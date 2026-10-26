@@ -37,11 +37,13 @@ def test_session_access_end_and_restart(tmp_path):
 
 
 async def test_session_domain_and_storage(tmp_path):
-    from voicebot.application.sessions import Sessions
+    from voicebot.application.sessions import SessionLimitExceeded, Sessions
 
     database = await Database.open(tmp_path / "test.sqlite3")
     try:
-        sessions = Sessions(database, load_scenarios(), "test-model")
+        with pytest.raises(RuntimeError, match="one backend process"):
+            await Database.open(tmp_path / "test.sqlite3")
+        sessions = Sessions(database, load_scenarios(), "test-model", max_sessions=2)
         session, token = await sessions.create("salary-negotiation")
         assert token not in (await database.get(session.id)).token_hash
         with pytest.raises(SessionConflict):
@@ -51,6 +53,11 @@ async def test_session_domain_and_storage(tmp_path):
         assert active.started_at is not None
         assert active.instructions == session.instructions
         other, _ = await sessions.create("salary-negotiation")
+        with pytest.raises(SessionLimitExceeded):
+            await sessions.create("salary-negotiation")
+        await sessions.expire_pending(0)
+        assert (await sessions.get(other.id)).end_reason == "connection_timeout"
+        assert (await sessions.get(session.id)).status == "active"
         await sessions.transcript(session.id, "assistant", "Dzień dobry", True, "")
         entries = await database.events(session.id, kind="transcript.final")
         assert len(entries) == 1

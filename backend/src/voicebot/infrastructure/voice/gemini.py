@@ -75,6 +75,7 @@ class GeminiConversation:
             params=PipelineParams(enable_metrics=True, enable_usage_metrics=True),
             processor_unusable_policy=ProcessorUnusablePolicy.CANCEL,
             idle_timeout_secs=None,
+            cancel_timeout_secs=3,
         )
         self.runner = WorkerRunner(handle_sigint=False, handle_sigterm=False)
         self.failed = False

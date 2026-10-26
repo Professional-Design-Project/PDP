@@ -1,5 +1,6 @@
 import asyncio
 import logging
+from contextlib import suppress
 from dataclasses import dataclass, field
 
 from pipecat.transports.smallwebrtc.connection import IceServer, SmallWebRTCConnection
@@ -21,8 +22,10 @@ class InvalidSignaling(Exception):
 class ActiveSession:
     connection: SmallWebRTCConnection
     stop: asyncio.Event = field(default_factory=asyncio.Event)
+    ready: asyncio.Event = field(default_factory=asyncio.Event)
     task: asyncio.Task | None = None
     reason: str = "client_disconnected"
+    failed: bool = False
 
 
 class VoiceRuntime:
@@ -45,11 +48,14 @@ class VoiceRuntime:
                     raise SessionConflict(
                         "Connection already exists; start a new session to restart"
                     )
-                await entry.connection.renegotiate(offer.sdp, offer.type)
+                async with asyncio.timeout(self.settings.connect_timeout_seconds):
+                    await entry.connection.renegotiate(offer.sdp, offer.type)
                 return Answer.model_validate(entry.connection.get_answer())
             if offer.pc_id or session.status != SessionStatus.CREATED:
                 raise SessionConflict("No matching connection")
-            await self.sessions.transition(session_id, SessionStatus.CONNECTING)
+            connecting = await self.sessions.transition(session_id, SessionStatus.CONNECTING)
+            if connecting.finished:
+                raise SessionConflict("Session has ended")
             connection = SmallWebRTCConnection(
                 ice_servers=[
                     IceServer(**server.model_dump()) for server in self.settings.ice_servers
@@ -65,14 +71,20 @@ class VoiceRuntime:
                 entry.stop.set()
 
             try:
-                await connection.initialize(offer.sdp, offer.type)
+                async with asyncio.timeout(self.settings.connect_timeout_seconds):
+                    await connection.initialize(offer.sdp, offer.type)
                 answer = Answer.model_validate(connection.get_answer())
                 entry.task = asyncio.create_task(self._run(session_id, entry), name=session_id)
                 return answer
             except BaseException:
                 self.active.pop(session_id, None)
-                await connection.disconnect()
-                await self.sessions.transition(session_id, SessionStatus.FAILED, "signaling_failed")
+                try:
+                    async with asyncio.timeout(self.settings.cleanup_timeout_seconds):
+                        await connection.disconnect()
+                finally:
+                    await self.sessions.transition(
+                        session_id, SessionStatus.FAILED, "signaling_failed"
+                    )
                 raise
 
     async def candidates(self, session_id: str, body: Candidates) -> None:
@@ -90,13 +102,26 @@ class VoiceRuntime:
         conversation = GeminiConversation(session, entry.connection, self.settings)
 
         async def ready():
-            await self.sessions.transition(session_id, SessionStatus.ACTIVE)
+            active = await self.sessions.transition(session_id, SessionStatus.ACTIVE)
+            if active.finished:
+                entry.stop.set()
+                return
+            entry.ready.set()
             entry.connection.send_app_message(
                 {"label": "rtvi-ai", "type": "server-message", "data": {"kind": "session.ready"}}
             )
 
         async def transcript(role: Speaker, text: str, interrupted: bool, started_at: str):
-            event = await self.sessions.transcript(session_id, role, text, interrupted, started_at)
+            try:
+                event = await self.sessions.transcript(
+                    session_id, role, text, interrupted, started_at
+                )
+            except Exception:
+                logger.error("Transcript save failed: session=%s", session_id)
+                entry.reason = "storage_failed"
+                entry.failed = True
+                entry.stop.set()
+                return
             if event:
                 entry.connection.send_app_message(
                     {
@@ -113,8 +138,20 @@ class VoiceRuntime:
 
         await conversation.run(entry.stop, ready, transcript)
 
+    async def _watch(self, entry: ActiveSession) -> None:
+        try:
+            async with asyncio.timeout(self.settings.connect_timeout_seconds):
+                await entry.ready.wait()
+            async with asyncio.timeout(self.settings.session_timeout_seconds):
+                await entry.stop.wait()
+        except TimeoutError:
+            entry.reason = "session_timeout" if entry.ready.is_set() else "connection_timeout"
+            entry.failed = not entry.ready.is_set()
+            entry.stop.set()
+
     async def _run(self, session_id: str, entry: ActiveSession) -> None:
         status = SessionStatus.ENDED
+        watchdog = asyncio.create_task(self._watch(entry))
         try:
             await self._serve(session_id, entry)
         except asyncio.CancelledError:
@@ -124,6 +161,11 @@ class VoiceRuntime:
             status = SessionStatus.FAILED
             entry.reason = "runtime_failed"
         finally:
+            watchdog.cancel()
+            with suppress(asyncio.CancelledError):
+                await watchdog
+            if entry.failed:
+                status = SessionStatus.FAILED
             try:
                 entry.connection.send_app_message(
                     {
@@ -132,10 +174,21 @@ class VoiceRuntime:
                         "data": {"kind": f"session.{status}", "reason": entry.reason},
                     }
                 )
-                await entry.connection.disconnect()
+                try:
+                    async with asyncio.timeout(self.settings.cleanup_timeout_seconds):
+                        await entry.connection.disconnect()
+                except Exception:
+                    logger.error("Connection cleanup failed: session=%s", session_id)
+                    status = SessionStatus.FAILED
+                    entry.reason = "cleanup_failed"
             finally:
-                await self.sessions.transition(session_id, status, entry.reason)
-                self.active.pop(session_id, None)
+                try:
+                    await self.sessions.transition(session_id, status, entry.reason)
+                    logger.info("Session finished: session=%s reason=%s", session_id, entry.reason)
+                except Exception:
+                    logger.error("Session finalization failed: session=%s", session_id)
+                finally:
+                    self.active.pop(session_id, None)
 
     async def end(self, session_id: str, reason: str = "user_ended"):
         async with self.lock:
@@ -144,8 +197,23 @@ class VoiceRuntime:
                 entry.reason = reason
                 entry.stop.set()
         if entry and entry.task:
-            await entry.task
+            done, _ = await asyncio.wait(
+                {entry.task}, timeout=self.settings.cleanup_timeout_seconds
+            )
+            if not done:
+                entry.task.cancel()
+            with suppress(asyncio.CancelledError, TimeoutError):
+                async with asyncio.timeout(self.settings.cleanup_timeout_seconds):
+                    await asyncio.shield(entry.task)
         return await self.sessions.transition(session_id, SessionStatus.ENDED, reason)
 
     async def close(self) -> None:
         await asyncio.gather(*(self.end(key, "server_shutdown") for key in list(self.active)))
+
+    async def maintain(self) -> None:
+        while True:
+            try:
+                await self.sessions.expire_pending(self.settings.pending_timeout_seconds)
+            except Exception:
+                logger.error("Session expiry failed")
+            await asyncio.sleep(min(5, self.settings.pending_timeout_seconds))

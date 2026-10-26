@@ -1,4 +1,5 @@
 import json
+import sqlite3
 from datetime import UTC, datetime
 from pathlib import Path
 
@@ -30,15 +31,25 @@ MIGRATIONS = (
 
 
 class Database:
-    def __init__(self, connection: aiosqlite.Connection) -> None:
+    def __init__(self, connection: aiosqlite.Connection, lease: aiosqlite.Connection) -> None:
         self.connection = connection
+        self.lease = lease
         self.adapter = TypeAdapter(Session)
 
     @classmethod
     async def open(cls, path: Path) -> "Database":
         path.parent.mkdir(parents=True, exist_ok=True)
-        connection = await aiosqlite.connect(path)
+        lease = await aiosqlite.connect(path.with_suffix(".lock"), timeout=0)
         try:
+            await lease.execute("BEGIN EXCLUSIVE")
+        except sqlite3.OperationalError as error:
+            await lease.close()
+            raise RuntimeError(
+                "Database is already in use; run exactly one backend process"
+            ) from error
+        connection = None
+        try:
+            connection = await aiosqlite.connect(path)
             await connection.execute("PRAGMA journal_mode=WAL")
             await connection.execute("PRAGMA foreign_keys=ON")
             cursor = await connection.execute("PRAGMA user_version")
@@ -49,13 +60,18 @@ class Database:
                 await connection.executescript(
                     f"BEGIN;\n{MIGRATIONS[index]}\nPRAGMA user_version={index + 1};\nCOMMIT;"
                 )
-            return cls(connection)
+            return cls(connection, lease)
         except BaseException:
-            await connection.close()
+            if connection:
+                await connection.close()
+            await lease.close()
             raise
 
     async def close(self) -> None:
-        await self.connection.close()
+        try:
+            await self.connection.close()
+        finally:
+            await self.lease.close()
 
     async def add(self, session: Session) -> None:
         await self.connection.execute(

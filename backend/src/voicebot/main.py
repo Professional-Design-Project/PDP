@@ -1,13 +1,21 @@
-from contextlib import asynccontextmanager
+import asyncio
+import logging
+from contextlib import asynccontextmanager, suppress
 
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
+from loguru import logger as pipecat_logger
 
 from voicebot.api.scenarios import scenario_router
 from voicebot.api.sessions import router as sessions_router
 from voicebot.application.scenarios import ScenarioNotFound
-from voicebot.application.sessions import SessionAccessDenied, SessionNotFound, Sessions
+from voicebot.application.sessions import (
+    SessionAccessDenied,
+    SessionLimitExceeded,
+    SessionNotFound,
+    Sessions,
+)
 from voicebot.domain.session import SessionConflict
 from voicebot.infrastructure.database import Database
 from voicebot.infrastructure.scenarios import load_scenarios
@@ -18,20 +26,33 @@ from voicebot.settings import Settings
 
 def create_app(settings: Settings | None = None) -> FastAPI:
     settings = settings or Settings()
+    logging.basicConfig(level=logging.INFO)
+    # Pipecat debug output can contain transcripts and provider session handles.
+    pipecat_logger.disable("pipecat")
     scenarios = load_scenarios()
 
     @asynccontextmanager
     async def lifespan(app: FastAPI):
         database = await Database.open(settings.database_path)
         try:
-            sessions = Sessions(database, scenarios, settings.gemini_model)
+            sessions = Sessions(
+                database,
+                scenarios,
+                settings.gemini_model,
+                settings.max_sessions,
+                settings.session_token_ttl_seconds,
+            )
             await sessions.recover()
             app.state.sessions = sessions
             runtime = VoiceRuntime(sessions, settings)
             app.state.runtime = runtime
+            maintenance = asyncio.create_task(runtime.maintain())
             try:
                 yield
             finally:
+                maintenance.cancel()
+                with suppress(asyncio.CancelledError):
+                    await maintenance
                 await runtime.close()
         finally:
             await database.close()
@@ -61,6 +82,8 @@ def create_app(settings: Settings | None = None) -> FastAPI:
             SessionConflict: (409, "Session state conflict"),
             InvalidSignaling: (400, "Invalid WebRTC signaling"),
             VoiceUnavailable: (503, "Voice provider is not configured"),
+            SessionLimitExceeded: (503, "Session capacity reached"),
+            TimeoutError: (504, "Voice connection timed out"),
         }
         status, detail = errors[type(error)]
         return JSONResponse(status_code=status, content={"detail": detail})
@@ -72,6 +95,8 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         SessionConflict,
         InvalidSignaling,
         VoiceUnavailable,
+        SessionLimitExceeded,
+        TimeoutError,
     ):
         app.add_exception_handler(error, application_error)
 

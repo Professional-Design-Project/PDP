@@ -99,6 +99,6 @@ async def transcript(
     after: Annotated[int, Query(ge=0)] = 0,
     limit: Annotated[int, Query(ge=1, le=500)] = 100,
 ):
-    return await request.app.state.sessions.repository.events(
+    return await request.app.state.sessions.events(
         session.id, after, limit, kind="transcript.final"
     )

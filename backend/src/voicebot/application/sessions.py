@@ -17,12 +17,25 @@ class SessionAccessDenied(Exception):
     pass
 
 
+class SessionLimitExceeded(Exception):
+    pass
+
+
 class Sessions:
-    def __init__(self, repository: SessionRepository, scenarios: Scenarios, model: str) -> None:
+    def __init__(
+        self,
+        repository: SessionRepository,
+        scenarios: Scenarios,
+        model: str,
+        max_sessions: int = 8,
+        token_ttl_seconds: int = 86400,
+    ) -> None:
         self.repository = repository
         self.scenarios = scenarios
         self.model = model
         self.lock = asyncio.Lock()
+        self.max_sessions = max_sessions
+        self.token_ttl_seconds = token_ttl_seconds
 
     async def create(self, scenario_id: str) -> tuple[Session, str]:
         scenario = self.scenarios.get(scenario_id)
@@ -38,8 +51,11 @@ class Sessions:
             token_hash=hashlib.sha256(token.encode()).hexdigest(),
             created_at=datetime.now(UTC),
         )
-        await self.repository.add(session)
-        await self.repository.append_event(session.id, "session.created", {})
+        async with self.lock:
+            if len(await self.repository.unfinished()) >= self.max_sessions:
+                raise SessionLimitExceeded
+            await self.repository.add(session)
+            await self.repository.append_event(session.id, "session.created", {})
         return session, token
 
     async def get(self, session_id: str) -> Session:
@@ -51,7 +67,8 @@ class Sessions:
     async def authorize(self, session_id: str, token: str) -> Session:
         session = await self.get(session_id)
         digest = hashlib.sha256(token.encode()).hexdigest()
-        if not secrets.compare_digest(digest, session.token_hash):
+        expired = (datetime.now(UTC) - session.created_at).total_seconds() > self.token_ttl_seconds
+        if not secrets.compare_digest(digest, session.token_hash) or expired:
             raise SessionAccessDenied
         return session
 
@@ -92,3 +109,22 @@ class Sessions:
     async def recover(self) -> None:
         for session in await self.repository.unfinished():
             await self.transition(session.id, SessionStatus.FAILED, "server_restarted")
+
+    async def expire_pending(self, timeout_seconds: int) -> None:
+        async with self.lock:
+            now = datetime.now(UTC)
+            for session in await self.repository.unfinished():
+                if (
+                    session.status == SessionStatus.CREATED
+                    and (now - session.created_at).total_seconds() >= timeout_seconds
+                ):
+                    ended = session.transition(SessionStatus.ENDED, now, "connection_timeout")
+                    await self.repository.save(ended)
+                    await self.repository.append_event(
+                        session.id, "session.ended", {"reason": "connection_timeout"}
+                    )
+
+    async def events(
+        self, session_id: str, after: int, limit: int, kind: str | None = None
+    ) -> list[SessionEvent]:
+        return await self.repository.events(session_id, after, limit, kind)
