@@ -12,10 +12,16 @@ from voicebot.infrastructure.voice.webrtc import Offer
 from voicebot.settings import Settings
 
 
-async def test_real_webrtc_signaling_and_cleanup(tmp_path):
+async def test_real_webrtc_signaling_and_cleanup(tmp_path, monkeypatch):
     database = await Database.open(tmp_path / "runtime.sqlite3")
     sessions = Sessions(database, load_scenarios(), "test-model")
-    runtime = VoiceRuntime(sessions, Settings(_env_file=None))
+    runtime = VoiceRuntime(sessions, Settings(_env_file=None, google_api_key="test-key"))
+
+    async def serve(session_id, entry):
+        await entry.connection.connect()
+        await entry.stop.wait()
+
+    monkeypatch.setattr(runtime, "_serve", serve)
     peer = RTCPeerConnection(RTCConfiguration(iceServers=[]))
     connected = asyncio.Event()
 

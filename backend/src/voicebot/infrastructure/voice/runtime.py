@@ -6,6 +6,7 @@ from pipecat.transports.smallwebrtc.connection import IceServer, SmallWebRTCConn
 
 from voicebot.application.sessions import Sessions
 from voicebot.domain.session import SessionConflict, SessionStatus
+from voicebot.infrastructure.voice.gemini import GeminiConversation, VoiceUnavailable
 from voicebot.infrastructure.voice.webrtc import Answer, Candidates, Offer, add_candidates
 from voicebot.settings import Settings
 
@@ -32,6 +33,8 @@ class VoiceRuntime:
         self.lock = asyncio.Lock()
 
     async def offer(self, session_id: str, offer: Offer) -> Answer:
+        if not self.settings.google_api_key.get_secret_value():
+            raise VoiceUnavailable
         async with self.lock:
             session = await self.sessions.get(session_id)
             if session.finished:
@@ -83,12 +86,13 @@ class VoiceRuntime:
                 raise InvalidSignaling from error
 
     async def _serve(self, session_id: str, entry: ActiveSession) -> None:
-        @entry.connection.event_handler("connected")
-        async def connected(connection):
+        session = await self.sessions.get(session_id)
+        conversation = GeminiConversation(session, entry.connection, self.settings)
+
+        async def ready():
             await self.sessions.transition(session_id, SessionStatus.ACTIVE)
 
-        await entry.connection.connect()
-        await entry.stop.wait()
+        await conversation.run(entry.stop, ready)
 
     async def _run(self, session_id: str, entry: ActiveSession) -> None:
         status = SessionStatus.ENDED

@@ -11,6 +11,7 @@ from voicebot.application.sessions import SessionAccessDenied, SessionNotFound, 
 from voicebot.domain.session import SessionConflict
 from voicebot.infrastructure.database import Database
 from voicebot.infrastructure.scenarios import load_scenarios
+from voicebot.infrastructure.voice.gemini import VoiceUnavailable
 from voicebot.infrastructure.voice.runtime import InvalidSignaling, VoiceRuntime
 from voicebot.settings import Settings
 
@@ -59,6 +60,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
             SessionAccessDenied: (403, "Session access denied"),
             SessionConflict: (409, "Session state conflict"),
             InvalidSignaling: (400, "Invalid WebRTC signaling"),
+            VoiceUnavailable: (503, "Voice provider is not configured"),
         }
         status, detail = errors[type(error)]
         return JSONResponse(status_code=status, content={"detail": detail})
@@ -69,6 +71,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         SessionAccessDenied,
         SessionConflict,
         InvalidSignaling,
+        VoiceUnavailable,
     ):
         app.add_exception_handler(error, application_error)
 
