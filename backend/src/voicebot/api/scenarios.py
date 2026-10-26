@@ -1,7 +1,7 @@
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter
 from pydantic import BaseModel, ConfigDict
 
-from voicebot.application.scenarios import ScenarioNotFound, Scenarios
+from voicebot.application.scenarios import Scenarios
 
 
 class ScenarioResponse(BaseModel):
@@ -23,9 +23,6 @@ def scenario_router(scenarios: Scenarios) -> APIRouter:
 
     @router.get("/{scenario_id}", response_model=ScenarioResponse)
     def get_scenario(scenario_id: str):
-        try:
-            return scenarios.get(scenario_id)
-        except ScenarioNotFound:
-            raise HTTPException(404, "Scenario not found") from None
+        return scenarios.get(scenario_id)
 
     return router

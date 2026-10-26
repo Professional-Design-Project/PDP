@@ -13,6 +13,7 @@ from pipecat.processors.aggregators.llm_response_universal import (
     UserTurnMessageAddedMessage,
 )
 from pipecat.services.google.gemini_live.llm import GeminiLiveLLMService
+from pipecat.transcriptions.language import Language
 from pipecat.transports.base_transport import TransportParams
 from pipecat.transports.smallwebrtc.connection import SmallWebRTCConnection
 from pipecat.transports.smallwebrtc.transport import SmallWebRTCTransport
@@ -51,7 +52,7 @@ class GeminiConversation:
                 model=session.model,
                 system_instruction=session.instructions,
                 voice=settings.gemini_voice,
-                language=session.language,
+                language=Language(session.language),
                 context_window_compression={"enabled": True},
             ),
         )

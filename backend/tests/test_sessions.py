@@ -16,6 +16,8 @@ def test_session_access_end_and_restart(tmp_path):
         response = client.post("/v1/sessions", json={"scenario_id": "salary-negotiation"})
         assert response.status_code == 201
         session = response.json()
+        assert response.headers["cache-control"] == "no-store"
+        assert session["signaling_url"] == f"/v1/sessions/{session['id']}/offer"
         url = f"/v1/sessions/{session['id']}"
         headers = {"Authorization": f"Bearer {session['access_token']}"}
         assert "token_hash" not in session
@@ -23,6 +25,8 @@ def test_session_access_end_and_restart(tmp_path):
         assert client.get(url).status_code == 401
         assert client.get(url, headers={"Authorization": "Bearer wrong"}).status_code == 403
         assert client.get(url, headers=headers).json()["status"] == "created"
+        assert client.get(url + "/events", headers=headers).json()[0]["kind"] == "session.created"
+        assert client.get(url + "/transcript", headers=headers).json() == []
         assert client.post(url + "/end", headers=headers).json()["status"] == "ended"
         assert client.post(url + "/end", headers=headers).status_code == 200
         abandoned = client.post("/v1/sessions", json={"scenario_id": "salary-negotiation"}).json()

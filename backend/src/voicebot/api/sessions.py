@@ -1,5 +1,5 @@
-from datetime import datetime
-from typing import Annotated
+from datetime import datetime, timedelta
+from typing import Annotated, Literal
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, Query, Request
@@ -9,6 +9,7 @@ from pydantic import BaseModel, ConfigDict, Field
 from voicebot.domain.session import Session, SessionStatus
 from voicebot.infrastructure.voice.runtime import InvalidSignaling
 from voicebot.infrastructure.voice.webrtc import Answer, Candidates, Offer
+from voicebot.settings import IceServerConfig
 
 router = APIRouter(prefix="/sessions", tags=["sessions"])
 bearer = HTTPBearer()
@@ -37,7 +38,10 @@ class SessionResponse(BaseModel):
 
 class CreatedSession(SessionResponse):
     access_token: str
-    transport: str = "small_webrtc"
+    token_expires_at: datetime
+    transport: Literal["small_webrtc"] = "small_webrtc"
+    signaling_url: str
+    ice_servers: list[IceServerConfig]
 
 
 class EventResponse(BaseModel):
@@ -61,11 +65,26 @@ async def authorized_session(
 AuthorizedSession = Annotated[Session, Depends(authorized_session)]
 
 
-@router.post("", response_model=CreatedSession, status_code=201)
+@router.post(
+    "",
+    response_model=CreatedSession,
+    status_code=201,
+    summary="Create a session and issue its access token",
+    description=(
+        "Use the access token as Bearer authorization on all session endpoints. "
+        "Connect using SmallWebRTC and the returned signaling URL. "
+        "The scenario defines the language; arbitrary model instructions are not accepted."
+    ),
+)
 async def create_session(body: CreateSession, request: Request):
     session, token = await request.app.state.sessions.create(body.scenario_id)
+    settings = request.app.state.settings
     return CreatedSession(
-        **SessionResponse.model_validate(session).model_dump(), access_token=token
+        **SessionResponse.model_validate(session).model_dump(),
+        access_token=token,
+        token_expires_at=session.created_at + timedelta(seconds=settings.session_token_ttl_seconds),
+        signaling_url=f"/v1/sessions/{session.id}/offer",
+        ice_servers=settings.ice_servers,
     )
 
 
@@ -79,7 +98,16 @@ async def end_session(session: AuthorizedSession, request: Request):
     return await request.app.state.runtime.end(session.id)
 
 
-@router.post("/{session_id}/offer", response_model=Answer)
+@router.post(
+    "/{session_id}/offer",
+    response_model=Answer,
+    summary="Exchange a SmallWebRTC SDP offer for an answer",
+    description=(
+        "Send an offer with an audio transceiver and a data channel. "
+        "For renegotiation include the returned pc_id. "
+        "Peer restarts require a new session. Use Pipecat RTVI on the data channel."
+    ),
+)
 async def offer(session: AuthorizedSession, body: Offer, request: Request):
     try:
         return await request.app.state.runtime.offer(session.id, body)
@@ -87,12 +115,25 @@ async def offer(session: AuthorizedSession, body: Offer, request: Request):
         raise InvalidSignaling from error
 
 
-@router.patch("/{session_id}/offer", status_code=204)
+@router.patch(
+    "/{session_id}/offer",
+    status_code=204,
+    summary="Add trickled ICE candidates to this session's peer",
+)
 async def candidates(session: AuthorizedSession, body: Candidates, request: Request):
     await request.app.state.runtime.candidates(session.id, body)
 
 
-@router.get("/{session_id}/transcript", response_model=list[EventResponse])
+@router.get(
+    "/{session_id}/transcript",
+    response_model=list[EventResponse],
+    description=(
+        "Finalized transcript segments ordered by sequence. "
+        "Pass the last sequence as after to retrieve the next page. "
+        "Interrupted assistant text is not proof of what was heard; playback is not verified. "
+        "Live partial transcripts are provided by RTVI and are not stored as final segments."
+    ),
+)
 async def transcript(
     session: AuthorizedSession,
     request: Request,
@@ -102,3 +143,17 @@ async def transcript(
     return await request.app.state.sessions.events(
         session.id, after, limit, kind="transcript.final"
     )
+
+
+@router.get(
+    "/{session_id}/events",
+    response_model=list[EventResponse],
+    description="Lifecycle and transcript events ordered by sequence, with cursor pagination.",
+)
+async def events(
+    session: AuthorizedSession,
+    request: Request,
+    after: Annotated[int, Query(ge=0)] = 0,
+    limit: Annotated[int, Query(ge=1, le=500)] = 100,
+):
+    return await request.app.state.sessions.events(session.id, after, limit)

@@ -21,6 +21,7 @@ class InvalidSignaling(Exception):
 @dataclass
 class ActiveSession:
     connection: SmallWebRTCConnection
+    signaling_lock: asyncio.Lock = field(default_factory=asyncio.Lock)
     stop: asyncio.Event = field(default_factory=asyncio.Event)
     ready: asyncio.Event = field(default_factory=asyncio.Event)
     task: asyncio.Task | None = None
@@ -48,60 +49,92 @@ class VoiceRuntime:
                     raise SessionConflict(
                         "Connection already exists; start a new session to restart"
                     )
-                async with asyncio.timeout(self.settings.connect_timeout_seconds):
-                    await entry.connection.renegotiate(offer.sdp, offer.type)
-                return Answer.model_validate(entry.connection.get_answer())
-            if offer.pc_id or session.status != SessionStatus.CREATED:
-                raise SessionConflict("No matching connection")
-            connecting = await self.sessions.transition(session_id, SessionStatus.CONNECTING)
-            if connecting.finished:
-                raise SessionConflict("Session has ended")
-            connection = SmallWebRTCConnection(
-                ice_servers=[
-                    IceServer(**server.model_dump()) for server in self.settings.ice_servers
-                ]
-            )
-            entry = ActiveSession(connection)
-            self.active[session_id] = entry
+                fresh = False
+            else:
+                if offer.pc_id or session.status != SessionStatus.CREATED:
+                    raise SessionConflict("No matching connection")
+                connection = SmallWebRTCConnection(
+                    ice_servers=[
+                        IceServer(**server.model_dump()) for server in self.settings.ice_servers
+                    ],
+                    connection_timeout_secs=self.settings.connect_timeout_seconds,
+                )
+                connecting = await self.sessions.transition(session_id, SessionStatus.CONNECTING)
+                if connecting.finished:
+                    await connection.disconnect()
+                    raise SessionConflict("Session has ended")
+                entry = ActiveSession(connection)
+                self.active[session_id] = entry
+                fresh = True
 
-            @connection.event_handler("closed")
-            @connection.event_handler("failed")
-            @connection.event_handler("disconnected")
-            async def disconnected(connection):
-                entry.stop.set()
+                @connection.event_handler("closed")
+                @connection.event_handler("disconnected")
+                async def disconnected(connection):
+                    entry.stop.set()
 
+                @connection.event_handler("failed")
+                async def failed(connection):
+                    entry.failed = True
+                    entry.reason = "transport_failed"
+                    entry.stop.set()
+
+        async with entry.signaling_lock:
+            if entry.stop.is_set():
+                if fresh:
+                    await entry.connection.disconnect()
+                    self.active.pop(session_id, None)
+                    await self.sessions.transition(
+                        session_id,
+                        SessionStatus.FAILED if entry.failed else SessionStatus.ENDED,
+                        entry.reason,
+                    )
+                raise SessionConflict("Connection is closing")
             try:
                 async with asyncio.timeout(self.settings.connect_timeout_seconds):
-                    await connection.initialize(offer.sdp, offer.type)
-                answer = Answer.model_validate(connection.get_answer())
-                entry.task = asyncio.create_task(self._run(session_id, entry), name=session_id)
+                    if fresh:
+                        await entry.connection.initialize(offer.sdp, offer.type)
+                    else:
+                        await entry.connection.renegotiate(offer.sdp, offer.type)
+                answer = Answer.model_validate(entry.connection.get_answer())
+                if fresh:
+                    entry.task = asyncio.create_task(self._run(session_id, entry), name=session_id)
                 return answer
             except BaseException:
-                self.active.pop(session_id, None)
-                try:
-                    async with asyncio.timeout(self.settings.cleanup_timeout_seconds):
-                        await connection.disconnect()
-                finally:
-                    await self.sessions.transition(
-                        session_id, SessionStatus.FAILED, "signaling_failed"
-                    )
+                entry.failed = True
+                entry.reason = "signaling_failed"
+                entry.stop.set()
+                if fresh:
+                    self.active.pop(session_id, None)
+                    try:
+                        async with asyncio.timeout(self.settings.cleanup_timeout_seconds):
+                            await entry.connection.disconnect()
+                    finally:
+                        await self.sessions.transition(
+                            session_id, SessionStatus.FAILED, "signaling_failed"
+                        )
                 raise
 
     async def candidates(self, session_id: str, body: Candidates) -> None:
-        async with self.lock:
-            entry = self.active.get(session_id)
-            if entry is None or entry.connection.pc_id != body.pc_id:
-                raise SessionConflict("No matching connection")
+        entry = self.active.get(session_id)
+        if entry is None or entry.connection.pc_id != body.pc_id:
+            raise SessionConflict("No matching connection")
+        async with entry.signaling_lock:
+            if entry.stop.is_set():
+                raise SessionConflict("Connection is closing")
             try:
                 await add_candidates(entry.connection, body.candidates)
             except (ValueError, AssertionError, IndexError) as error:
                 raise InvalidSignaling from error
 
     async def _serve(self, session_id: str, entry: ActiveSession) -> None:
+        if entry.stop.is_set():
+            return
         session = await self.sessions.get(session_id)
         conversation = GeminiConversation(session, entry.connection, self.settings)
 
         async def ready():
+            if entry.stop.is_set():
+                return
             active = await self.sessions.transition(session_id, SessionStatus.ACTIVE)
             if active.finished:
                 entry.stop.set()
@@ -196,6 +229,9 @@ class VoiceRuntime:
             if entry:
                 entry.reason = reason
                 entry.stop.set()
+        if entry:
+            async with entry.signaling_lock:
+                pass
         if entry and entry.task:
             done, _ = await asyncio.wait(
                 {entry.task}, timeout=self.settings.cleanup_timeout_seconds

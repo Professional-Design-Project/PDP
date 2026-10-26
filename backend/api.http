@@ -1,0 +1,34 @@
+@base = http://localhost:8000/v1
+
+### Health
+GET {{base}}/health
+
+### Public scenarios
+GET {{base}}/scenarios
+
+### Create a session
+POST {{base}}/sessions
+Content-Type: application/json
+
+{"scenario_id": "salary-negotiation"}
+
+> {%
+    client.global.set("session_id", response.body.id);
+    client.global.set("session_token", response.body.access_token);
+%}
+
+### Session status
+GET {{base}}/sessions/{{session_id}}
+Authorization: Bearer {{session_token}}
+
+### Saved transcript
+GET {{base}}/sessions/{{session_id}}/transcript?after=0&limit=100
+Authorization: Bearer {{session_token}}
+
+### Lifecycle events
+GET {{base}}/sessions/{{session_id}}/events?after=0&limit=100
+Authorization: Bearer {{session_token}}
+
+### End the session
+POST {{base}}/sessions/{{session_id}}/end
+Authorization: Bearer {{session_token}}
