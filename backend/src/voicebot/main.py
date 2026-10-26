@@ -1,6 +1,8 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
+from voicebot.api.scenarios import scenario_router
+from voicebot.infrastructure.scenarios import load_scenarios
 from voicebot.settings import Settings
 
 
@@ -19,6 +21,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         allow_methods=["GET", "POST", "PATCH"],
         allow_headers=["Authorization", "Content-Type"],
     )
+    app.include_router(scenario_router(load_scenarios()), prefix="/v1")
 
     @app.get("/v1/health", tags=["health"])
     def health() -> dict[str, str]:
