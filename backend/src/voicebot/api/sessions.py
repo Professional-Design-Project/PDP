@@ -2,7 +2,7 @@ from datetime import datetime
 from typing import Annotated
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, Request
+from fastapi import APIRouter, Depends, Query, Request
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from pydantic import BaseModel, ConfigDict, Field
 
@@ -38,6 +38,16 @@ class SessionResponse(BaseModel):
 class CreatedSession(SessionResponse):
     access_token: str
     transport: str = "small_webrtc"
+
+
+class EventResponse(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    sequence: int
+    session_id: UUID
+    kind: str
+    timestamp: datetime
+    data: dict[str, str | bool | int | None]
 
 
 async def authorized_session(
@@ -80,3 +90,15 @@ async def offer(session: AuthorizedSession, body: Offer, request: Request):
 @router.patch("/{session_id}/offer", status_code=204)
 async def candidates(session: AuthorizedSession, body: Candidates, request: Request):
     await request.app.state.runtime.candidates(session.id, body)
+
+
+@router.get("/{session_id}/transcript", response_model=list[EventResponse])
+async def transcript(
+    session: AuthorizedSession,
+    request: Request,
+    after: Annotated[int, Query(ge=0)] = 0,
+    limit: Annotated[int, Query(ge=1, le=500)] = 100,
+):
+    return await request.app.state.sessions.repository.events(
+        session.id, after, limit, kind="transcript.final"
+    )

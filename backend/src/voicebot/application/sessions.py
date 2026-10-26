@@ -6,7 +6,7 @@ from uuid import uuid4
 
 from voicebot.application.ports import SessionRepository
 from voicebot.application.scenarios import Scenarios, compile_instructions
-from voicebot.domain.session import Session, SessionStatus
+from voicebot.domain.session import Session, SessionEvent, SessionStatus, Speaker
 
 
 class SessionNotFound(Exception):
@@ -39,6 +39,7 @@ class Sessions:
             created_at=datetime.now(UTC),
         )
         await self.repository.add(session)
+        await self.repository.append_event(session.id, "session.created", {})
         return session, token
 
     async def get(self, session_id: str) -> Session:
@@ -63,7 +64,30 @@ class Sessions:
                 return session
             session = session.transition(status, datetime.now(UTC), reason)
             await self.repository.save(session)
+            await self.repository.append_event(session.id, f"session.{status}", {"reason": reason})
             return session
+
+    async def transcript(
+        self,
+        session_id: str,
+        role: Speaker,
+        text: str,
+        interrupted: bool,
+        started_at: str,
+    ) -> SessionEvent | None:
+        if not text.strip():
+            return None
+        return await self.repository.append_event(
+            session_id,
+            "transcript.final",
+            {
+                "role": role,
+                "text": text,
+                "interrupted": interrupted,
+                "started_at": started_at,
+                "playback_verified": False,
+            },
+        )
 
     async def recover(self) -> None:
         for session in await self.repository.unfinished():

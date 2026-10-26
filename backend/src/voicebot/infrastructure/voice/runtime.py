@@ -5,7 +5,7 @@ from dataclasses import dataclass, field
 from pipecat.transports.smallwebrtc.connection import IceServer, SmallWebRTCConnection
 
 from voicebot.application.sessions import Sessions
-from voicebot.domain.session import SessionConflict, SessionStatus
+from voicebot.domain.session import SessionConflict, SessionStatus, Speaker
 from voicebot.infrastructure.voice.gemini import GeminiConversation, VoiceUnavailable
 from voicebot.infrastructure.voice.webrtc import Answer, Candidates, Offer, add_candidates
 from voicebot.settings import Settings
@@ -91,8 +91,27 @@ class VoiceRuntime:
 
         async def ready():
             await self.sessions.transition(session_id, SessionStatus.ACTIVE)
+            entry.connection.send_app_message(
+                {"label": "rtvi-ai", "type": "server-message", "data": {"kind": "session.ready"}}
+            )
 
-        await conversation.run(entry.stop, ready)
+        async def transcript(role: Speaker, text: str, interrupted: bool, started_at: str):
+            event = await self.sessions.transcript(session_id, role, text, interrupted, started_at)
+            if event:
+                entry.connection.send_app_message(
+                    {
+                        "label": "rtvi-ai",
+                        "type": "server-message",
+                        "data": {
+                            "kind": event.kind,
+                            "sequence": event.sequence,
+                            "timestamp": event.timestamp.isoformat(),
+                            **event.data,
+                        },
+                    }
+                )
+
+        await conversation.run(entry.stop, ready, transcript)
 
     async def _run(self, session_id: str, entry: ActiveSession) -> None:
         status = SessionStatus.ENDED
@@ -106,6 +125,13 @@ class VoiceRuntime:
             entry.reason = "runtime_failed"
         finally:
             try:
+                entry.connection.send_app_message(
+                    {
+                        "label": "rtvi-ai",
+                        "type": "server-message",
+                        "data": {"kind": f"session.{status}", "reason": entry.reason},
+                    }
+                )
                 await entry.connection.disconnect()
             finally:
                 await self.sessions.transition(session_id, status, entry.reason)

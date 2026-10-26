@@ -7,8 +7,10 @@ from pipecat.pipeline.pipeline import Pipeline
 from pipecat.pipeline.worker import PipelineParams, PipelineWorker, ProcessorUnusablePolicy
 from pipecat.processors.aggregators.llm_context import LLMContext
 from pipecat.processors.aggregators.llm_response_universal import (
+    AssistantTurnStoppedMessage,
     LLMContextAggregatorPair,
     LLMUserAggregatorParams,
+    UserTurnMessageAddedMessage,
 )
 from pipecat.services.google.gemini_live.llm import GeminiLiveLLMService
 from pipecat.transports.base_transport import TransportParams
@@ -17,7 +19,7 @@ from pipecat.transports.smallwebrtc.transport import SmallWebRTCTransport
 from pipecat.turns.user_turn_strategies import ExternalUserTurnStrategies
 from pipecat.workers.runner import WorkerRunner
 
-from voicebot.domain.session import Session
+from voicebot.domain.session import Session, Speaker
 from voicebot.settings import Settings
 
 
@@ -77,7 +79,12 @@ class GeminiConversation:
         self.runner = WorkerRunner(handle_sigint=False, handle_sigterm=False)
         self.failed = False
 
-    async def run(self, stop: asyncio.Event, on_ready: Callable[[], Awaitable[None]]) -> None:
+    async def run(
+        self,
+        stop: asyncio.Event,
+        on_ready: Callable[[], Awaitable[None]],
+        on_transcript: Callable[[Speaker, str, bool, str], Awaitable[None]],
+    ) -> None:
         pipeline_ready = False
         client_connected = False
         notified = False
@@ -115,6 +122,16 @@ class GeminiConversation:
         async def timed_out(worker, *args):
             self.failed = True
             await self.runner.cancel()
+
+        @self.user.event_handler("on_user_turn_message_added")
+        async def user_transcript(aggregator, message: UserTurnMessageAddedMessage):
+            await on_transcript("user", message.content, False, message.timestamp)
+
+        @self.assistant.event_handler("on_assistant_turn_stopped")
+        async def assistant_transcript(aggregator, message: AssistantTurnStoppedMessage):
+            await on_transcript(
+                "assistant", message.content, message.interrupted, message.timestamp
+            )
 
         await self.runner.add_workers(self.worker)
         run_task = asyncio.create_task(self.runner.run())

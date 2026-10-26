@@ -1,6 +1,7 @@
 from dataclasses import dataclass, replace
 from datetime import datetime
 from enum import StrEnum
+from typing import Literal
 
 
 class SessionStatus(StrEnum):
@@ -13,6 +14,18 @@ class SessionStatus(StrEnum):
 
 class SessionConflict(Exception):
     pass
+
+
+@dataclass(frozen=True)
+class SessionEvent:
+    sequence: int
+    session_id: str
+    kind: str
+    timestamp: datetime
+    data: dict[str, str | bool | int | None]
+
+
+Speaker = Literal["user", "assistant"]
 
 
 @dataclass(frozen=True)

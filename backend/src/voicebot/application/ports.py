@@ -1,6 +1,6 @@
 from typing import Protocol
 
-from voicebot.domain.session import Session
+from voicebot.domain.session import Session, SessionEvent
 
 
 class SessionRepository(Protocol):
@@ -8,3 +8,9 @@ class SessionRepository(Protocol):
     async def get(self, session_id: str) -> Session | None: ...
     async def save(self, session: Session) -> None: ...
     async def unfinished(self) -> list[Session]: ...
+    async def append_event(
+        self, session_id: str, kind: str, data: dict[str, str | bool | int | None]
+    ) -> SessionEvent: ...
+    async def events(
+        self, session_id: str, after: int = 0, limit: int = 100, kind: str | None = None
+    ) -> list[SessionEvent]: ...

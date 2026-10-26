@@ -50,5 +50,11 @@ async def test_session_domain_and_storage(tmp_path):
         active = await sessions.transition(session.id, SessionStatus.ACTIVE)
         assert active.started_at is not None
         assert active.instructions == session.instructions
+        other, _ = await sessions.create("salary-negotiation")
+        await sessions.transcript(session.id, "assistant", "Dzień dobry", True, "")
+        entries = await database.events(session.id, kind="transcript.final")
+        assert len(entries) == 1
+        assert entries[0].data["interrupted"] is True
+        assert await database.events(other.id, kind="transcript.final") == []
     finally:
         await database.close()
