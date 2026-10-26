@@ -20,8 +20,9 @@ def test_scenario_rules_are_validated_and_compiled():
         replace(scenario, constraints=())
 
 
-def test_public_scenario_does_not_expose_private_rules():
-    with TestClient(create_app(Settings(_env_file=None))) as client:
+def test_public_scenario_does_not_expose_private_rules(tmp_path):
+    settings = Settings(_env_file=None, database_path=tmp_path / "test.sqlite3")
+    with TestClient(create_app(settings)) as client:
         scenarios = client.get("/v1/scenarios").json()
         assert len(scenarios) == 1
         response = client.get("/v1/scenarios/salary-negotiation")
