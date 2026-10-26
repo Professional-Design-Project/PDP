@@ -11,6 +11,7 @@ from voicebot.application.sessions import SessionAccessDenied, SessionNotFound, 
 from voicebot.domain.session import SessionConflict
 from voicebot.infrastructure.database import Database
 from voicebot.infrastructure.scenarios import load_scenarios
+from voicebot.infrastructure.voice.runtime import InvalidSignaling, VoiceRuntime
 from voicebot.settings import Settings
 
 
@@ -25,7 +26,12 @@ def create_app(settings: Settings | None = None) -> FastAPI:
             sessions = Sessions(database, scenarios, settings.gemini_model)
             await sessions.recover()
             app.state.sessions = sessions
-            yield
+            runtime = VoiceRuntime(sessions, settings)
+            app.state.runtime = runtime
+            try:
+                yield
+            finally:
+                await runtime.close()
         finally:
             await database.close()
 
@@ -52,11 +58,18 @@ def create_app(settings: Settings | None = None) -> FastAPI:
             SessionNotFound: (404, "Session not found"),
             SessionAccessDenied: (403, "Session access denied"),
             SessionConflict: (409, "Session state conflict"),
+            InvalidSignaling: (400, "Invalid WebRTC signaling"),
         }
         status, detail = errors[type(error)]
         return JSONResponse(status_code=status, content={"detail": detail})
 
-    for error in (ScenarioNotFound, SessionNotFound, SessionAccessDenied, SessionConflict):
+    for error in (
+        ScenarioNotFound,
+        SessionNotFound,
+        SessionAccessDenied,
+        SessionConflict,
+        InvalidSignaling,
+    ):
         app.add_exception_handler(error, application_error)
 
     @app.get("/v1/health", tags=["health"])

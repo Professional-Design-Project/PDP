@@ -7,6 +7,8 @@ from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from pydantic import BaseModel, ConfigDict, Field
 
 from voicebot.domain.session import Session, SessionStatus
+from voicebot.infrastructure.voice.runtime import InvalidSignaling
+from voicebot.infrastructure.voice.webrtc import Answer, Candidates, Offer
 
 router = APIRouter(prefix="/sessions", tags=["sessions"])
 bearer = HTTPBearer()
@@ -64,6 +66,17 @@ async def get_session(session: AuthorizedSession):
 
 @router.post("/{session_id}/end", response_model=SessionResponse)
 async def end_session(session: AuthorizedSession, request: Request):
-    return await request.app.state.sessions.transition(
-        session.id, SessionStatus.ENDED, "user_ended"
-    )
+    return await request.app.state.runtime.end(session.id)
+
+
+@router.post("/{session_id}/offer", response_model=Answer)
+async def offer(session: AuthorizedSession, body: Offer, request: Request):
+    try:
+        return await request.app.state.runtime.offer(session.id, body)
+    except (ValueError, AssertionError) as error:
+        raise InvalidSignaling from error
+
+
+@router.patch("/{session_id}/offer", status_code=204)
+async def candidates(session: AuthorizedSession, body: Candidates, request: Request):
+    await request.app.state.runtime.candidates(session.id, body)

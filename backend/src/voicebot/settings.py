@@ -1,7 +1,14 @@
 from pathlib import Path
 
-from pydantic import SecretStr
+from pydantic import BaseModel, ConfigDict, SecretStr
 from pydantic_settings import BaseSettings, SettingsConfigDict
+
+
+class IceServerConfig(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+    urls: str | list[str]
+    username: str | None = None
+    credential: str | None = None
 
 
 class Settings(BaseSettings):
@@ -12,3 +19,4 @@ class Settings(BaseSettings):
     gemini_voice: str = "Charon"
     database_path: Path = Path("data/voicebot.sqlite3")
     cors_origins: list[str] = ["http://localhost:3000"]
+    ice_servers: list[IceServerConfig] = []
