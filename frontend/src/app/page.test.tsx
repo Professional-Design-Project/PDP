@@ -5,13 +5,16 @@ import Home from "@/app/page";
 it("starts and ends the session preview", () => {
   render(<Home />);
   const scenario = screen.getByLabelText("Scenario");
+  const language = screen.getByLabelText("Conversation language");
   expect(scenario).toBeEnabled();
   fireEvent.click(screen.getByRole("button", { name: "Start preview" }));
   expect(screen.getByText("Preview: started")).toBeInTheDocument();
   expect(scenario).toBeDisabled();
+  expect(language).toBeDisabled();
   fireEvent.click(screen.getByRole("button", { name: "Stop preview" }));
   expect(screen.getByText("Preview: stopped")).toBeInTheDocument();
   expect(scenario).toBeEnabled();
+  expect(language).toBeEnabled();
 });
 
 afterEach(() => vi.unstubAllGlobals());

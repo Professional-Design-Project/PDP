@@ -48,7 +48,7 @@ async def test_session_domain_and_storage(tmp_path):
         with pytest.raises(RuntimeError, match="one backend process"):
             await Database.open(tmp_path / "test.sqlite3")
         sessions = Sessions(database, load_scenarios(), "test-model", max_sessions=2)
-        session, token = await sessions.create("salary-negotiation")
+        session, token = await sessions.create("salary-negotiation", "pl")
         assert token not in (await database.get(session.id)).token_hash
         with pytest.raises(SessionConflict):
             session.transition(SessionStatus.ACTIVE, datetime.now(UTC))
@@ -56,9 +56,9 @@ async def test_session_domain_and_storage(tmp_path):
         active = await sessions.transition(session.id, SessionStatus.ACTIVE)
         assert active.started_at is not None
         assert active.instructions == session.instructions
-        other, _ = await sessions.create("salary-negotiation")
+        other, _ = await sessions.create("salary-negotiation", "en")
         with pytest.raises(SessionLimitExceeded):
-            await sessions.create("salary-negotiation")
+            await sessions.create("salary-negotiation", "pl")
         await sessions.expire_pending(0)
         assert (await sessions.get(other.id)).end_reason == "connection_timeout"
         assert (await sessions.get(session.id)).status == "active"

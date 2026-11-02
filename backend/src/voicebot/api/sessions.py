@@ -6,6 +6,7 @@ from fastapi import APIRouter, Depends, Query, Request
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from pydantic import BaseModel, ConfigDict, Field
 
+from voicebot.domain.scenario import Language
 from voicebot.domain.session import Session, SessionStatus
 from voicebot.infrastructure.voice.runtime import InvalidSignaling
 from voicebot.infrastructure.voice.webrtc import Answer, Candidates, Offer
@@ -18,6 +19,7 @@ bearer = HTTPBearer()
 class CreateSession(BaseModel):
     model_config = ConfigDict(extra="forbid")
     scenario_id: str = Field(min_length=1, max_length=100, pattern=r"^[a-z0-9-]+$")
+    language: Language = Language.PL
 
 
 class SessionResponse(BaseModel):
@@ -73,11 +75,12 @@ AuthorizedSession = Annotated[Session, Depends(authorized_session)]
     description=(
         "Use the access token as Bearer authorization on all session endpoints. "
         "Connect using SmallWebRTC and the returned signaling URL. "
-        "The scenario defines the language; arbitrary model instructions are not accepted."
+        "The selected localized scenario defines the conversation language; "
+        "arbitrary model instructions are not accepted."
     ),
 )
 async def create_session(body: CreateSession, request: Request):
-    session, token = await request.app.state.sessions.create(body.scenario_id)
+    session, token = await request.app.state.sessions.create(body.scenario_id, body.language)
     settings = request.app.state.settings
     return CreatedSession(
         **SessionResponse.model_validate(session).model_dump(),

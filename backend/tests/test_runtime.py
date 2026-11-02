@@ -34,7 +34,7 @@ async def test_real_webrtc_signaling_and_cleanup(tmp_path, monkeypatch):
         peer.addTransceiver("audio", direction="sendrecv")
         peer.createDataChannel("rtvi-ai")
         await peer.setLocalDescription(await peer.createOffer())
-        session, _ = await sessions.create("salary-negotiation")
+        session, _ = await sessions.create("salary-negotiation", "pl")
         offer = Offer(sdp=peer.localDescription.sdp, type="offer")
         answer = await runtime.offer(session.id, offer)
         with pytest.raises(SessionConflict):

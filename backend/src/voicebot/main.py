@@ -1,10 +1,12 @@
 import asyncio
 import logging
 from contextlib import asynccontextmanager, suppress
+from pathlib import Path
 
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
+from fastapi.staticfiles import StaticFiles
 from loguru import logger as pipecat_logger
 from pydantic import BaseModel
 
@@ -90,6 +92,11 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     )
     app.include_router(scenario_router(scenarios), prefix="/v1")
     app.include_router(sessions_router, prefix="/v1")
+    app.mount(
+        "/v1/playground",
+        StaticFiles(directory=Path(__file__).parent / "web", html=True),
+        name="playground",
+    )
 
     @app.middleware("http")
     async def no_session_cache(request: Request, call_next):

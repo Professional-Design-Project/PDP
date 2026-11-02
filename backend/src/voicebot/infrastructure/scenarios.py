@@ -12,6 +12,6 @@ def load_scenarios(directory: Path | None = None) -> Scenarios:
     return Scenarios(
         [
             adapter.validate_json(path.read_text(encoding="utf-8"))
-            for path in directory.glob("*.json")
+            for path in sorted(directory.glob("*/*.json"))
         ]
     )

@@ -6,6 +6,7 @@ from uuid import uuid4
 
 from voicebot.application.ports import SessionRepository
 from voicebot.application.scenarios import Scenarios, compile_instructions
+from voicebot.domain.scenario import Language
 from voicebot.domain.session import Session, SessionEvent, SessionStatus, Speaker
 
 
@@ -37,15 +38,15 @@ class Sessions:
         self.max_sessions = max_sessions
         self.token_ttl_seconds = token_ttl_seconds
 
-    async def create(self, scenario_id: str) -> tuple[Session, str]:
-        scenario = self.scenarios.get(scenario_id)
+    async def create(self, scenario_id: str, language: Language) -> tuple[Session, str]:
+        scenario = self.scenarios.get(scenario_id, language)
         token = secrets.token_urlsafe(32)
         session = Session(
             id=str(uuid4()),
             scenario_id=scenario.id,
             scenario_version=scenario.version,
             instructions=compile_instructions(scenario),
-            language=scenario.language,
+            language=scenario.language.value,
             profile="gemini_live",
             model=self.model,
             token_hash=hashlib.sha256(token.encode()).hexdigest(),

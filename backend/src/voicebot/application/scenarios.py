@@ -1,4 +1,4 @@
-from voicebot.domain.scenario import Scenario
+from voicebot.domain.scenario import Language, Scenario
 
 
 class ScenarioNotFound(Exception):
@@ -7,25 +7,27 @@ class ScenarioNotFound(Exception):
 
 class Scenarios:
     def __init__(self, scenarios: list[Scenario]) -> None:
-        self._scenarios = {scenario.id: scenario for scenario in scenarios}
+        self._scenarios = {(scenario.id, scenario.language): scenario for scenario in scenarios}
         if not scenarios or len(self._scenarios) != len(scenarios):
-            raise ValueError("Scenarios must have unique IDs and cannot be empty")
+            raise ValueError("Scenarios must have unique ID and language pairs and cannot be empty")
 
-    def list(self) -> list[Scenario]:
-        return list(self._scenarios.values())
+    def list(self, language: Language) -> list[Scenario]:
+        return [scenario for scenario in self._scenarios.values() if scenario.language == language]
 
-    def get(self, scenario_id: str) -> Scenario:
+    def get(self, scenario_id: str, language: Language) -> Scenario:
         try:
-            return self._scenarios[scenario_id]
+            return self._scenarios[(scenario_id, language)]
         except KeyError:
-            raise ScenarioNotFound(scenario_id) from None
+            raise ScenarioNotFound(f"{scenario_id}:{language}") from None
 
 
 def compile_instructions(scenario: Scenario) -> str:
     return "\n".join(
         [
             f"Scenario: {scenario.id}, version: {scenario.version}.",
-            f"Language: {scenario.language}.",
+            f"Conversation language: {scenario.language.prompt_name} ({scenario.language.value}).",
+            f"Speak only in {scenario.language.prompt_name}, unless the user explicitly "
+            "asks to switch.",
             f"Your role: {scenario.role}",
             f"Situation: {scenario.situation}",
             "Goals:",

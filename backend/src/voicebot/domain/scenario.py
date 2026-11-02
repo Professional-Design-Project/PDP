@@ -1,4 +1,14 @@
 from dataclasses import dataclass
+from enum import StrEnum
+
+
+class Language(StrEnum):
+    PL = "pl"
+    EN = "en"
+
+    @property
+    def prompt_name(self) -> str:
+        return {Language.PL: "Polish", Language.EN: "English"}[self]
 
 
 @dataclass(frozen=True)
@@ -11,7 +21,7 @@ class Scenario:
     situation: str
     goals: tuple[str, ...]
     constraints: tuple[str, ...]
-    language: str
+    language: Language
 
     def __post_init__(self) -> None:
         if self.version < 1:
@@ -22,7 +32,6 @@ class Scenario:
             self.description,
             self.role,
             self.situation,
-            self.language,
         ):
             if not value.strip():
                 raise ValueError("Scenario fields cannot be blank")

@@ -4,6 +4,7 @@ import { useState } from "react";
 
 export default function Home() {
   const [active, setActive] = useState(false);
+  const [language, setLanguage] = useState("pl");
   const [microphones, setMicrophones] = useState<MediaDeviceInfo[]>([]);
   const [microphone, setMicrophone] = useState("");
   const [micStatus, setMicStatus] = useState("Not checked");
@@ -48,6 +49,20 @@ export default function Home() {
       <p>UI preview only. Voice is not connected.</p>
 
       <div className="space-y-2">
+        <label htmlFor="language" className="block">
+          Conversation language
+        </label>
+        <select
+          id="language"
+          value={language}
+          disabled={active}
+          onChange={(event) => setLanguage(event.target.value)}
+          className="border px-2 py-1 disabled:opacity-50"
+        >
+          <option value="pl">Polski</option>
+          <option value="en">English</option>
+        </select>
+
         <label htmlFor="scenario" className="block">
           Scenario
         </label>
