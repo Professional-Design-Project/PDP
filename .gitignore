@@ -12,4 +12,5 @@ __pycache__/
 dist/
 backend/data/
 *.md
+!README.md
 *.txt

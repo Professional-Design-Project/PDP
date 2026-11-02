@@ -13,14 +13,14 @@ def test_health_and_versioned_schema(tmp_path):
         session = client.post(
             "/v1/sessions",
             json={
-                "scenario_id": "salary-negotiation",
+                "scenario_id": "job-interview",
                 "language": "en",
-                "context": "The candidate is applying for a senior role.",
+                "context": "The candidate is applying for a Java Backend Intern role.",
             },
         )
         assert session.status_code == 201
         assert session.json()["language"] == "en"
         assert client.post(
             "/v1/sessions",
-            json={"scenario_id": "salary-negotiation", "context": "x" * 2001},
+            json={"scenario_id": "job-interview", "context": "x" * 2001},
         ).status_code == 422

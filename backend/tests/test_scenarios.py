@@ -11,11 +11,13 @@ from voicebot.settings import Settings
 
 
 def test_scenario_rules_are_validated_and_compiled():
-    scenario = load_scenarios().get("salary-negotiation", Language.PL)
-    instructions = compile_instructions(scenario, "The candidate is applying for a senior role.")
+    scenario = load_scenarios().get("job-interview", Language.PL)
+    instructions = compile_instructions(
+        scenario, "The candidate is applying for a Java Backend Intern role."
+    )
     assert "version: 1" in instructions
     assert "Polish" in instructions
-    assert "The candidate is applying for a senior role." in instructions
+    assert "The candidate is applying for a Java Backend Intern role." in instructions
     assert "Use this context to start naturally" in instructions
     assert all(rule in instructions for rule in scenario.constraints)
     with pytest.raises(ValueError):
@@ -30,10 +32,10 @@ def test_public_scenario_does_not_expose_private_rules(tmp_path):
         scenarios = client.get("/v1/scenarios?language=pl").json()
         assert len(scenarios) == 1
         assert scenarios[0]["language"] == "pl"
-        assert client.get("/v1/scenarios?language=en").json()[0]["title"] == "Salary negotiation"
-        response = client.get("/v1/scenarios/salary-negotiation")
+        assert client.get("/v1/scenarios?language=en").json()[0]["title"] == "Job interview"
+        response = client.get("/v1/scenarios/job-interview")
         assert response.status_code == 200
         assert "constraints" not in response.json()
         assert "role" not in response.json()
-        assert client.get("/v1/scenarios/salary-negotiation?language=en").json()["language"] == "en"
+        assert client.get("/v1/scenarios/job-interview?language=en").json()["language"] == "en"
         assert client.get("/v1/scenarios/missing").status_code == 404

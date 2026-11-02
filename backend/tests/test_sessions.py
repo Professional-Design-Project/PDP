@@ -13,7 +13,7 @@ from voicebot.settings import Settings
 def test_session_access_end_and_restart(tmp_path):
     settings = Settings(_env_file=None, database_path=tmp_path / "sessions.sqlite3")
     with TestClient(create_app(settings)) as client:
-        response = client.post("/v1/sessions", json={"scenario_id": "salary-negotiation"})
+        response = client.post("/v1/sessions", json={"scenario_id": "job-interview"})
         assert response.status_code == 201
         session = response.json()
         assert response.headers["cache-control"] == "no-store"
@@ -29,7 +29,7 @@ def test_session_access_end_and_restart(tmp_path):
         assert client.get(url + "/transcript", headers=headers).json() == []
         assert client.post(url + "/end", headers=headers).json()["status"] == "ended"
         assert client.post(url + "/end", headers=headers).status_code == 200
-        abandoned = client.post("/v1/sessions", json={"scenario_id": "salary-negotiation"}).json()
+        abandoned = client.post("/v1/sessions", json={"scenario_id": "job-interview"}).json()
     with TestClient(create_app(settings)) as client:
         assert client.get(url, headers=headers).json()["status"] == "ended"
         recovered = client.get(
@@ -49,19 +49,19 @@ async def test_session_domain_and_storage(tmp_path):
             await Database.open(tmp_path / "test.sqlite3")
         sessions = Sessions(database, load_scenarios(), "test-model", max_sessions=2)
         session, token = await sessions.create(
-            "salary-negotiation", "pl", "The candidate is applying for a senior role."
+            "job-interview", "pl", "The candidate is applying for a Java Backend Intern role."
         )
         assert token not in (await database.get(session.id)).token_hash
-        assert "senior role" in session.instructions
+        assert "Java Backend Intern role" in session.instructions
         with pytest.raises(SessionConflict):
             session.transition(SessionStatus.ACTIVE, datetime.now(UTC))
         await sessions.transition(session.id, SessionStatus.CONNECTING)
         active = await sessions.transition(session.id, SessionStatus.ACTIVE)
         assert active.started_at is not None
         assert active.instructions == session.instructions
-        other, _ = await sessions.create("salary-negotiation", "en")
+        other, _ = await sessions.create("job-interview", "en")
         with pytest.raises(SessionLimitExceeded):
-            await sessions.create("salary-negotiation", "pl")
+            await sessions.create("job-interview", "pl")
         await sessions.expire_pending(0)
         assert (await sessions.get(other.id)).end_reason == "connection_timeout"
         assert (await sessions.get(session.id)).status == "active"
