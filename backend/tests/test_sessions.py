@@ -48,8 +48,11 @@ async def test_session_domain_and_storage(tmp_path):
         with pytest.raises(RuntimeError, match="one backend process"):
             await Database.open(tmp_path / "test.sqlite3")
         sessions = Sessions(database, load_scenarios(), "test-model", max_sessions=2)
-        session, token = await sessions.create("salary-negotiation", "pl")
+        session, token = await sessions.create(
+            "salary-negotiation", "pl", "The candidate is applying for a senior role."
+        )
         assert token not in (await database.get(session.id)).token_hash
+        assert "senior role" in session.instructions
         with pytest.raises(SessionConflict):
             session.transition(SessionStatus.ACTIVE, datetime.now(UTC))
         await sessions.transition(session.id, SessionStatus.CONNECTING)

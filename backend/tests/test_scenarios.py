@@ -12,9 +12,11 @@ from voicebot.settings import Settings
 
 def test_scenario_rules_are_validated_and_compiled():
     scenario = load_scenarios().get("salary-negotiation", Language.PL)
-    instructions = compile_instructions(scenario)
+    instructions = compile_instructions(scenario, "The candidate is applying for a senior role.")
     assert "version: 1" in instructions
     assert "Polish" in instructions
+    assert "The candidate is applying for a senior role." in instructions
+    assert "Use this context to start naturally" in instructions
     assert all(rule in instructions for rule in scenario.constraints)
     with pytest.raises(ValueError):
         replace(scenario, version=0)

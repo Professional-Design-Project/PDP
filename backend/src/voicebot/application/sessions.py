@@ -38,14 +38,16 @@ class Sessions:
         self.max_sessions = max_sessions
         self.token_ttl_seconds = token_ttl_seconds
 
-    async def create(self, scenario_id: str, language: Language) -> tuple[Session, str]:
+    async def create(
+        self, scenario_id: str, language: Language, context: str = ""
+    ) -> tuple[Session, str]:
         scenario = self.scenarios.get(scenario_id, language)
         token = secrets.token_urlsafe(32)
         session = Session(
             id=str(uuid4()),
             scenario_id=scenario.id,
             scenario_version=scenario.version,
-            instructions=compile_instructions(scenario),
+            instructions=compile_instructions(scenario, context),
             language=scenario.language.value,
             profile="gemini_live",
             model=self.model,

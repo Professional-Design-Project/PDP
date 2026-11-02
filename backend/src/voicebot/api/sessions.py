@@ -20,6 +20,7 @@ class CreateSession(BaseModel):
     model_config = ConfigDict(extra="forbid")
     scenario_id: str = Field(min_length=1, max_length=100, pattern=r"^[a-z0-9-]+$")
     language: Language = Language.PL
+    context: str = Field(default="", max_length=2000)
 
 
 class SessionResponse(BaseModel):
@@ -76,11 +77,13 @@ AuthorizedSession = Annotated[Session, Depends(authorized_session)]
         "Use the access token as Bearer authorization on all session endpoints. "
         "Connect using SmallWebRTC and the returned signaling URL. "
         "The selected localized scenario defines the conversation language; "
-        "arbitrary model instructions are not accepted."
+        "context is optional background information for the conversation."
     ),
 )
 async def create_session(body: CreateSession, request: Request):
-    session, token = await request.app.state.sessions.create(body.scenario_id, body.language)
+    session, token = await request.app.state.sessions.create(
+        body.scenario_id, body.language, body.context
+    )
     settings = request.app.state.settings
     return CreatedSession(
         **SessionResponse.model_validate(session).model_dump(),

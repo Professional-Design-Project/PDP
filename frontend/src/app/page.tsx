@@ -5,6 +5,7 @@ import { useState } from "react";
 export default function Home() {
   const [active, setActive] = useState(false);
   const [language, setLanguage] = useState("pl");
+  const [context, setContext] = useState("");
   const [microphones, setMicrophones] = useState<MediaDeviceInfo[]>([]);
   const [microphone, setMicrophone] = useState("");
   const [micStatus, setMicStatus] = useState("Not checked");
@@ -70,6 +71,22 @@ export default function Home() {
           <option>Salary negotiation</option>
         </select>
         <p>Discuss a raise with your manager.</p>
+      </div>
+
+      <div className="space-y-2">
+        <label htmlFor="context" className="block">
+          Additional context
+        </label>
+        <textarea
+          id="context"
+          value={context}
+          maxLength={2000}
+          disabled={active}
+          onChange={(event) => setContext(event.target.value)}
+          placeholder="For example: the role, company, or situation you want to practice."
+          className="min-h-28 w-full border p-2 disabled:opacity-50"
+        />
+        <p className="text-sm text-gray-600">{context.length}/2000 characters</p>
       </div>
 
       <div className="space-y-2">

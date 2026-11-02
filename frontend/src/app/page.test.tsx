@@ -6,15 +6,19 @@ it("starts and ends the session preview", () => {
   render(<Home />);
   const scenario = screen.getByLabelText("Scenario");
   const language = screen.getByLabelText("Conversation language");
+  const context = screen.getByLabelText("Additional context");
   expect(scenario).toBeEnabled();
+  expect(context).toHaveAttribute("maxlength", "2000");
   fireEvent.click(screen.getByRole("button", { name: "Start preview" }));
   expect(screen.getByText("Preview: started")).toBeInTheDocument();
   expect(scenario).toBeDisabled();
   expect(language).toBeDisabled();
+  expect(context).toBeDisabled();
   fireEvent.click(screen.getByRole("button", { name: "Stop preview" }));
   expect(screen.getByText("Preview: stopped")).toBeInTheDocument();
   expect(scenario).toBeEnabled();
   expect(language).toBeEnabled();
+  expect(context).toBeEnabled();
 });
 
 afterEach(() => vi.unstubAllGlobals());
