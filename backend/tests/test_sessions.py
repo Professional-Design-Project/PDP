@@ -9,11 +9,14 @@ from voicebot.infrastructure.scenarios import load_scenarios
 from voicebot.main import create_app
 from voicebot.settings import Settings
 
+CONSENT = {"version": "test", "voice": True, "transcripts": True, "outside_eu": True}
+CREATE = {"scenario_id": "job-interview", "consent": CONSENT}
+
 
 def test_session_access_end_and_restart(tmp_path):
     settings = Settings(_env_file=None, database_path=tmp_path / "sessions.sqlite3")
     with TestClient(create_app(settings)) as client:
-        response = client.post("/v1/sessions", json={"scenario_id": "job-interview"})
+        response = client.post("/v1/sessions", json=CREATE)
         assert response.status_code == 201
         session = response.json()
         assert response.headers["cache-control"] == "no-store"
@@ -29,7 +32,7 @@ def test_session_access_end_and_restart(tmp_path):
         assert client.get(url + "/transcript", headers=headers).json() == []
         assert client.post(url + "/end", headers=headers).json()["status"] == "ended"
         assert client.post(url + "/end", headers=headers).status_code == 200
-        abandoned = client.post("/v1/sessions", json={"scenario_id": "job-interview"}).json()
+        abandoned = client.post("/v1/sessions", json=CREATE).json()
     with TestClient(create_app(settings)) as client:
         assert client.get(url, headers=headers).json()["status"] == "ended"
         recovered = client.get(

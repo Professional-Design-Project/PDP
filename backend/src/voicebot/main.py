@@ -17,7 +17,7 @@ from voicebot.application.sessions import (
     SessionNotFound,
     Sessions,
 )
-from voicebot.domain.session import SessionConflict
+from voicebot.domain.session import ConsentRequired, SessionConflict
 from voicebot.infrastructure.database import Database
 from voicebot.infrastructure.scenarios import load_scenarios
 from voicebot.infrastructure.voice.gemini import VoiceUnavailable
@@ -100,6 +100,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     async def application_error(request: Request, error: Exception):
         errors = {
             ScenarioNotFound: (404, "Scenario not found"),
+            ConsentRequired: (400, "Required consent missing"),
             SessionNotFound: (404, "Session not found"),
             SessionAccessDenied: (403, "Session access denied"),
             SessionConflict: (409, "Session state conflict"),
@@ -113,6 +114,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
 
     for error in (
         ScenarioNotFound,
+        ConsentRequired,
         SessionNotFound,
         SessionAccessDenied,
         SessionConflict,

@@ -7,7 +7,14 @@ from uuid import uuid4
 from voicebot.application.ports import SessionRepository
 from voicebot.application.scenarios import Scenarios, compile_instructions
 from voicebot.domain.scenario import Language
-from voicebot.domain.session import Session, SessionEvent, SessionStatus, Speaker
+from voicebot.domain.session import (
+    Consent,
+    ConsentRequired,
+    Session,
+    SessionEvent,
+    SessionStatus,
+    Speaker,
+)
 
 
 class SessionNotFound(Exception):
@@ -39,8 +46,14 @@ class Sessions:
         self.token_ttl_seconds = token_ttl_seconds
 
     async def create(
-        self, scenario_id: str, language: Language, context: str = ""
+        self,
+        scenario_id: str,
+        language: Language,
+        context: str = "",
+        consent: Consent | None = None,
     ) -> tuple[Session, str]:
+        if consent is not None and not consent.allows_session:
+            raise ConsentRequired
         scenario = self.scenarios.get(scenario_id, language)
         token = secrets.token_urlsafe(32)
         session = Session(
@@ -53,12 +66,17 @@ class Sessions:
             model=self.model,
             token_hash=hashlib.sha256(token.encode()).hexdigest(),
             created_at=datetime.now(UTC),
+            consent=consent,
         )
         async with self.lock:
             if len(await self.repository.unfinished()) >= self.max_sessions:
                 raise SessionLimitExceeded
             await self.repository.add(session)
             await self.repository.append_event(session.id, "session.created", {})
+            if consent is not None:
+                await self.repository.append_event(
+                    session.id, "consent.recorded", consent.record()
+                )
         return session, token
 
     async def get(self, session_id: str) -> Session:
