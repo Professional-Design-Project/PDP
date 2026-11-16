@@ -91,7 +91,9 @@ export default function Home() {
     setError("");
     setStatus("Requesting microphone...");
     try {
-      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      const stream = await navigator.mediaDevices.getUserMedia({
+        audio: microphone ? { deviceId: { exact: microphone } } : true,
+      });
       streamRef.current = stream;
       const session = await request<Session>("/sessions", {
         method: "POST",
