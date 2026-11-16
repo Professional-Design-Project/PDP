@@ -1,4 +1,5 @@
 import Image from "next/image";
+import { ArrowRightIcon } from "@/components/icons";
 
 export function SiteFooter() {
   return (
@@ -30,8 +31,15 @@ export function SiteFooter() {
       </div>
 
       <div className="border-t border-line">
-        <div className="mx-auto max-w-7xl px-4 py-5 text-[13px] text-muted sm:px-8">
+        <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-5 text-[13px] text-muted sm:px-8">
           <p>© 2026 ensaio</p>
+          <a
+            href="#top"
+            className="group inline-flex items-center gap-2 font-semibold text-ink hover:text-cobalt focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-cobalt"
+          >
+            Back to top
+            <ArrowRightIcon className="size-4 -rotate-90 transition-transform duration-300 ease-(--ease-soft) group-hover:-translate-y-0.5" />
+          </a>
         </div>
       </div>
     </footer>
