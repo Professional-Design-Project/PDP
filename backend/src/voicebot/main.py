@@ -10,6 +10,7 @@ from pydantic import BaseModel
 
 from voicebot.api.scenarios import scenario_router
 from voicebot.api.sessions import router as sessions_router
+from voicebot.application.feedback import FeedbackFailed, FeedbackUnavailable
 from voicebot.application.scenarios import ScenarioNotFound
 from voicebot.application.sessions import (
     SessionAccessDenied,
@@ -19,6 +20,7 @@ from voicebot.application.sessions import (
 )
 from voicebot.domain.session import ConsentRequired, SessionConflict
 from voicebot.infrastructure.database import Database
+from voicebot.infrastructure.feedback import GeminiFeedbackWriter
 from voicebot.infrastructure.scenarios import load_scenarios
 from voicebot.infrastructure.voice.gemini import VoiceUnavailable
 from voicebot.infrastructure.voice.runtime import InvalidSignaling, VoiceRuntime
@@ -29,7 +31,7 @@ class ErrorResponse(BaseModel):
     detail: str
 
 
-def create_app(settings: Settings | None = None) -> FastAPI:
+def create_app(settings: Settings | None = None, feedback_writer=None) -> FastAPI:
     settings = settings or Settings()
     logging.basicConfig(level=logging.INFO)
     # Pipecat debug output can contain transcripts and provider session handles.
@@ -50,6 +52,10 @@ def create_app(settings: Settings | None = None) -> FastAPI:
             await sessions.recover()
             app.state.sessions = sessions
             app.state.settings = settings
+            key = settings.google_api_key.get_secret_value()
+            app.state.feedback_writer = feedback_writer or (
+                GeminiFeedbackWriter(key, settings.feedback_model) if key else None
+            )
             runtime = VoiceRuntime(sessions, settings)
             app.state.runtime = runtime
             maintenance = asyncio.create_task(runtime.maintain())
@@ -79,7 +85,8 @@ def create_app(settings: Settings | None = None) -> FastAPI:
             "One backend process owns the local database and active peers."
         ),
         responses={
-            status: {"model": ErrorResponse} for status in (400, 401, 403, 404, 409, 503, 504)
+            status: {"model": ErrorResponse}
+            for status in (400, 401, 403, 404, 409, 502, 503, 504)
         },
     )
     app.add_middleware(
@@ -108,6 +115,8 @@ def create_app(settings: Settings | None = None) -> FastAPI:
             VoiceUnavailable: (503, "Voice provider is not configured"),
             SessionLimitExceeded: (503, "Session capacity reached"),
             TimeoutError: (504, "Voice connection timed out"),
+            FeedbackUnavailable: (409, "Not enough answers for feedback"),
+            FeedbackFailed: (502, "Feedback could not be generated"),
         }
         status, detail = errors[type(error)]
         return JSONResponse(status_code=status, content={"detail": detail})
@@ -122,6 +131,8 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         VoiceUnavailable,
         SessionLimitExceeded,
         TimeoutError,
+        FeedbackUnavailable,
+        FeedbackFailed,
     ):
         app.add_exception_handler(error, application_error)
 

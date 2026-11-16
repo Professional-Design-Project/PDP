@@ -17,6 +17,7 @@ class Settings(BaseSettings):
     google_api_key: SecretStr = SecretStr("")
     gemini_model: str = "gemini-3.8-live"
     gemini_voice: str = "Charon"
+    feedback_model: str = "gemini-3.5-flash"
     database_path: Path = Path("data/voicebot.sqlite3")
     cors_origins: list[str] = ["http://localhost:3000"]
     ice_servers: list[IceServerConfig] = []

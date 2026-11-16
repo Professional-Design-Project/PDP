@@ -74,6 +74,7 @@ class Session:
     ended_at: datetime | None = None
     end_reason: str | None = None
     consent: Consent | None = None
+    context: str = ""
 
     @property
     def finished(self) -> bool:

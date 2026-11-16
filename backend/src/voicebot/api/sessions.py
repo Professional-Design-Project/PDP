@@ -6,6 +6,7 @@ from fastapi import APIRouter, Depends, Query, Request
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from pydantic import BaseModel, ConfigDict, Field
 
+from voicebot.application.feedback import FeedbackKind
 from voicebot.domain.scenario import Language
 from voicebot.domain.session import Consent, Session, SessionStatus
 from voicebot.infrastructure.voice.runtime import InvalidSignaling
@@ -55,6 +56,19 @@ class CreatedSession(SessionResponse):
     transport: Literal["small_webrtc"] = "small_webrtc"
     signaling_url: str
     ice_servers: list[IceServerConfig]
+
+
+class FeedbackNoteResponse(BaseModel):
+    kind: FeedbackKind
+    title: str
+    quote: str
+    advice: str
+    sequence: int | None
+
+
+class FeedbackResponse(BaseModel):
+    summary: str
+    notes: list[FeedbackNoteResponse]
 
 
 class EventResponse(BaseModel):
@@ -145,6 +159,35 @@ async def offer(session: AuthorizedSession, body: Offer, request: Request):
 )
 async def candidates(session: AuthorizedSession, body: Candidates, request: Request):
     await request.app.state.runtime.candidates(session.id, body)
+
+
+@router.post(
+    "/{session_id}/feedback",
+    response_model=FeedbackResponse,
+    summary="Create AI feedback from the finished session transcript",
+    description=(
+        "Available after the session has ended. Feedback is based only on the transcript text "
+        "and is generated once, then returned from storage on later calls. "
+        "Each note links to the transcript segment it quotes by sequence."
+    ),
+)
+async def feedback(session: AuthorizedSession, request: Request):
+    result, sequences = await request.app.state.sessions.feedback(
+        session.id, request.app.state.feedback_writer
+    )
+    return FeedbackResponse(
+        summary=result.summary,
+        notes=[
+            FeedbackNoteResponse(
+                kind=note.kind,
+                title=note.title,
+                quote=note.quote,
+                advice=note.advice,
+                sequence=sequences[note.line - 1] if note.line <= len(sequences) else None,
+            )
+            for note in result.notes
+        ],
+    )
 
 
 @router.get(
