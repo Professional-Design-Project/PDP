@@ -1,10 +1,19 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useEffect, useReducer, useRef, useState } from "react";
 import { arrowMotion } from "@/components/button-styles";
 import { ArrowRightIcon, BriefcaseIcon, MicrophoneIcon } from "@/components/icons";
+import { Loader } from "@/components/loader";
 import { Rise } from "@/components/rise";
 import { Section } from "@/components/section";
+import { LiveSession } from "@/components/session/live-session";
+import {
+  endMessage,
+  initialLiveState,
+  liveReducer,
+  type TranscriptLine,
+} from "@/components/session/session-state";
+import { SessionSummary } from "@/components/session/session-summary";
 import { StatusLine } from "@/components/status-line";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://127.0.0.1:8000/v1";
@@ -39,8 +48,17 @@ function micTone(status: string) {
 }
 
 export default function Home() {
-  const [active, setActive] = useState(false);
+  const [phase, setPhase] = useState<"setup" | "session" | "summary">("setup");
   const [connecting, setConnecting] = useState(false);
+  const [connected, setConnected] = useState(false);
+  const [ending, setEnding] = useState(false);
+  const [muted, setMuted] = useState(false);
+  const [live, dispatch] = useReducer(liveReducer, initialLiveState);
+  const [summary, setSummary] = useState<{
+    duration: number;
+    transcript: TranscriptLine[];
+    message: string;
+  } | null>(null);
   const [language, setLanguage] = useState("pl");
   const [context, setContext] = useState("");
   const [microphones, setMicrophones] = useState<MediaDeviceInfo[]>([]);
@@ -53,14 +71,21 @@ export default function Home() {
   const peerRef = useRef<RTCPeerConnection | null>(null);
   const streamRef = useRef<MediaStream | null>(null);
   const sessionRef = useRef<Session | null>(null);
+  const liveRef = useRef(live);
+  const finishingRef = useRef(false);
 
-  const locked = active || connecting;
+  const locked = phase !== "setup" || connecting;
+  const languageLabel = languages.find((option) => option.value === language)?.label ?? language;
   const selectedMicrophone = microphones.find((device) => device.deviceId === microphone);
   const microphoneSummary = selectedMicrophone
     ? selectedMicrophone.label || "Selected"
     : micStatus === "Microphone available"
       ? "Default"
       : "Not checked";
+
+  useEffect(() => {
+    liveRef.current = live;
+  }, [live]);
 
   async function checkMicrophone() {
     if (!navigator.mediaDevices?.getUserMedia || !navigator.mediaDevices.enumerateDevices) {
@@ -103,7 +128,7 @@ export default function Home() {
     peerRef.current = null;
     streamRef.current = null;
     sessionRef.current = null;
-    setActive(false);
+    setConnected(false);
     setStatus("Ready");
     if (session) {
       await request(`/sessions/${session.id}/end`, {
@@ -113,9 +138,49 @@ export default function Home() {
     }
   }
 
+  async function finishSession(reason: string, failed: boolean) {
+    if (finishingRef.current) return;
+    finishingRef.current = true;
+    const current = liveRef.current;
+    const duration =
+      current.readyAt === null ? 0 : Math.max(0, Math.round((Date.now() - current.readyAt) / 1000));
+    await stopConversation();
+    setSummary({ duration, transcript: current.transcript, message: endMessage(reason, failed) });
+    setPhase("summary");
+    setMuted(false);
+  }
+
+  const finishRef = useRef(finishSession);
+  useEffect(() => {
+    finishRef.current = finishSession;
+  });
+
+  useEffect(() => {
+    if (live.ended) void finishRef.current(live.ended.reason, live.ended.failed);
+  }, [live.ended]);
+
+  async function endSession() {
+    setEnding(true);
+    await finishSession("user_ended", false);
+    setEnding(false);
+  }
+
+  function toggleMute() {
+    const next = !muted;
+    streamRef.current?.getAudioTracks().forEach((track) => {
+      track.enabled = !next;
+    });
+    setMuted(next);
+  }
+
   async function startConversation() {
     setError("");
+    setSummary(null);
+    setMuted(false);
+    dispatch({ type: "reset" });
+    finishingRef.current = false;
     setConnecting(true);
+    setPhase("session");
     setStatus("Requesting microphone...");
     try {
       const stream = await navigator.mediaDevices.getUserMedia({
@@ -135,7 +200,17 @@ export default function Home() {
         audio.srcObject = event.streams[0] || new MediaStream([event.track]);
         void audio.play();
       };
-      peer.createDataChannel("rtvi-ai");
+      peer.onconnectionstatechange = () => {
+        if (peer.connectionState === "failed") void finishRef.current("transport_failed", true);
+      };
+      const channel = peer.createDataChannel("rtvi-ai");
+      channel.onmessage = (event) => {
+        try {
+          dispatch({ type: "message", message: JSON.parse(event.data), now: Date.now() });
+        } catch {
+          return;
+        }
+      };
       sessionRef.current = session;
       peerRef.current = peer;
       setStatus("Connecting...");
@@ -159,15 +234,29 @@ export default function Home() {
         body: JSON.stringify({ type: "offer", sdp: peer.localDescription?.sdp }),
       });
       await peer.setRemoteDescription(answer);
-      setActive(true);
+      setConnected(true);
       setStatus("Connected");
     } catch (caught) {
+      finishingRef.current = true;
       await stopConversation();
+      setPhase("setup");
       setError(caught instanceof Error ? caught.message : "Could not start the conversation.");
       setStatus("Not connected");
     } finally {
       setConnecting(false);
     }
+  }
+
+  if (phase === "summary" && summary) {
+    return (
+      <SessionSummary
+        duration={summary.duration}
+        transcript={summary.transcript}
+        message={summary.message}
+        onAgain={() => void startConversation()}
+        onSetup={() => setPhase("setup")}
+      />
+    );
   }
 
   return (
@@ -305,10 +394,7 @@ export default function Home() {
             <dl className="mt-5 text-[15px]">
               {[
                 ["Scenario", "Job interview"],
-                [
-                  "Language",
-                  languages.find((option) => option.value === language)?.label ?? language,
-                ],
+                ["Language", languageLabel],
                 ["Context", context.trim() ? `${context.trim().length} characters` : "None yet"],
                 ["Microphone", microphoneSummary],
               ].map(([term, value]) => (
@@ -334,19 +420,19 @@ export default function Home() {
           <div className="border border-t-0 border-line bg-white p-6">
             <button
               type="button"
-              disabled={connecting}
-              onClick={() => (active ? stopConversation() : startConversation())}
-              className={`group flex h-14 w-full items-center justify-between px-5 text-lg font-semibold focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink disabled:cursor-wait disabled:bg-raised disabled:text-muted ${
-                active
-                  ? "border border-ink text-ink hover:bg-ink hover:text-white"
-                  : "bg-cobalt text-white hover:bg-cobalt/90"
-              }`}
+              disabled={locked}
+              onClick={() => void startConversation()}
+              className="group flex h-14 w-full items-center justify-between bg-cobalt px-5 text-lg font-semibold text-white hover:bg-cobalt/90 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink disabled:cursor-wait disabled:bg-raised disabled:text-muted"
             >
-              {connecting ? "Connecting..." : active ? "Leave the room" : "Enter the room"}
-              {!active && <ArrowRightIcon className={arrowMotion} />}
+              {connecting ? "Connecting" : "Enter the room"}
+              {connecting ? (
+                <Loader className="text-[22px]" />
+              ) : (
+                <ArrowRightIcon className={arrowMotion} />
+              )}
             </button>
             <output className="mt-3 block text-[14px] text-muted">
-              <StatusLine tone={error ? "bad" : active ? "good" : "neutral"}>{status}</StatusLine>
+              <StatusLine tone={error ? "bad" : "neutral"}>{status}</StatusLine>
             </output>
             {error && (
               <p role="alert" className="mt-2 text-[14px] text-ink">
@@ -356,6 +442,18 @@ export default function Home() {
           </div>
         </Rise>
       </div>
+
+      {phase === "session" && (
+        <LiveSession
+          state={live}
+          connected={connected}
+          language={languageLabel}
+          muted={muted}
+          ending={ending}
+          onToggleMute={toggleMute}
+          onEnd={() => void endSession()}
+        />
+      )}
     </main>
   );
 }
