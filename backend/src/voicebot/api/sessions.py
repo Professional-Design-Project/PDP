@@ -1,4 +1,4 @@
-from datetime import datetime, timedelta
+from datetime import UTC, datetime, timedelta
 from typing import Annotated, Literal
 from uuid import UUID
 
@@ -7,7 +7,7 @@ from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from pydantic import BaseModel, ConfigDict, Field
 
 from voicebot.domain.scenario import Language
-from voicebot.domain.session import Session, SessionStatus
+from voicebot.domain.session import Consent, Session, SessionStatus
 from voicebot.infrastructure.voice.runtime import InvalidSignaling
 from voicebot.infrastructure.voice.webrtc import Answer, Candidates, Offer
 from voicebot.settings import IceServerConfig
@@ -16,11 +16,21 @@ router = APIRouter(prefix="/sessions", tags=["sessions"])
 bearer = HTTPBearer()
 
 
+class ConsentChoice(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+    version: str = Field(min_length=1, max_length=40, pattern=r"^[A-Za-z0-9._-]+$")
+    voice: bool
+    transcripts: bool
+    improvement: bool = False
+    outside_eu: bool
+
+
 class CreateSession(BaseModel):
     model_config = ConfigDict(extra="forbid")
     scenario_id: str = Field(min_length=1, max_length=100, pattern=r"^[a-z0-9-]+$")
     language: Language = Language.PL
     context: str = Field(default="", max_length=2000)
+    consent: ConsentChoice
 
 
 class SessionResponse(BaseModel):
@@ -77,12 +87,19 @@ AuthorizedSession = Annotated[Session, Depends(authorized_session)]
         "Use the access token as Bearer authorization on all session endpoints. "
         "Connect using SmallWebRTC and the returned signaling URL. "
         "The selected localized scenario defines the conversation language; "
-        "context is optional background information for the conversation."
+        "context is optional background information for the conversation. "
+        "Voice, transcript and non-EU processing consents are required; "
+        "the consent record is stored as a consent.recorded event."
     ),
 )
 async def create_session(body: CreateSession, request: Request):
+    consent = Consent(
+        **body.consent.model_dump(),
+        language=body.language.value,
+        given_at=datetime.now(UTC),
+    )
     session, token = await request.app.state.sessions.create(
-        body.scenario_id, body.language, body.context
+        body.scenario_id, body.language, body.context, consent
     )
     settings = request.app.state.settings
     return CreatedSession(

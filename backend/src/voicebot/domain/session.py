@@ -28,6 +28,36 @@ class SessionEvent:
 Speaker = Literal["user", "assistant"]
 
 
+class ConsentRequired(Exception):
+    pass
+
+
+@dataclass(frozen=True)
+class Consent:
+    version: str
+    language: str
+    voice: bool
+    transcripts: bool
+    improvement: bool
+    outside_eu: bool
+    given_at: datetime
+
+    @property
+    def allows_session(self) -> bool:
+        return self.voice and self.transcripts and self.outside_eu
+
+    def record(self) -> dict[str, str | bool | int | None]:
+        return {
+            "version": self.version,
+            "language": self.language,
+            "voice": self.voice,
+            "transcripts": self.transcripts,
+            "improvement": self.improvement,
+            "outside_eu": self.outside_eu,
+            "given_at": self.given_at.isoformat(),
+        }
+
+
 @dataclass(frozen=True)
 class Session:
     id: str
@@ -43,6 +73,7 @@ class Session:
     started_at: datetime | None = None
     ended_at: datetime | None = None
     end_reason: str | None = None
+    consent: Consent | None = None
 
     @property
     def finished(self) -> bool:
