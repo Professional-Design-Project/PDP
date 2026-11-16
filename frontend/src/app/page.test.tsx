@@ -1,4 +1,4 @@
-import { render, screen } from "@testing-library/react";
+import { fireEvent, render, screen } from "@testing-library/react";
 import { expect, it } from "vitest";
 import Landing from "@/app/page";
 
@@ -14,4 +14,18 @@ it("introduces ensaio and links to the setup screen", () => {
     "href",
     "#how-it-works",
   );
+});
+
+it("lets the visitor pick who speaks in the room", () => {
+  render(<Landing />);
+  expect(screen.getByRole("button", { name: "Hear the hiring manager" })).toHaveAttribute(
+    "aria-pressed",
+    "true",
+  );
+  fireEvent.click(screen.getByRole("button", { name: "Hear the tech lead" }));
+  expect(screen.getByRole("button", { name: "Hear the tech lead" })).toHaveAttribute(
+    "aria-pressed",
+    "true",
+  );
+  expect(screen.getByText(/Why that database/)).toBeInTheDocument();
 });

@@ -1,19 +1,21 @@
 import Link from "next/link";
 import { arrowMotion, buttonStyles } from "@/components/button-styles";
 import { ArrowRightIcon } from "@/components/icons";
+import { LiveRoom } from "@/components/live-room";
+import { PersonaPortrait, type PersonaTint } from "@/components/persona-portrait";
 import { Rise } from "@/components/rise";
-import { SpeakingBars } from "@/components/speaking-bars";
 
-const numbers = [
-  { value: "15", unit: "min", label: "longest session" },
-  { value: "2", label: "languages, Polish and English" },
-  { value: "2000", label: "characters of context" },
+const people: { tint: PersonaTint; role: string; line: string }[] = [
+  { tint: "amber", role: "A recruiter", line: "Warm, quick, checks the basics." },
+  { tint: "slate", role: "A hiring manager", line: "Wants proof you can deliver." },
+  { tint: "sage", role: "A tech lead", line: "Asks why, then asks again." },
+  { tint: "rose", role: "A team lead", line: "Listens for how you work with people." },
 ];
 
 const steps = [
   {
     title: "Set the room",
-    text: "Pick the scenario, describe the role and the company, and check your microphone.",
+    text: "Describe the role, the company and who you will meet, then check your microphone.",
   },
   {
     title: "Talk it through",
@@ -21,30 +23,26 @@ const steps = [
   },
   {
     title: "Go again",
-    text: "End the session when you are ready and start a new one with a different context.",
+    text: "Change the context and start a new session until the answers come easily.",
   },
 ];
 
 export default function Landing() {
   return (
     <main>
-      <section className="mx-auto grid max-w-7xl gap-12 px-4 pt-14 pb-20 sm:px-8 sm:pt-20 lg:grid-cols-12 lg:gap-8 lg:pb-28">
-        <div className="lg:col-span-7">
-          <Rise as="p" className="text-[15px] font-semibold text-muted">
-            Voice practice for the conversations that matter
-          </Rise>
+      <section className="mx-auto grid max-w-7xl gap-12 px-4 pt-14 pb-24 sm:px-8 sm:pt-20 lg:grid-cols-12 lg:items-center lg:gap-10">
+        <div className="lg:col-span-6">
           <Rise
             as="h1"
-            delay={80}
-            className="mt-5 text-[52px] leading-[0.95] font-bold tracking-[-0.045em] sm:text-[88px] xl:text-[104px]"
+            className="text-[52px] leading-[0.95] font-bold tracking-[-0.04em] text-balance sm:text-[84px] xl:text-[96px]"
           >
             Rehearse the conversation before it happens.
           </Rise>
-          <Rise as="p" delay={180} className="mt-8 max-w-lg text-lg leading-relaxed text-ink/80">
-            Talk out loud with an AI interviewer that works only with the role and situation you
-            describe. Practise in Polish or English, then go again.
+          <Rise as="p" delay={120} className="mt-8 max-w-md text-lg leading-relaxed text-ink/80">
+            Talk out loud with an AI interviewer that shapes every question around the role you
+            describe. In Polish or English, as many times as you need.
           </Rise>
-          <Rise delay={260} className="mt-10 flex flex-col gap-3 sm:flex-row">
+          <Rise delay={220} className="mt-10 flex flex-col gap-3 sm:flex-row">
             <Link href="/practice" data-pressable className={`${buttonStyles.ink} sm:w-72`}>
               Set the room
               <ArrowRightIcon className={arrowMotion} />
@@ -55,77 +53,66 @@ export default function Landing() {
           </Rise>
         </div>
 
-        <Rise delay={340} className="lg:col-span-5 lg:mt-10">
-          <figure className="flex h-full min-h-96 flex-col bg-cobalt p-6 text-white sm:p-8">
-            <figcaption className="flex items-center justify-between text-[15px]">
-              <span className="font-semibold">Interviewer</span>
-              <span className="inline-flex items-center gap-2 font-semibold">
-                <SpeakingBars />
-                Speaking
-              </span>
-            </figcaption>
-            <blockquote className="mt-auto pt-16 text-[30px] leading-[1.15] font-medium tracking-tight sm:text-[36px]">
-              “Tell me about a time you handled a difficult deadline.”
-            </blockquote>
-            <p className="mt-8 border-t border-white/30 pt-4 text-[15px] text-white/85">
-              Why this question: the role asks for ownership of delivery.
-            </p>
-          </figure>
+        <Rise delay={320} className="lg:col-span-6">
+          <LiveRoom />
         </Rise>
       </section>
 
-      <section aria-label="In numbers" className="mx-auto max-w-7xl px-4 sm:px-8">
-        <dl className="grid border-t-2 border-ink sm:grid-cols-2 lg:grid-cols-4">
-          {numbers.map((item, index) => (
-            <Rise
-              key={item.label}
-              delay={420 + index * 70}
-              className="border-b border-line py-8 sm:pr-8 lg:border-b-0"
+      <section aria-labelledby="table-title" className="bg-white">
+        <div className="mx-auto max-w-7xl px-4 py-20 sm:px-8 sm:py-24">
+          <div className="grid gap-6 border-t-2 border-ink pt-5 lg:grid-cols-12 lg:gap-8">
+            <h2
+              id="table-title"
+              className="text-[40px] leading-none font-bold tracking-[-0.03em] text-balance sm:text-[56px] lg:col-span-7"
             >
-              <dt className="sr-only">{item.label}</dt>
-              <dd>
-                <span className="text-[64px] leading-none font-bold tracking-[-0.05em] tabular-nums sm:text-[80px]">
-                  {item.value}
-                </span>
-                {item.unit && <span className="ml-1 text-2xl font-bold">{item.unit}</span>}
-                <span className="mt-2 block text-muted">{item.label}</span>
-              </dd>
-            </Rise>
-          ))}
-          <Rise delay={630} className="py-8 lg:pl-8">
-            <p className="font-semibold">Nothing hidden</p>
-            <p className="mt-2 text-[15px] leading-relaxed text-muted">
-              The interviewer reads only the scenario and the context you write. Change either and
-              the conversation changes with it.
+              Who is across the table?
+            </h2>
+            <p className="max-w-md text-lg leading-relaxed text-ink/80 lg:col-span-5">
+              Describe the person you will meet in the context, and the interviewer shapes its
+              questions around them.
             </p>
-          </Rise>
-        </dl>
+          </div>
+          <ul className="mt-12 grid grid-cols-2 border-t border-l border-line lg:grid-cols-4">
+            {people.map((person) => (
+              <li key={person.role} className="group border-r border-b border-line">
+                <div className="overflow-hidden">
+                  <PersonaPortrait
+                    tint={person.tint}
+                    className="aspect-square w-full transition-transform duration-700 ease-(--ease-soft) group-hover:scale-[1.04]"
+                  />
+                </div>
+                <div className="p-4 sm:p-5">
+                  <p className="text-lg font-bold">{person.role}</p>
+                  <p className="mt-1 text-[15px] leading-snug text-muted">{person.line}</p>
+                </div>
+              </li>
+            ))}
+          </ul>
+        </div>
       </section>
 
       <section
         id="how-it-works"
         aria-labelledby="how-it-works-title"
-        className="mx-auto max-w-7xl scroll-mt-8 px-4 pt-24 sm:px-8"
+        className="mx-auto max-w-7xl scroll-mt-8 px-4 pt-20 sm:px-8 sm:pt-24"
       >
-        <div className="border-t-2 border-ink pt-5">
-          <h2
-            id="how-it-works-title"
-            className="text-[32px] leading-tight font-bold tracking-tight"
-          >
-            How it works
-          </h2>
-        </div>
-        <ol className="mt-8 grid border-t border-l border-line md:grid-cols-3">
+        <h2
+          id="how-it-works-title"
+          className="border-t-2 border-ink pt-5 text-[32px] leading-tight font-bold tracking-tight"
+        >
+          How it works
+        </h2>
+        <ol className="mt-10 grid gap-10 md:grid-cols-3 md:gap-0">
           {steps.map((step, index) => (
             <li
               key={step.title}
-              className="group border-r border-b border-line bg-white p-6 hover:bg-raised sm:p-8"
+              className="md:border-l md:border-line md:px-8 md:first:border-l-0 md:first:pl-0"
             >
-              <span className="text-[56px] leading-none font-bold tracking-[-0.05em] text-muted tabular-nums transition-colors duration-300 group-hover:text-cobalt">
-                {index + 1}
-              </span>
-              <h3 className="mt-10 text-[22px] font-bold">{step.title}</h3>
-              <p className="mt-2 text-[15px] leading-relaxed text-ink/80">{step.text}</p>
+              <p className="text-[15px] font-semibold text-cobalt tabular-nums">Step {index + 1}</p>
+              <h3 className="mt-3 text-[26px] leading-tight font-bold tracking-tight">
+                {step.title}
+              </h3>
+              <p className="mt-3 max-w-xs leading-relaxed text-ink/80">{step.text}</p>
             </li>
           ))}
         </ol>
