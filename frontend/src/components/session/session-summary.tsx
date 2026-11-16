@@ -1,13 +1,20 @@
 import { arrowMotion, buttonStyles } from "@/components/button-styles";
 import { ArrowRightIcon } from "@/components/icons";
 import { Rise } from "@/components/rise";
-import { formatClock, type TranscriptLine } from "@/components/session/session-state";
+import { FeedbackSection } from "@/components/session/feedback-section";
+import {
+  formatClock,
+  type FeedbackState,
+  type TranscriptLine,
+} from "@/components/session/session-state";
 
 type SessionSummaryProps = {
   duration: number;
   transcript: TranscriptLine[];
   message: string;
   heading: string;
+  feedback: FeedbackState;
+  onRequestFeedback: () => void;
   onAgain: () => void;
   onSetup: () => void;
 };
@@ -17,6 +24,8 @@ export function SessionSummary({
   transcript,
   message,
   heading,
+  feedback,
+  onRequestFeedback,
   onAgain,
   onSetup,
 }: SessionSummaryProps) {
@@ -67,6 +76,8 @@ export function SessionSummary({
         </button>
       </Rise>
 
+      <FeedbackSection state={feedback} transcript={transcript} onRequest={onRequestFeedback} />
+
       <section aria-labelledby="transcript-title" className="mt-16 border-t-2 border-ink pt-5">
         <h2 id="transcript-title" className="text-[32px] leading-tight font-bold tracking-tight">
           Transcript
@@ -80,7 +91,8 @@ export function SessionSummary({
             {transcript.map((line) => (
               <li
                 key={line.id}
-                className={`grid grid-cols-[4rem_1fr] gap-4 border-b border-line px-4 py-5 sm:grid-cols-[5rem_9rem_1fr] ${
+                id={`line-${line.id}`}
+                className={`grid scroll-mt-24 grid-cols-[4rem_1fr] gap-4 border-b border-line px-4 py-5 target:outline-2 target:-outline-offset-2 target:outline-cobalt sm:grid-cols-[5rem_9rem_1fr] ${
                   line.role === "user" ? "bg-raised" : "bg-white"
                 }`}
               >

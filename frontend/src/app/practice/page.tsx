@@ -28,6 +28,8 @@ import {
   endMessage,
   initialLiveState,
   liveReducer,
+  type FeedbackResult,
+  type FeedbackState,
   type TranscriptLine,
 } from "@/components/session/session-state";
 import { SessionSummary } from "@/components/session/session-summary";
@@ -54,13 +56,19 @@ type Session = {
   ice_servers: RTCIceServer[];
 };
 
+class HttpError extends Error {
+  constructor(readonly status: number) {
+    super(`Request failed (${status})`);
+  }
+}
+
 async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
   const url = path.startsWith("/v1") ? new URL(path, API_URL).toString() : `${API_URL}${path}`;
   const response = await fetch(url, {
     ...options,
     headers: { "Content-Type": "application/json", ...options.headers },
   });
-  if (!response.ok) throw new Error(`Request failed (${response.status})`);
+  if (!response.ok) throw new HttpError(response.status);
   return response.json() as Promise<T>;
 }
 
@@ -98,6 +106,8 @@ export default function Home() {
   const sessionRef = useRef<Session | null>(null);
   const liveRef = useRef(live);
   const finishingRef = useRef(false);
+  const lastSessionRef = useRef<Session | null>(null);
+  const [feedback, setFeedback] = useState<FeedbackState>({ status: "undecided" });
 
   const locked = phase !== "setup" || connecting;
   const languageLabel = languages.find((option) => option.value === language)?.label ?? language;
@@ -169,7 +179,27 @@ export default function Home() {
     }
   }
 
-  async function finishSession(reason: string, failed: boolean) {
+  async function requestFeedback() {
+    const session = lastSessionRef.current;
+    if (!session) {
+      setFeedback({ status: "failed" });
+      return;
+    }
+    setFeedback({ status: "loading" });
+    try {
+      const result = await request<FeedbackResult>(`/sessions/${session.id}/feedback`, {
+        method: "POST",
+        headers: { Authorization: `Bearer ${session.access_token}` },
+      });
+      setFeedback({ status: "ready", result });
+    } catch (caught) {
+      setFeedback({
+        status: caught instanceof HttpError && caught.status === 409 ? "unavailable" : "failed",
+      });
+    }
+  }
+
+  async function finishSession(reason: string, failed: boolean, wantsFeedback?: boolean) {
     if (finishingRef.current) return;
     finishingRef.current = true;
     const current = liveRef.current;
@@ -179,6 +209,9 @@ export default function Home() {
     setSummary({ duration, transcript: current.transcript, message: endMessage(reason, failed) });
     setPhase("summary");
     setMuted(false);
+    window.scrollTo({ top: 0 });
+    if (wantsFeedback === true) void requestFeedback();
+    else setFeedback({ status: wantsFeedback === false ? "declined" : "undecided" });
   }
 
   const finishRef = useRef(finishSession);
@@ -190,9 +223,9 @@ export default function Home() {
     if (live.ended) void finishRef.current(live.ended.reason, live.ended.failed);
   }, [live.ended]);
 
-  async function endSession() {
+  async function endSession(wantsFeedback: boolean) {
     setEnding(true);
-    await finishSession("user_ended", false);
+    await finishSession("user_ended", false, wantsFeedback);
     setEnding(false);
   }
 
@@ -207,6 +240,7 @@ export default function Home() {
   async function startConversation() {
     setError("");
     setSummary(null);
+    setFeedback({ status: "undecided" });
     setMuted(false);
     dispatch({ type: "reset" });
     finishingRef.current = false;
@@ -248,6 +282,7 @@ export default function Home() {
         }
       };
       sessionRef.current = session;
+      lastSessionRef.current = session;
       peerRef.current = peer;
       setStatus("Connecting...");
 
@@ -290,6 +325,8 @@ export default function Home() {
         transcript={summary.transcript}
         message={summary.message}
         heading={scenarioCopy[scenario].finished}
+        feedback={feedback}
+        onRequestFeedback={() => void requestFeedback()}
         onAgain={() => void startConversation()}
         onSetup={() => setPhase("setup")}
       />
@@ -335,7 +372,7 @@ export default function Home() {
                       className="sr-only"
                     />
                     <Icon className="size-6 transition-transform duration-300 ease-(--ease-soft) group-hover:-translate-y-0.5" />
-                    <span className="mt-auto pt-8 text-[22px] leading-tight font-bold">
+                    <span className="pt-10 text-[22px] leading-tight font-bold">
                       {scenarioCopy[id].title}
                     </span>
                     <span className="mt-2 text-[15px] text-muted group-has-checked:text-white/85">
@@ -505,7 +542,7 @@ export default function Home() {
           muted={muted}
           ending={ending}
           onToggleMute={toggleMute}
-          onEnd={() => void endSession()}
+          onLeave={(withFeedback) => void endSession(withFeedback)}
         />
       )}
     </main>
