@@ -62,3 +62,14 @@ it("shows when microphone permission is denied", async () => {
   expect(await screen.findByText("Microphone permission denied")).toBeInTheDocument();
   expect(screen.getByRole("heading", { name: "Set the room." })).toBeInTheDocument();
 });
+
+it("lets the user choose another scenario", () => {
+  render(<Home />);
+  fireEvent.click(screen.getByRole("radio", { name: /Thesis defence/ }));
+  expect(screen.getByRole("radio", { name: /Thesis defence/ })).toBeChecked();
+  expect(screen.getByRole("radio", { name: /Job interview/ })).not.toBeChecked();
+  expect(screen.getByLabelText("Additional context")).toHaveAttribute(
+    "placeholder",
+    expect.stringContaining("master's thesis"),
+  );
+});

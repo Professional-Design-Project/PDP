@@ -13,6 +13,7 @@ function renderSession(
       state={{ ...initialLiveState, ...state }}
       connected
       language="English"
+      scenario="Job interview"
       muted={false}
       ending={false}
       {...handlers}

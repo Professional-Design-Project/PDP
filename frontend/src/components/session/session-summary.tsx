@@ -7,6 +7,7 @@ type SessionSummaryProps = {
   duration: number;
   transcript: TranscriptLine[];
   message: string;
+  heading: string;
   onAgain: () => void;
   onSetup: () => void;
 };
@@ -15,6 +16,7 @@ export function SessionSummary({
   duration,
   transcript,
   message,
+  heading,
   onAgain,
   onSetup,
 }: SessionSummaryProps) {
@@ -33,7 +35,7 @@ export function SessionSummary({
           as="h1"
           className="text-[56px] leading-[0.92] font-bold tracking-[-0.04em] sm:text-[96px] lg:col-span-7"
         >
-          Interview finished.
+          {heading}
         </Rise>
         <Rise
           as="p"
