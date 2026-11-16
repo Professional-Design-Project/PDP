@@ -20,13 +20,61 @@
   --color-persona-slate: #8fa5c8;
   --color-persona-sage: #9db38f;
   --color-persona-rose: #d99a8c;
+
+  --ease-soft: cubic-bezier(0.22, 1, 0.36, 1);
+
+  --animate-rise: rise 0.8s var(--ease-soft) both;
+  --animate-bar: bar 1.1s ease-in-out infinite;
+
+  @keyframes rise {
+    from {
+      opacity: 0;
+      transform: translateY(18px);
+    }
+    to {
+      opacity: 1;
+      transform: none;
+    }
+  }
+
+  @keyframes bar {
+    0%,
+    100% {
+      transform: scaleY(0.3);
+    }
+    50% {
+      transform: scaleY(1);
+    }
+  }
 }
 
 @layer base {
+  html {
+    scroll-behavior: smooth;
+    -webkit-font-smoothing: antialiased;
+  }
+
   body {
     background-color: var(--color-canvas);
     color: var(--color-ink);
     font-family: var(--font-sans);
+  }
+
+  a,
+  button,
+  select,
+  input,
+  textarea,
+  label:has(input) {
+    transition-property:
+      color, background-color, border-color, outline-color, opacity, transform, background-size;
+    transition-duration: 220ms;
+    transition-timing-function: var(--ease-soft);
+  }
+
+  button:not(:disabled):active,
+  a[data-pressable]:active {
+    transform: scale(0.985);
   }
 
   button,
@@ -44,5 +92,19 @@
   fieldset:disabled label,
   label:has(input:disabled) {
     cursor: not-allowed;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    html {
+      scroll-behavior: auto;
+    }
+
+    *,
+    ::before,
+    ::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+    }
   }
 }
