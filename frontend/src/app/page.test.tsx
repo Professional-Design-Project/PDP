@@ -4,13 +4,21 @@ import Home from "@/app/page";
 
 it("renders the conversation controls", () => {
   render(<Home />);
-  const scenario = screen.getByLabelText("Scenario");
-  const language = screen.getByLabelText("Conversation language");
+  const scenario = screen.getByRole("radio", { name: /Job interview/ });
   const context = screen.getByLabelText("Additional context");
   expect(scenario).toBeEnabled();
+  expect(scenario).toBeChecked();
   expect(context).toHaveAttribute("maxlength", "2000");
-  expect(language).toHaveValue("pl");
-  expect(screen.getByRole("button", { name: "Start conversation" })).toBeEnabled();
+  expect(screen.getByRole("radio", { name: "Polski" })).toBeChecked();
+  expect(screen.getByRole("button", { name: "Enter the room" })).toBeEnabled();
+  expect(screen.getByText("You are talking to an AI.")).toBeInTheDocument();
+});
+
+it("switches the conversation language", () => {
+  render(<Home />);
+  fireEvent.click(screen.getByRole("radio", { name: "English" }));
+  expect(screen.getByRole("radio", { name: "English" })).toBeChecked();
+  expect(screen.getByRole("radio", { name: "Polski" })).not.toBeChecked();
 });
 
 afterEach(() => vi.unstubAllGlobals());
@@ -52,5 +60,5 @@ it("shows when microphone permission is denied", async () => {
   render(<Home />);
   fireEvent.click(screen.getByRole("button", { name: "Check microphone" }));
   expect(await screen.findByText("Microphone permission denied")).toBeInTheDocument();
-  expect(screen.getByRole("heading", { name: "Voice practice" })).toBeInTheDocument();
+  expect(screen.getByRole("heading", { name: "Set the room." })).toBeInTheDocument();
 });
