@@ -29,6 +29,41 @@
   --animate-turn: turn 5s linear both;
   --animate-caret: caret 1.1s steps(1) infinite;
   --animate-room: room 0.65s var(--ease-soft) both;
+  --animate-dot: dot 1s var(--ease-soft) infinite;
+  --animate-fade: fade 0.4s var(--ease-soft) both;
+  --animate-page: page 0.5s var(--ease-soft) both;
+
+  @keyframes dot {
+    0%,
+    100% {
+      opacity: 0.25;
+      transform: scale(0.7);
+    }
+    40% {
+      opacity: 1;
+      transform: scale(1);
+    }
+  }
+
+  @keyframes fade {
+    from {
+      opacity: 0;
+    }
+    to {
+      opacity: 1;
+    }
+  }
+
+  @keyframes page {
+    from {
+      opacity: 0;
+      filter: blur(6px);
+    }
+    to {
+      opacity: 1;
+      filter: none;
+    }
+  }
   --animate-panel: panel 0.4s var(--ease-soft) both;
 
   @keyframes room {
@@ -66,7 +101,7 @@
     to {
       opacity: 1;
       clip-path: inset(0 0 0 0);
-      filter: blur(0);
+      filter: none;
     }
   }
 
