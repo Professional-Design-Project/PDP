@@ -30,7 +30,8 @@ def test_public_scenario_does_not_expose_private_rules(tmp_path):
     settings = Settings(_env_file=None, database_path=tmp_path / "test.sqlite3")
     with TestClient(create_app(settings)) as client:
         scenarios = client.get("/v1/scenarios?language=pl").json()
-        assert len(scenarios) == 1
+        expected = {"job-interview", "thesis-defence", "oral-exam"}
+        assert {item["id"] for item in scenarios} == expected
         assert scenarios[0]["language"] == "pl"
         assert client.get("/v1/scenarios?language=en").json()[0]["title"] == "Job interview"
         response = client.get("/v1/scenarios/job-interview")
@@ -39,3 +40,12 @@ def test_public_scenario_does_not_expose_private_rules(tmp_path):
         assert "role" not in response.json()
         assert client.get("/v1/scenarios/job-interview?language=en").json()["language"] == "en"
         assert client.get("/v1/scenarios/missing").status_code == 404
+
+
+@pytest.mark.parametrize("scenario_id", ["job-interview", "thesis-defence", "oral-exam"])
+def test_every_scenario_exists_in_both_languages(scenario_id):
+    scenarios = load_scenarios()
+    for language in Language:
+        scenario = scenarios.get(scenario_id, language)
+        assert scenario.language == language
+        assert scenario.version == 1
