@@ -27,6 +27,13 @@
   --animate-bar: bar 1.1s ease-in-out infinite;
   --animate-caption: caption 0.7s var(--ease-soft) both;
   --animate-turn: turn 5s linear both;
+  --animate-caret: caret 1.1s steps(1) infinite;
+
+  @keyframes caret {
+    50% {
+      opacity: 0;
+    }
+  }
 
   @keyframes caption {
     from {

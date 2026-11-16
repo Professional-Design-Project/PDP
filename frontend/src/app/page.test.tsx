@@ -29,3 +29,13 @@ it("lets the visitor pick who speaks in the room", () => {
   );
   expect(screen.getByText(/Why that database/)).toBeInTheDocument();
 });
+
+it("shows how a different context changes the questions", () => {
+  render(<Landing />);
+  expect(screen.getByText(/store payments so nothing is ever counted twice/)).toBeInTheDocument();
+  fireEvent.click(screen.getByRole("radio", { name: "Product designer" }));
+  expect(
+    screen.getByText(/Which decision in this project did research change/),
+  ).toBeInTheDocument();
+  expect(screen.queryByText(/store payments/)).not.toBeInTheDocument();
+});

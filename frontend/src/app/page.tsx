@@ -1,16 +1,9 @@
 import Link from "next/link";
 import { arrowMotion, buttonStyles } from "@/components/button-styles";
+import { ContextDemo } from "@/components/context-demo";
 import { ArrowRightIcon } from "@/components/icons";
 import { LiveRoom } from "@/components/live-room";
-import { PersonaPortrait, type PersonaTint } from "@/components/persona-portrait";
 import { Rise } from "@/components/rise";
-
-const people: { tint: PersonaTint; role: string; line: string }[] = [
-  { tint: "amber", role: "A recruiter", line: "Warm, quick, checks the basics." },
-  { tint: "slate", role: "A hiring manager", line: "Wants proof you can deliver." },
-  { tint: "sage", role: "A tech lead", line: "Asks why, then asks again." },
-  { tint: "rose", role: "A team lead", line: "Listens for how you work with people." },
-];
 
 const steps = [
   {
@@ -58,36 +51,21 @@ export default function Landing() {
         </Rise>
       </section>
 
-      <section aria-labelledby="table-title" className="bg-white">
+      <section aria-labelledby="context-title" className="bg-white">
         <div className="mx-auto max-w-7xl px-4 py-20 sm:px-8 sm:py-24">
           <div className="grid gap-6 border-t-2 border-ink pt-5 lg:grid-cols-12 lg:gap-8">
             <h2
-              id="table-title"
+              id="context-title"
               className="text-[40px] leading-none font-bold tracking-[-0.03em] text-balance sm:text-[56px] lg:col-span-7"
             >
-              Who is across the table?
+              Your context sets the questions.
             </h2>
             <p className="max-w-md text-lg leading-relaxed text-ink/80 lg:col-span-5">
-              Describe the person you will meet in the context, and the interviewer shapes its
-              questions around them.
+              The interviewer reads only what you write. Change a few lines and you get a different
+              conversation. These are examples of where it can go.
             </p>
           </div>
-          <ul className="mt-12 grid grid-cols-2 border-t border-l border-line lg:grid-cols-4">
-            {people.map((person) => (
-              <li key={person.role} className="group border-r border-b border-line">
-                <div className="overflow-hidden">
-                  <PersonaPortrait
-                    tint={person.tint}
-                    className="aspect-square w-full transition-transform duration-700 ease-(--ease-soft) group-hover:scale-[1.04]"
-                  />
-                </div>
-                <div className="p-4 sm:p-5">
-                  <p className="text-lg font-bold">{person.role}</p>
-                  <p className="mt-1 text-[15px] leading-snug text-muted">{person.line}</p>
-                </div>
-              </li>
-            ))}
-          </ul>
+          <ContextDemo />
         </div>
       </section>
 
