@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useReducer, useRef, useState } from "react";
+import { useEffect, useReducer, useRef, useState, useSyncExternalStore } from "react";
 import { arrowMotion } from "@/components/button-styles";
 import {
   ArrowRightIcon,
@@ -9,6 +9,16 @@ import {
   GraduationIcon,
   MicrophoneIcon,
 } from "@/components/icons";
+import { ConsentPanel } from "@/components/consent-panel";
+import {
+  allowsSession,
+  CONSENT_VERSION,
+  getConsentSnapshot,
+  getServerConsent,
+  saveConsent,
+  subscribeConsent,
+  type ConsentKey,
+} from "@/lib/consent";
 import { scenarioCopy, scenarioIds, type ScenarioId } from "@/lib/scenarios";
 import { Loader } from "@/components/loader";
 import { Rise } from "@/components/rise";
@@ -73,6 +83,7 @@ export default function Home() {
     message: string;
   } | null>(null);
   const [scenario, setScenario] = useState<ScenarioId>("job-interview");
+  const consent = useSyncExternalStore(subscribeConsent, getConsentSnapshot, getServerConsent);
   const [language, setLanguage] = useState("pl");
   const [context, setContext] = useState("");
   const [microphones, setMicrophones] = useState<MediaDeviceInfo[]>([]);
@@ -100,6 +111,12 @@ export default function Home() {
   useEffect(() => {
     liveRef.current = live;
   }, [live]);
+
+  function changeConsent(key: ConsentKey, value: boolean) {
+    saveConsent({ ...consent, [key]: value });
+  }
+
+  const canEnter = allowsSession(consent);
 
   async function checkMicrophone() {
     if (!navigator.mediaDevices?.getUserMedia || !navigator.mediaDevices.enumerateDevices) {
@@ -203,7 +220,12 @@ export default function Home() {
       streamRef.current = stream;
       const session = await request<Session>("/sessions", {
         method: "POST",
-        body: JSON.stringify({ scenario_id: scenario, language, context }),
+        body: JSON.stringify({
+          scenario_id: scenario,
+          language,
+          context,
+          consent: { version: CONSENT_VERSION, ...consent },
+        }),
       });
       const peer = new RTCPeerConnection({ iceServers: session.ice_servers });
       stream.getTracks().forEach((track) => peer.addTrack(track, stream));
@@ -445,11 +467,13 @@ export default function Home() {
           </div>
 
           <div className="border border-t-0 border-line bg-white p-6">
+            <ConsentPanel choices={consent} disabled={locked} onChange={changeConsent} />
+            <div className="mt-6 border-t border-line pt-6" />
             <button
               type="button"
-              disabled={locked}
+              disabled={locked || !canEnter}
               onClick={() => void startConversation()}
-              className="group flex h-14 w-full items-center justify-between bg-cobalt px-5 text-lg font-semibold text-white hover:bg-cobalt/90 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink disabled:cursor-wait disabled:bg-raised disabled:text-muted"
+              className={`group flex h-14 w-full items-center justify-between bg-cobalt px-5 text-lg font-semibold text-white hover:bg-cobalt/90 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink disabled:bg-raised disabled:text-muted ${connecting ? "disabled:cursor-wait" : "disabled:cursor-not-allowed"}`}
             >
               {connecting ? "Connecting" : "Enter the room"}
               {connecting ? (
@@ -459,7 +483,9 @@ export default function Home() {
               )}
             </button>
             <output className="mt-3 block text-[14px] text-muted">
-              <StatusLine tone={error ? "bad" : "neutral"}>{status}</StatusLine>
+              <StatusLine tone={error ? "bad" : canEnter ? "neutral" : "bad"}>
+                {canEnter ? status : "Tick the three required boxes to enter."}
+              </StatusLine>
             </output>
             {error && (
               <p role="alert" className="mt-2 text-[14px] text-ink">
