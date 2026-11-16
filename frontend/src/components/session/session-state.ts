@@ -114,3 +114,24 @@ export function endMessage(reason: string, failed: boolean) {
   if (failed) return "The connection dropped, so the session ended early.";
   return "The session has ended.";
 }
+
+export type FeedbackNote = {
+  kind: "strength" | "work_on";
+  title: string;
+  quote: string;
+  advice: string;
+  sequence: number | null;
+};
+
+export type FeedbackResult = {
+  summary: string;
+  notes: FeedbackNote[];
+};
+
+export type FeedbackState =
+  | { status: "undecided" }
+  | { status: "declined" }
+  | { status: "loading" }
+  | { status: "ready"; result: FeedbackResult }
+  | { status: "unavailable" }
+  | { status: "failed" };
