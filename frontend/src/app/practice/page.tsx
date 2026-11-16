@@ -1,7 +1,9 @@
 "use client";
 
 import { useRef, useState } from "react";
+import { arrowMotion } from "@/components/button-styles";
 import { ArrowRightIcon, BriefcaseIcon, MicrophoneIcon } from "@/components/icons";
+import { Rise } from "@/components/rise";
 import { Section } from "@/components/section";
 import { StatusLine } from "@/components/status-line";
 
@@ -171,17 +173,20 @@ export default function Home() {
   return (
     <main className="mx-auto max-w-7xl px-4 pt-12 pb-24 sm:px-8 sm:pt-16">
       <div className="grid gap-6 lg:grid-cols-12 lg:items-start lg:gap-8">
-        <h1 className="text-5xl leading-none font-bold tracking-[-0.04em] sm:text-7xl lg:col-span-7">
+        <Rise
+          as="h1"
+          className="text-5xl leading-none font-bold tracking-[-0.04em] sm:text-7xl lg:col-span-7"
+        >
           Set the room.
-        </h1>
-        <p className="max-w-md text-lg text-ink/80 lg:col-span-5">
+        </Rise>
+        <Rise as="p" delay={100} className="max-w-md text-lg text-ink/80 lg:col-span-5">
           Pick a scenario, describe the situation you want to practise and check your microphone.
           The interviewer works only with what you give it.
-        </p>
+        </Rise>
       </div>
 
       <div className="mt-14 grid gap-12 lg:grid-cols-12 lg:gap-8">
-        <div className="space-y-14 lg:col-span-8">
+        <Rise delay={180} className="space-y-14 lg:col-span-8">
           <Section number={1} title="Scenario">
             <fieldset disabled={locked} className="grid sm:grid-cols-3">
               <legend className="sr-only">Scenario</legend>
@@ -292,9 +297,9 @@ export default function Home() {
               </div>
             </div>
           </Section>
-        </div>
+        </Rise>
 
-        <aside className="lg:sticky lg:top-8 lg:col-span-4 lg:self-start">
+        <Rise as="aside" delay={260} className="lg:sticky lg:top-8 lg:col-span-4 lg:self-start">
           <div className="bg-ink p-6 text-white">
             <h2 className="text-[28px] leading-tight font-bold tracking-tight">Your session</h2>
             <dl className="mt-5 text-[15px]">
@@ -331,14 +336,14 @@ export default function Home() {
               type="button"
               disabled={connecting}
               onClick={() => (active ? stopConversation() : startConversation())}
-              className={`flex h-14 w-full items-center justify-between px-5 text-lg font-semibold focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink disabled:cursor-wait disabled:bg-raised disabled:text-muted ${
+              className={`group flex h-14 w-full items-center justify-between px-5 text-lg font-semibold focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink disabled:cursor-wait disabled:bg-raised disabled:text-muted ${
                 active
                   ? "border border-ink text-ink hover:bg-ink hover:text-white"
                   : "bg-cobalt text-white hover:bg-cobalt/90"
               }`}
             >
               {connecting ? "Connecting..." : active ? "Leave the room" : "Enter the room"}
-              {!active && <ArrowRightIcon className="size-5" />}
+              {!active && <ArrowRightIcon className={arrowMotion} />}
             </button>
             <output className="mt-3 block text-[14px] text-muted">
               <StatusLine tone={error ? "bad" : active ? "good" : "neutral"}>{status}</StatusLine>
@@ -349,7 +354,7 @@ export default function Home() {
               </p>
             )}
           </div>
-        </aside>
+        </Rise>
       </div>
     </main>
   );
