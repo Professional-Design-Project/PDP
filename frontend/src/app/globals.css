@@ -150,3 +150,23 @@
     }
   }
 }
+
+::view-transition-old(root) {
+  animation: locale-out 0.16s ease-in both;
+}
+
+::view-transition-new(root) {
+  animation: locale-in 0.28s var(--ease-soft) 0.12s both;
+}
+
+@keyframes locale-out {
+  to {
+    opacity: 0;
+  }
+}
+
+@keyframes locale-in {
+  from {
+    opacity: 0;
+  }
+}
