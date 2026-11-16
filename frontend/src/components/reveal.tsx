@@ -2,37 +2,18 @@
 
 import { type ElementType, type ReactNode, useEffect, useRef, useState } from "react";
 
-type RevealStyle = "rise" | "wipe" | "settle";
-
-const hidden: Record<RevealStyle, string> = {
-  rise: "translate-y-8 opacity-0",
-  wipe: "[clip-path:inset(0_0_100%_0)] opacity-0",
-  settle: "scale-[0.97] opacity-0 blur-sm",
-};
-
-const shown: Record<RevealStyle, string> = {
-  rise: "translate-y-0 opacity-100",
-  wipe: "[clip-path:inset(0_0_0_0)] opacity-100",
-  settle: "scale-100 opacity-100 blur-none",
-};
+const hidden = "translate-y-2 opacity-0";
+const shown = "translate-y-0 opacity-100";
 
 type RevealProps = {
   id?: string;
   as?: ElementType;
-  variant?: RevealStyle;
   delay?: number;
   className?: string;
   children: ReactNode;
 };
 
-export function Reveal({
-  as: Tag = "div",
-  id,
-  variant = "rise",
-  delay = 0,
-  className = "",
-  children,
-}: RevealProps) {
+export function Reveal({ as: Tag = "div", id, delay = 0, className = "", children }: RevealProps) {
   const ref = useRef<HTMLElement>(null);
   const [state, setState] = useState<"static" | "waiting" | "shown">("static");
 
@@ -57,8 +38,8 @@ export function Reveal({
   const motion =
     state === "static"
       ? ""
-      : `transition-[opacity,transform,clip-path,filter] duration-[900ms] ease-(--ease-soft) ${
-          state === "waiting" ? hidden[variant] : shown[variant]
+      : `transition-[opacity,transform] duration-500 ease-(--ease-soft) ${
+          state === "waiting" ? hidden : shown
         }`;
 
   return (
