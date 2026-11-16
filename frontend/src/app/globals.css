@@ -25,6 +25,30 @@
 
   --animate-rise: rise 0.8s var(--ease-soft) both;
   --animate-bar: bar 1.1s ease-in-out infinite;
+  --animate-caption: caption 0.7s var(--ease-soft) both;
+  --animate-turn: turn 5s linear both;
+
+  @keyframes caption {
+    from {
+      opacity: 0;
+      clip-path: inset(0 100% 0 0);
+      filter: blur(4px);
+    }
+    to {
+      opacity: 1;
+      clip-path: inset(0 0 0 0);
+      filter: blur(0);
+    }
+  }
+
+  @keyframes turn {
+    from {
+      transform: scaleX(0);
+    }
+    to {
+      transform: scaleX(1);
+    }
+  }
 
   @keyframes rise {
     from {
