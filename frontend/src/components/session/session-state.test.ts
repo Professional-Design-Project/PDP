@@ -1,6 +1,6 @@
 import { expect, it } from "vitest";
 import {
-  endMessage,
+  endKind,
   formatClock,
   initialLiveState,
   liveReducer,
@@ -75,8 +75,9 @@ it("records why the session ended", () => {
   ]);
   expect(state.ended).toEqual({ reason: "session_timeout", failed: false });
   expect(state.botSpeaking).toBe(false);
-  expect(endMessage("session_timeout", false)).toMatch(/15 minutes/);
-  expect(endMessage("transport_failed", true)).toMatch(/connection dropped/);
+  expect(endKind("session_timeout", false)).toBe("timeout");
+  expect(endKind("transport_failed", true)).toBe("dropped");
+  expect(endKind("user_ended", false)).toBe("user");
 });
 
 it("formats the session clock", () => {

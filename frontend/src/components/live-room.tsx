@@ -3,31 +3,15 @@
 import { useEffect, useRef, useState } from "react";
 import { PersonaPortrait, type PersonaTint } from "@/components/persona-portrait";
 import { SpeakingBars } from "@/components/speaking-bars";
+import { useLocale } from "@/i18n/locale";
 
 const TURN_MS = 5200;
 
-const turns: { tint: PersonaTint; role: string; quote: string; why: string }[] = [
-  {
-    tint: "amber",
-    role: "Recruiter",
-    quote: "Walk me through your CV in two minutes.",
-    why: "Most first rounds open this way.",
-  },
-  {
-    tint: "slate",
-    role: "Hiring manager",
-    quote: "Tell me about a time you handled a difficult deadline.",
-    why: "The role asks for ownership of delivery.",
-  },
-  {
-    tint: "sage",
-    role: "Tech lead",
-    quote: "Why that database, and not the obvious alternative?",
-    why: "Your context mentions a system design round.",
-  },
-];
+const tints: PersonaTint[] = ["amber", "slate", "sage"];
 
 export function LiveRoom() {
+  const { t } = useLocale();
+  const turns = t.room.turns;
   const [current, setCurrent] = useState(1);
   const [running, setRunning] = useState(false);
   const roomRef = useRef<HTMLDivElement>(null);
@@ -55,7 +39,7 @@ export function LiveRoom() {
   useEffect(() => {
     if (!running) return;
     const timer = window.setTimeout(
-      () => setCurrent((index) => (index + 1) % turns.length),
+      () => setCurrent((index) => (index + 1) % tints.length),
       TURN_MS,
     );
     return () => window.clearTimeout(timer);
@@ -70,17 +54,17 @@ export function LiveRoom() {
           const speaking = index === current;
           return (
             <button
-              key={person.role}
+              key={tints[index]}
               type="button"
               aria-pressed={speaking}
-              aria-label={`Hear the ${person.role.toLowerCase()}`}
+              aria-label={t.room.hear(person.role)}
               onClick={() => setCurrent(index)}
               className={`group relative flex flex-col items-start gap-3 p-3 text-left duration-500 not-first:border-l not-first:border-line focus-visible:z-10 focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-ink sm:p-4 ${
                 speaking ? "bg-cobalt text-white" : "bg-white text-ink hover:bg-raised"
               }`}
             >
               <PersonaPortrait
-                tint={person.tint}
+                tint={tints[index]}
                 className={`aspect-square w-full transition-[filter] duration-500 ${
                   speaking ? "" : "grayscale-[35%] group-hover:grayscale-0"
                 }`}
@@ -92,7 +76,7 @@ export function LiveRoom() {
                 className={`inline-flex items-center gap-2 text-[13px] ${speaking ? "font-semibold" : "text-muted"}`}
               >
                 {speaking ? <SpeakingBars className="h-3" /> : <span className="size-2 bg-line" />}
-                {speaking ? "Speaking" : "Listening"}
+                {speaking ? t.common.speaking : t.common.listening}
               </span>
               {speaking && running && (
                 <span
@@ -112,13 +96,13 @@ export function LiveRoom() {
           key={turn.quote}
           className="min-h-[3.6em] animate-caption text-[26px] leading-[1.18] font-medium tracking-tight sm:text-[32px]"
         >
-          “{turn.quote}”
+          {t.common.quote(turn.quote)}
         </blockquote>
         <p
           key={turn.why}
           className="mt-5 animate-caption text-[14px] text-muted [animation-delay:120ms]"
         >
-          <span className="font-semibold text-ink">Why this question:</span> {turn.why}
+          <span className="font-semibold text-ink">{t.common.whyThisQuestion}</span> {turn.why}
         </p>
       </div>
     </div>

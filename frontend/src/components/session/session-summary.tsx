@@ -1,6 +1,7 @@
 import { arrowMotion, buttonStyles } from "@/components/button-styles";
 import { ArrowRightIcon } from "@/components/icons";
 import { Rise } from "@/components/rise";
+import { useLocale } from "@/i18n/locale";
 import { FeedbackSection } from "@/components/session/feedback-section";
 import {
   formatClock,
@@ -29,12 +30,13 @@ export function SessionSummary({
   onAgain,
   onSetup,
 }: SessionSummaryProps) {
+  const { t } = useLocale();
   const questions = transcript.filter((line) => line.role === "assistant").length;
   const answers = transcript.filter((line) => line.role === "user").length;
   const numbers = [
-    { value: formatClock(duration), label: "minutes" },
-    { value: String(questions), label: questions === 1 ? "question asked" : "questions asked" },
-    { value: String(answers), label: answers === 1 ? "answer given" : "answers given" },
+    { value: formatClock(duration), label: t.summary.minutes },
+    { value: String(questions), label: t.summary.questions(questions) },
+    { value: String(answers), label: t.summary.answers(answers) },
   ];
 
   return (
@@ -48,14 +50,14 @@ export function SessionSummary({
         </Rise>
         <Rise
           as="p"
-          delay={100}
+          delay={50}
           className="max-w-md text-lg leading-relaxed text-ink/80 lg:col-span-5"
         >
-          {message} It was practice, not a grade. Read it back, then go again while it is fresh.
+          {message} {t.summary.practice}
         </Rise>
       </div>
 
-      <Rise delay={180} className="mt-12 grid border-t-2 border-ink sm:grid-cols-3">
+      <Rise delay={100} className="mt-12 grid border-t-2 border-ink sm:grid-cols-3">
         {numbers.map((item) => (
           <div key={item.label} className="border-b border-line py-6 sm:pr-8">
             <p className="text-[56px] leading-none font-bold tracking-[-0.05em] tabular-nums sm:text-[72px]">
@@ -66,13 +68,13 @@ export function SessionSummary({
         ))}
       </Rise>
 
-      <Rise delay={260} className="mt-10 flex flex-col gap-3 sm:flex-row">
+      <Rise delay={150} className="mt-10 flex flex-col gap-3 sm:flex-row">
         <button type="button" onClick={onAgain} className={`${buttonStyles.ink} sm:w-72`}>
-          Go again
+          {t.summary.again}
           <ArrowRightIcon className={arrowMotion} />
         </button>
         <button type="button" onClick={onSetup} className={buttonStyles.outline}>
-          Change the setup
+          {t.summary.setup}
         </button>
       </Rise>
 
@@ -80,12 +82,10 @@ export function SessionSummary({
 
       <section aria-labelledby="transcript-title" className="mt-16 border-t-2 border-ink pt-5">
         <h2 id="transcript-title" className="text-[32px] leading-tight font-bold tracking-tight">
-          Transcript
+          {t.summary.transcript}
         </h2>
         {transcript.length === 0 ? (
-          <p className="mt-4 text-muted">
-            Nothing was said in this session, so there is nothing to read back.
-          </p>
+          <p className="mt-4 text-muted">{t.summary.empty}</p>
         ) : (
           <ol className="mt-6 border-t border-line">
             {transcript.map((line) => (
@@ -98,7 +98,7 @@ export function SessionSummary({
               >
                 <span className="text-[14px] text-muted tabular-nums">{formatClock(line.at)}</span>
                 <span className="text-[15px] font-semibold max-sm:col-start-2">
-                  {line.role === "user" ? "You" : "Interviewer"}
+                  {line.role === "user" ? t.common.you : t.common.interviewer}
                 </span>
                 <p className="leading-relaxed max-sm:col-start-2">{line.text}</p>
               </li>

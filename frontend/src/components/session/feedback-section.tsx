@@ -1,9 +1,12 @@
+"use client";
+
 import { Loader } from "@/components/loader";
 import {
   formatClock,
   type FeedbackState,
   type TranscriptLine,
 } from "@/components/session/session-state";
+import { useLocale } from "@/i18n/locale";
 
 type FeedbackSectionProps = {
   state: FeedbackState;
@@ -17,6 +20,7 @@ function moment(sequence: number | null, transcript: TranscriptLine[]) {
 }
 
 export function FeedbackSection({ state, transcript, onRequest }: FeedbackSectionProps) {
+  const { t } = useLocale();
   return (
     <section
       aria-labelledby="feedback-title"
@@ -28,27 +32,24 @@ export function FeedbackSection({ state, transcript, onRequest }: FeedbackSectio
           id="feedback-title"
           className="text-[32px] leading-tight font-bold tracking-tight lg:col-span-7"
         >
-          Feedback
+          {t.feedback.title}
         </h2>
         <p className="max-w-md text-[15px] leading-relaxed text-muted lg:col-span-5">
-          Written by AI from the words in your transcript only, not from your voice. It may contain
-          mistakes, and it is not a grade.
+          {t.feedback.notice}
         </p>
       </div>
 
       {(state.status === "undecided" || state.status === "declined") && (
         <div className="mt-8 flex animate-caption flex-col gap-5 border border-line bg-white p-6 sm:flex-row sm:items-center sm:justify-between sm:p-8">
           <p className="max-w-lg text-lg leading-snug">
-            {state.status === "declined"
-              ? "You left without feedback. Changed your mind? It only takes a moment."
-              : "Do you want a few notes on what went well and what to work on?"}
+            {state.status === "declined" ? t.feedback.declined : t.feedback.offer}
           </p>
           <button
             type="button"
             onClick={onRequest}
             className="h-12 shrink-0 bg-cobalt px-6 font-semibold text-white hover:bg-cobalt/90 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink"
           >
-            Get feedback
+            {t.feedback.get}
           </button>
         </div>
       )}
@@ -57,7 +58,7 @@ export function FeedbackSection({ state, transcript, onRequest }: FeedbackSectio
         <div className="mt-8">
           <output className="inline-flex items-center gap-3 text-[15px] text-muted">
             <Loader className="text-[18px] text-cobalt" />
-            Reading your transcript
+            {t.feedback.reading}
           </output>
           <div
             className="mt-5 grid border-t border-l border-line md:grid-cols-3"
@@ -84,23 +85,20 @@ export function FeedbackSection({ state, transcript, onRequest }: FeedbackSectio
       )}
 
       {state.status === "unavailable" && (
-        <p className="mt-8 animate-caption text-lg text-ink/80">
-          There were not enough of your answers to give feedback on. Try a longer session and answer
-          a few questions.
-        </p>
+        <p className="mt-8 animate-caption text-lg text-ink/80">{t.feedback.unavailable}</p>
       )}
 
       {state.status === "failed" && (
         <div className="mt-8 flex animate-caption flex-col gap-4 sm:flex-row sm:items-center">
           <p role="alert" className="text-lg text-ink/80">
-            The feedback could not be written this time.
+            {t.feedback.failed}
           </p>
           <button
             type="button"
             onClick={onRequest}
             className="h-12 border border-ink px-5 font-semibold hover:bg-ink hover:text-white focus-visible:outline-2 focus-visible:outline-cobalt"
           >
-            Try again
+            {t.feedback.retry}
           </button>
         </div>
       )}
@@ -122,14 +120,14 @@ export function FeedbackSection({ state, transcript, onRequest }: FeedbackSectio
                   className={`flex animate-caption flex-col border-r border-b p-6 sm:p-7 ${
                     focus ? "border-cobalt bg-cobalt text-white" : "border-line bg-white"
                   }`}
-                  style={{ animationDelay: `${120 + index * 120}ms` }}
+                  style={{ animationDelay: `${index * 60}ms` }}
                 >
                   <p className={`text-[14px] font-semibold ${focus ? "" : "text-muted"}`}>
-                    {note.kind === "strength" ? "Keep this" : "Work on this"}
+                    {note.kind === "strength" ? t.feedback.keep : t.feedback.work}
                   </p>
                   <p className="mt-3 text-lg font-bold">{note.title}</p>
                   <blockquote className="mt-3 text-[20px] leading-snug font-medium tracking-tight">
-                    “{note.quote}”
+                    {t.common.quote(note.quote)}
                   </blockquote>
                   <p className={`mt-4 leading-relaxed ${focus ? "text-white/90" : "text-ink/80"}`}>
                     {note.advice}
@@ -143,7 +141,7 @@ export function FeedbackSection({ state, transcript, onRequest }: FeedbackSectio
                           : "border-line hover:text-cobalt"
                       }`}
                     >
-                      In the transcript at {at.at}
+                      {t.feedback.at(at.at)}
                     </a>
                   )}
                 </li>

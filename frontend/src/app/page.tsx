@@ -1,3 +1,5 @@
+"use client";
+
 import Link from "next/link";
 import { arrowMotion, buttonStyles } from "@/components/button-styles";
 import { ContextDemo } from "@/components/context-demo";
@@ -5,23 +7,10 @@ import { ArrowRightIcon } from "@/components/icons";
 import { LiveRoom } from "@/components/live-room";
 import { Reveal } from "@/components/reveal";
 import { Rise } from "@/components/rise";
-
-const steps = [
-  {
-    title: "Set the room",
-    text: "Describe the role, the company and who you will meet, then check your microphone.",
-  },
-  {
-    title: "Talk it through",
-    text: "The interviewer asks, listens and follows up out loud, in real time.",
-  },
-  {
-    title: "Go again",
-    text: "Change the context and start a new session until the answers come easily.",
-  },
-];
+import { useLocale } from "@/i18n/locale";
 
 export default function Landing() {
+  const { t } = useLocale();
   return (
     <main>
       <section className="mx-auto grid max-w-7xl gap-12 px-4 pt-14 pb-24 sm:px-8 sm:pt-20 lg:grid-cols-12 lg:items-center lg:gap-10">
@@ -30,24 +19,23 @@ export default function Landing() {
             as="h1"
             className="text-[52px] leading-[0.95] font-bold tracking-[-0.04em] text-balance sm:text-[84px] xl:text-[96px]"
           >
-            Rehearse the conversation before it happens.
+            {t.landing.title}
           </Rise>
-          <Rise as="p" delay={120} className="mt-8 max-w-md text-lg leading-relaxed text-ink/80">
-            Talk out loud with an AI interviewer that shapes every question around the role you
-            describe. In Polish or English, as many times as you need.
+          <Rise as="p" delay={60} className="mt-8 max-w-md text-lg leading-relaxed text-ink/80">
+            {t.landing.intro}
           </Rise>
-          <Rise delay={220} className="mt-10 flex flex-col gap-3 sm:flex-row">
+          <Rise delay={120} className="mt-10 flex flex-col gap-3 sm:flex-row">
             <Link href="/practice" data-pressable className={`${buttonStyles.ink} sm:w-72`}>
-              Set the room
+              {t.common.setTheRoom}
               <ArrowRightIcon className={arrowMotion} />
             </Link>
             <a href="#how-it-works" data-pressable className={buttonStyles.outline}>
-              How it works
+              {t.landing.howItWorks}
             </a>
           </Rise>
         </div>
 
-        <Rise delay={320} className="lg:col-span-6">
+        <Rise delay={180} className="lg:col-span-6">
           <LiveRoom />
         </Rise>
       </section>
@@ -59,14 +47,13 @@ export default function Landing() {
               id="context-title"
               className="text-[40px] leading-none font-bold tracking-[-0.03em] text-balance sm:text-[56px] lg:col-span-7"
             >
-              Your context sets the questions.
+              {t.landing.contextTitle}
             </h2>
             <p className="max-w-md text-lg leading-relaxed text-ink/80 lg:col-span-5">
-              The interviewer reads only what you write. Change a few lines and you get a different
-              conversation. These are examples of where it can go.
+              {t.landing.contextIntro}
             </p>
           </Reveal>
-          <Reveal variant="wipe" delay={150}>
+          <Reveal delay={80}>
             <ContextDemo />
           </Reveal>
         </div>
@@ -82,17 +69,19 @@ export default function Landing() {
           id="how-it-works-title"
           className="border-t-2 border-ink pt-5 text-[32px] leading-tight font-bold tracking-tight"
         >
-          How it works
+          {t.landing.howItWorks}
         </Reveal>
         <ol className="mt-10 grid gap-10 md:grid-cols-3 md:gap-0">
-          {steps.map((step, index) => (
+          {t.landing.steps.map((step, index) => (
             <Reveal
               as="li"
               key={step.title}
-              delay={120 + index * 140}
+              delay={index * 80}
               className="md:border-l md:border-line md:px-8 md:first:border-l-0 md:first:pl-0"
             >
-              <p className="text-[15px] font-semibold text-cobalt tabular-nums">Step {index + 1}</p>
+              <p className="text-[15px] font-semibold text-cobalt tabular-nums">
+                {t.landing.step(index + 1)}
+              </p>
               <h3 className="mt-3 text-[26px] leading-tight font-bold tracking-tight">
                 {step.title}
               </h3>
@@ -103,21 +92,15 @@ export default function Landing() {
       </section>
 
       <section aria-labelledby="ready-title" className="mx-auto max-w-7xl px-4 pt-24 pb-24 sm:px-8">
-        <Reveal
-          variant="settle"
-          className="grid gap-8 bg-ink p-8 text-white sm:p-12 lg:grid-cols-12 lg:items-end"
-        >
+        <Reveal className="grid gap-8 bg-ink p-8 text-white sm:p-12 lg:grid-cols-12 lg:items-end">
           <div className="lg:col-span-7">
             <h2
               id="ready-title"
               className="text-[40px] leading-none font-bold tracking-[-0.03em] sm:text-[56px]"
             >
-              Ready when you are.
+              {t.landing.readyTitle}
             </h2>
-            <p className="mt-5 max-w-lg leading-relaxed text-ink-muted">
-              Your interviewer is an artificial intelligence, not a real person, and its voice is
-              synthetic. Feedback is also generated by AI and may contain mistakes.
-            </p>
+            <p className="mt-5 max-w-lg leading-relaxed text-ink-muted">{t.landing.readyText}</p>
           </div>
           <div className="lg:col-span-5 lg:justify-self-end">
             <Link
@@ -125,7 +108,7 @@ export default function Landing() {
               data-pressable
               className={`${buttonStyles.white} w-full sm:w-72`}
             >
-              Set the room
+              {t.common.setTheRoom}
               <ArrowRightIcon className={arrowMotion} />
             </Link>
           </div>

@@ -19,13 +19,15 @@ import {
   subscribeConsent,
   type ConsentKey,
 } from "@/lib/consent";
-import { scenarioCopy, scenarioIds, type ScenarioId } from "@/lib/scenarios";
+import { useLocale, type Locale } from "@/i18n/locale";
+import { scenarioIds, type ScenarioId } from "@/lib/scenarios";
 import { Loader } from "@/components/loader";
 import { Rise } from "@/components/rise";
 import { Section } from "@/components/section";
 import { LiveSession } from "@/components/session/live-session";
 import {
-  endMessage,
+  endKind,
+  type EndKind,
   initialLiveState,
   liveReducer,
   type FeedbackResult,
@@ -44,10 +46,20 @@ const scenarioIcons: Record<ScenarioId, typeof BriefcaseIcon> = {
   "oral-exam": ExamIcon,
 };
 
-const languages = [
+const languages: { value: Locale; label: string }[] = [
   { value: "pl", label: "Polski" },
   { value: "en", label: "English" },
 ];
+
+type MicStatus =
+  | "unchecked"
+  | "checking"
+  | "available"
+  | "none"
+  | "denied"
+  | "unavailable"
+  | "insecure";
+type ConnectionStatus = "ready" | "requesting" | "connecting" | "connected" | "failed";
 
 type Session = {
   id: string;
@@ -72,9 +84,9 @@ async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
   return response.json() as Promise<T>;
 }
 
-function micTone(status: string) {
-  if (status === "Microphone available") return "good";
-  if (status === "Not checked" || status === "Checking...") return "neutral";
+function micTone(status: MicStatus) {
+  if (status === "available") return "good";
+  if (status === "unchecked" || status === "checking") return "neutral";
   return "bad";
 }
 
@@ -88,16 +100,19 @@ export default function Home() {
   const [summary, setSummary] = useState<{
     duration: number;
     transcript: TranscriptLine[];
-    message: string;
+    end: EndKind;
   } | null>(null);
   const [scenario, setScenario] = useState<ScenarioId>("job-interview");
   const consent = useSyncExternalStore(subscribeConsent, getConsentSnapshot, getServerConsent);
-  const [language, setLanguage] = useState("pl");
+  const { locale, t } = useLocale();
+  const [chosenLanguage, setLanguage] = useState<Locale | null>(null);
+  const language = chosenLanguage ?? locale;
+  const copy = t.scenarios[scenario];
   const [context, setContext] = useState("");
   const [microphones, setMicrophones] = useState<MediaDeviceInfo[]>([]);
   const [microphone, setMicrophone] = useState("");
-  const [micStatus, setMicStatus] = useState("Not checked");
-  const [status, setStatus] = useState("Ready");
+  const [micStatus, setMicStatus] = useState<MicStatus>("unchecked");
+  const [status, setStatus] = useState<ConnectionStatus>("ready");
   const [error, setError] = useState("");
   const [checking, setChecking] = useState(false);
   const audioRef = useRef<HTMLAudioElement | null>(null);
@@ -113,10 +128,10 @@ export default function Home() {
   const languageLabel = languages.find((option) => option.value === language)?.label ?? language;
   const selectedMicrophone = microphones.find((device) => device.deviceId === microphone);
   const microphoneSummary = selectedMicrophone
-    ? selectedMicrophone.label || "Selected"
-    : micStatus === "Microphone available"
-      ? "Default"
-      : "Not checked";
+    ? selectedMicrophone.label || t.setup.selectedMicrophone
+    : micStatus === "available"
+      ? t.setup.defaultMicrophone
+      : t.setup.mic.unchecked;
 
   useEffect(() => {
     liveRef.current = live;
@@ -130,12 +145,12 @@ export default function Home() {
 
   async function checkMicrophone() {
     if (!navigator.mediaDevices?.getUserMedia || !navigator.mediaDevices.enumerateDevices) {
-      setMicStatus("Microphone access requires HTTPS or localhost.");
+      setMicStatus("insecure");
       return;
     }
 
     setChecking(true);
-    setMicStatus("Checking...");
+    setMicStatus("checking");
     let stream: MediaStream | undefined;
     try {
       stream = await navigator.mediaDevices.getUserMedia({
@@ -148,12 +163,12 @@ export default function Home() {
       setMicrophone(
         inputs.some((device) => device.deviceId === usedId) ? usedId! : inputs[0]?.deviceId || "",
       );
-      setMicStatus(inputs.length ? "Microphone available" : "No microphone found");
+      setMicStatus(inputs.length ? "available" : "none");
     } catch (caught) {
       setMicStatus(
         caught instanceof DOMException && caught.name === "NotAllowedError"
-          ? "Microphone permission denied"
-          : "Microphone unavailable",
+          ? "denied"
+          : "unavailable",
       );
     } finally {
       stream?.getTracks().forEach((track) => track.stop());
@@ -170,7 +185,7 @@ export default function Home() {
     streamRef.current = null;
     sessionRef.current = null;
     setConnected(false);
-    setStatus("Ready");
+    setStatus("ready");
     if (session) {
       await request(`/sessions/${session.id}/end`, {
         method: "POST",
@@ -206,7 +221,7 @@ export default function Home() {
     const duration =
       current.readyAt === null ? 0 : Math.max(0, Math.round((Date.now() - current.readyAt) / 1000));
     await stopConversation();
-    setSummary({ duration, transcript: current.transcript, message: endMessage(reason, failed) });
+    setSummary({ duration, transcript: current.transcript, end: endKind(reason, failed) });
     setPhase("summary");
     setMuted(false);
     window.scrollTo({ top: 0 });
@@ -246,7 +261,7 @@ export default function Home() {
     finishingRef.current = false;
     setConnecting(true);
     setPhase("session");
-    setStatus("Requesting microphone...");
+    setStatus("requesting");
     try {
       const stream = await navigator.mediaDevices.getUserMedia({
         audio: microphone ? { deviceId: { exact: microphone } } : true,
@@ -258,7 +273,7 @@ export default function Home() {
           scenario_id: scenario,
           language,
           context,
-          consent: { version: CONSENT_VERSION, ...consent },
+          consent: { version: CONSENT_VERSION, language: locale, ...consent },
         }),
       });
       const peer = new RTCPeerConnection({ iceServers: session.ice_servers });
@@ -284,7 +299,7 @@ export default function Home() {
       sessionRef.current = session;
       lastSessionRef.current = session;
       peerRef.current = peer;
-      setStatus("Connecting...");
+      setStatus("connecting");
 
       await peer.setLocalDescription(await peer.createOffer());
       if (peer.iceGatheringState !== "complete") {
@@ -306,13 +321,13 @@ export default function Home() {
       });
       await peer.setRemoteDescription(answer);
       setConnected(true);
-      setStatus("Connected");
+      setStatus("connected");
     } catch (caught) {
       finishingRef.current = true;
       await stopConversation();
       setPhase("setup");
-      setError(caught instanceof Error ? caught.message : "Could not start the conversation.");
-      setStatus("Not connected");
+      setError(t.setup.startFailed(caught instanceof Error ? caught.message : ""));
+      setStatus("failed");
     } finally {
       setConnecting(false);
     }
@@ -323,8 +338,8 @@ export default function Home() {
       <SessionSummary
         duration={summary.duration}
         transcript={summary.transcript}
-        message={summary.message}
-        heading={scenarioCopy[scenario].finished}
+        message={t.summary.ended[summary.end]}
+        heading={copy.finished}
         feedback={feedback}
         onRequestFeedback={() => void requestFeedback()}
         onAgain={() => void startConversation()}
@@ -340,22 +355,21 @@ export default function Home() {
           as="h1"
           className="text-5xl leading-none font-bold tracking-[-0.04em] sm:text-7xl lg:col-span-7"
         >
-          Set the room.
+          {t.setup.title}
         </Rise>
-        <Rise as="p" delay={100} className="max-w-md text-lg text-ink/80 lg:col-span-5">
-          Pick a scenario, describe the situation you want to practise and check your microphone.
-          The interviewer works only with what you give it.
+        <Rise as="p" delay={50} className="max-w-md text-lg text-ink/80 lg:col-span-5">
+          {t.setup.intro}
         </Rise>
       </div>
 
       <div className="mt-14 grid gap-12 lg:grid-cols-12 lg:gap-8">
-        <Rise delay={180} className="space-y-14 lg:col-span-8">
-          <Section number={1} title="Scenario">
+        <Rise delay={100} className="space-y-14 lg:col-span-8">
+          <Section number={1} title={t.setup.scenario}>
             <fieldset
               disabled={locked}
               className="grid border-t border-l border-line sm:grid-cols-3"
             >
-              <legend className="sr-only">Scenario</legend>
+              <legend className="sr-only">{t.setup.scenario}</legend>
               {scenarioIds.map((id) => {
                 const Icon = scenarioIcons[id];
                 return (
@@ -373,10 +387,10 @@ export default function Home() {
                     />
                     <Icon className="size-6 transition-transform duration-300 ease-(--ease-soft) group-hover:-translate-y-0.5" />
                     <span className="pt-10 text-[22px] leading-tight font-bold">
-                      {scenarioCopy[id].title}
+                      {t.scenarios[id].title}
                     </span>
                     <span className="mt-2 text-[15px] text-muted group-has-checked:text-white/85">
-                      {scenarioCopy[id].description}
+                      {t.scenarios[id].description}
                     </span>
                   </label>
                 );
@@ -384,16 +398,12 @@ export default function Home() {
             </fieldset>
           </Section>
 
-          <Section
-            number={2}
-            title="Context"
-            description="Tell the interviewer about the role, the company or the situation. It reads only what is here."
-          >
+          <Section number={2} title={t.setup.context} description={t.setup.contextIntro}>
             <div className="space-y-8">
               <div>
                 <div className="flex items-baseline justify-between gap-4">
                   <label htmlFor="context" className="font-semibold">
-                    Additional context
+                    {t.setup.contextLabel}
                   </label>
                   <span className="text-[13px] text-muted tabular-nums">
                     {context.length} / {CONTEXT_LIMIT}
@@ -405,13 +415,13 @@ export default function Home() {
                   maxLength={CONTEXT_LIMIT}
                   disabled={locked}
                   onChange={(event) => setContext(event.target.value)}
-                  placeholder={scenarioCopy[scenario].placeholder}
+                  placeholder={copy.placeholder}
                   className="mt-2 block min-h-36 w-full resize-y border border-line bg-white p-4 placeholder:text-muted/80 focus-visible:border-ink focus-visible:outline-none disabled:bg-raised disabled:text-muted"
                 />
               </div>
 
               <fieldset disabled={locked}>
-                <legend className="font-semibold">Conversation language</legend>
+                <legend className="font-semibold">{t.setup.conversationLanguage}</legend>
                 <div className="mt-2 grid w-full grid-cols-2 sm:w-80">
                   {languages.map((option) => (
                     <label
@@ -434,7 +444,7 @@ export default function Home() {
 
               <div>
                 <label htmlFor="microphone" className="font-semibold">
-                  Microphone
+                  {t.setup.microphone}
                 </label>
                 <div className="mt-2 flex flex-col gap-3 sm:flex-row">
                   <select
@@ -443,16 +453,16 @@ export default function Home() {
                     disabled={checking || locked || microphones.length === 0}
                     onChange={(event) => {
                       setMicrophone(event.target.value);
-                      setMicStatus("Not checked");
+                      setMicStatus("unchecked");
                     }}
                     className="h-12 min-w-0 border sm:flex-1 border-line bg-white px-3 focus-visible:border-ink focus-visible:outline-none disabled:bg-raised disabled:text-muted"
                   >
                     {microphones.length === 0 && (
-                      <option value="">Check to list microphones</option>
+                      <option value="">{t.setup.listMicrophones}</option>
                     )}
                     {microphones.map((device, index) => (
                       <option key={device.deviceId} value={device.deviceId}>
-                        {device.label || `Microphone ${index + 1}`}
+                        {device.label || t.setup.microphoneNumber(index + 1)}
                       </option>
                     ))}
                   </select>
@@ -463,26 +473,33 @@ export default function Home() {
                     className="inline-flex h-12 items-center justify-center gap-2 border border-ink px-5 font-semibold hover:bg-ink hover:text-white focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-cobalt disabled:cursor-not-allowed disabled:opacity-60 disabled:hover:bg-transparent disabled:hover:text-ink"
                   >
                     <MicrophoneIcon className="size-5" />
-                    {checking ? "Checking..." : "Check microphone"}
+                    {checking ? t.setup.checking : t.setup.checkMicrophone}
                   </button>
                 </div>
                 <output className="mt-3 block text-[15px] text-muted">
-                  <StatusLine tone={micTone(micStatus)}>{micStatus}</StatusLine>
+                  <StatusLine tone={micTone(micStatus)}>{t.setup.mic[micStatus]}</StatusLine>
                 </output>
               </div>
             </div>
           </Section>
         </Rise>
 
-        <Rise as="aside" delay={260} className="lg:sticky lg:top-8 lg:col-span-4 lg:self-start">
+        <Rise as="aside" delay={150} className="lg:sticky lg:top-8 lg:col-span-4 lg:self-start">
           <div className="bg-ink p-6 text-white">
-            <h2 className="text-[28px] leading-tight font-bold tracking-tight">Your session</h2>
+            <h2 className="text-[28px] leading-tight font-bold tracking-tight">
+              {t.setup.yourSession}
+            </h2>
             <dl className="mt-5 text-[15px]">
               {[
-                ["Scenario", scenarioCopy[scenario].title],
-                ["Language", languageLabel],
-                ["Context", context.trim() ? `${context.trim().length} characters` : "None yet"],
-                ["Microphone", microphoneSummary],
+                [t.setup.scenario, copy.title],
+                [t.setup.language, languageLabel],
+                [
+                  t.setup.context,
+                  context.trim()
+                    ? t.setup.contextSummary(context.trim().length)
+                    : t.setup.noContext,
+                ],
+                [t.setup.microphone, microphoneSummary],
               ].map(([term, value]) => (
                 <div
                   key={term}
@@ -494,11 +511,9 @@ export default function Home() {
               ))}
             </dl>
             <div className="mt-6 border-t border-ink-line pt-5">
-              <p className="font-semibold">You are talking to an AI.</p>
+              <p className="font-semibold">{t.setup.aiNoticeTitle}</p>
               <p className="mt-2 text-[14px] leading-relaxed text-ink-muted">
-                Your interviewer is an artificial intelligence, not a real person, and its voice is
-                synthetic. Feedback after the session is also generated by AI and may contain
-                mistakes.
+                {t.setup.aiNoticeText}
               </p>
             </div>
           </div>
@@ -512,7 +527,7 @@ export default function Home() {
               onClick={() => void startConversation()}
               className={`group flex h-14 w-full items-center justify-between bg-cobalt px-5 text-lg font-semibold text-white hover:bg-cobalt/90 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink disabled:bg-raised disabled:text-muted ${connecting ? "disabled:cursor-wait" : "disabled:cursor-not-allowed"}`}
             >
-              {connecting ? "Connecting" : "Enter the room"}
+              {connecting ? t.setup.connecting : t.setup.enter}
               {connecting ? (
                 <Loader className="text-[22px]" />
               ) : (
@@ -521,7 +536,7 @@ export default function Home() {
             </button>
             <output className="mt-3 block text-[14px] text-muted">
               <StatusLine tone={error ? "bad" : canEnter ? "neutral" : "bad"}>
-                {canEnter ? status : "Tick the three required boxes to enter."}
+                {canEnter ? t.setup.status[status] : t.setup.tickRequired}
               </StatusLine>
             </output>
             {error && (
@@ -538,7 +553,7 @@ export default function Home() {
           state={live}
           connected={connected}
           language={languageLabel}
-          scenario={scenarioCopy[scenario].title}
+          scenario={copy.title}
           muted={muted}
           ending={ending}
           onToggleMute={toggleMute}
