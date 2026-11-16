@@ -2,7 +2,14 @@
 
 import { useEffect, useReducer, useRef, useState } from "react";
 import { arrowMotion } from "@/components/button-styles";
-import { ArrowRightIcon, BriefcaseIcon, MicrophoneIcon } from "@/components/icons";
+import {
+  ArrowRightIcon,
+  BriefcaseIcon,
+  ExamIcon,
+  GraduationIcon,
+  MicrophoneIcon,
+} from "@/components/icons";
+import { scenarioCopy, scenarioIds, type ScenarioId } from "@/lib/scenarios";
 import { Loader } from "@/components/loader";
 import { Rise } from "@/components/rise";
 import { Section } from "@/components/section";
@@ -18,6 +25,12 @@ import { StatusLine } from "@/components/status-line";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://127.0.0.1:8000/v1";
 const CONTEXT_LIMIT = 2000;
+
+const scenarioIcons: Record<ScenarioId, typeof BriefcaseIcon> = {
+  "job-interview": BriefcaseIcon,
+  "thesis-defence": GraduationIcon,
+  "oral-exam": ExamIcon,
+};
 
 const languages = [
   { value: "pl", label: "Polski" },
@@ -59,6 +72,7 @@ export default function Home() {
     transcript: TranscriptLine[];
     message: string;
   } | null>(null);
+  const [scenario, setScenario] = useState<ScenarioId>("job-interview");
   const [language, setLanguage] = useState("pl");
   const [context, setContext] = useState("");
   const [microphones, setMicrophones] = useState<MediaDeviceInfo[]>([]);
@@ -189,7 +203,7 @@ export default function Home() {
       streamRef.current = stream;
       const session = await request<Session>("/sessions", {
         method: "POST",
-        body: JSON.stringify({ scenario_id: "job-interview", language, context }),
+        body: JSON.stringify({ scenario_id: scenario, language, context }),
       });
       const peer = new RTCPeerConnection({ iceServers: session.ice_servers });
       stream.getTracks().forEach((track) => peer.addTrack(track, stream));
@@ -253,6 +267,7 @@ export default function Home() {
         duration={summary.duration}
         transcript={summary.transcript}
         message={summary.message}
+        heading={scenarioCopy[scenario].finished}
         onAgain={() => void startConversation()}
         onSetup={() => setPhase("setup")}
       />
@@ -277,24 +292,36 @@ export default function Home() {
       <div className="mt-14 grid gap-12 lg:grid-cols-12 lg:gap-8">
         <Rise delay={180} className="space-y-14 lg:col-span-8">
           <Section number={1} title="Scenario">
-            <fieldset disabled={locked} className="grid sm:grid-cols-3">
+            <fieldset
+              disabled={locked}
+              className="grid border-t border-l border-line sm:grid-cols-3"
+            >
               <legend className="sr-only">Scenario</legend>
-              <label className="flex min-h-44 cursor-pointer flex-col border border-cobalt bg-cobalt p-5 text-white has-focus-visible:outline-2 has-focus-visible:outline-offset-2 has-focus-visible:outline-ink">
-                <input
-                  type="radio"
-                  name="scenario"
-                  value="job-interview"
-                  defaultChecked
-                  className="sr-only"
-                />
-                <BriefcaseIcon className="size-6" />
-                <span className="mt-auto pt-8 text-[22px] leading-tight font-bold">
-                  Job interview
-                </span>
-                <span className="mt-2 text-[15px] text-white/85">
-                  Questions about your experience and the role. One interviewer.
-                </span>
-              </label>
+              {scenarioIds.map((id) => {
+                const Icon = scenarioIcons[id];
+                return (
+                  <label
+                    key={id}
+                    className="group flex min-h-44 flex-col border-r border-b border-line bg-white p-5 text-ink duration-300 hover:bg-raised has-checked:border-cobalt has-checked:bg-cobalt has-checked:text-white has-focus-visible:outline-2 has-focus-visible:outline-offset-2 has-focus-visible:outline-ink"
+                  >
+                    <input
+                      type="radio"
+                      name="scenario"
+                      value={id}
+                      checked={scenario === id}
+                      onChange={() => setScenario(id)}
+                      className="sr-only"
+                    />
+                    <Icon className="size-6 transition-transform duration-300 ease-(--ease-soft) group-hover:-translate-y-0.5" />
+                    <span className="mt-auto pt-8 text-[22px] leading-tight font-bold">
+                      {scenarioCopy[id].title}
+                    </span>
+                    <span className="mt-2 text-[15px] text-muted group-has-checked:text-white/85">
+                      {scenarioCopy[id].description}
+                    </span>
+                  </label>
+                );
+              })}
             </fieldset>
           </Section>
 
@@ -319,7 +346,7 @@ export default function Home() {
                   maxLength={CONTEXT_LIMIT}
                   disabled={locked}
                   onChange={(event) => setContext(event.target.value)}
-                  placeholder="For example: junior backend developer at a fintech, second round, they asked about system design last time."
+                  placeholder={scenarioCopy[scenario].placeholder}
                   className="mt-2 block min-h-36 w-full resize-y border border-line bg-white p-4 placeholder:text-muted/80 focus-visible:border-ink focus-visible:outline-none disabled:bg-raised disabled:text-muted"
                 />
               </div>
@@ -393,7 +420,7 @@ export default function Home() {
             <h2 className="text-[28px] leading-tight font-bold tracking-tight">Your session</h2>
             <dl className="mt-5 text-[15px]">
               {[
-                ["Scenario", "Job interview"],
+                ["Scenario", scenarioCopy[scenario].title],
                 ["Language", languageLabel],
                 ["Context", context.trim() ? `${context.trim().length} characters` : "None yet"],
                 ["Microphone", microphoneSummary],
@@ -448,6 +475,7 @@ export default function Home() {
           state={live}
           connected={connected}
           language={languageLabel}
+          scenario={scenarioCopy[scenario].title}
           muted={muted}
           ending={ending}
           onToggleMute={toggleMute}

@@ -100,3 +100,33 @@ export function CloseIcon({ className }: IconProps) {
     </svg>
   );
 }
+
+export function GraduationIcon({ className }: IconProps) {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.75"
+      aria-hidden="true"
+      className={className}
+    >
+      <path d="M2 9l10-5 10 5-10 5ZM6 11v5c2 2 10 2 12 0v-5M22 9v6" />
+    </svg>
+  );
+}
+
+export function ExamIcon({ className }: IconProps) {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.75"
+      aria-hidden="true"
+      className={className}
+    >
+      <path d="M6 3h12v18H6ZM9 8h6M9 12h6M9 16h3" />
+    </svg>
+  );
+}

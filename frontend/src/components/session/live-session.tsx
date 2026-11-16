@@ -20,6 +20,7 @@ type LiveSessionProps = {
   state: LiveState;
   connected: boolean;
   language: string;
+  scenario: string;
   muted: boolean;
   ending: boolean;
   onToggleMute: () => void;
@@ -42,6 +43,7 @@ export function LiveSession({
   state,
   connected,
   language,
+  scenario,
   muted,
   ending,
   onToggleMute,
@@ -92,7 +94,9 @@ export function LiveSession({
     >
       <header className="flex h-16 shrink-0 items-center justify-between gap-4 border-b border-ink-line px-4 sm:px-8">
         <Image src="/brand/logo-light.svg" alt="ensaio" width={88} height={31} />
-        <p className="hidden text-[15px] text-ink-muted md:block">Job interview / {language}</p>
+        <p className="hidden text-[15px] text-ink-muted md:block">
+          {scenario} / {language}
+        </p>
         <div className="flex items-center gap-5">
           <p className="text-[28px] leading-none font-bold tracking-[-0.04em] tabular-nums">
             {formatClock(elapsed)}
