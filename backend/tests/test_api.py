@@ -48,4 +48,12 @@ def test_sessions_require_and_record_consent(tmp_path):
         assert record["data"]["version"] == "test"
         assert record["data"]["improvement"] is True
         assert record["data"]["language"] == "en"
+        shown_in_polish = client.post(
+            "/v1/sessions", json={**body, "consent": {**CONSENT, "language": "pl"}}
+        ).json()
+        headers = {"Authorization": f"Bearer {shown_in_polish['access_token']}"}
+        url = f"/v1/sessions/{shown_in_polish['id']}/events"
+        events = client.get(url, headers=headers).json()
+        polish = next(event for event in events if event["kind"] == "consent.recorded")
+        assert polish["data"]["language"] == "pl"
         assert record["data"]["given_at"]

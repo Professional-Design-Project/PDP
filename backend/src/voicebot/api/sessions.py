@@ -24,6 +24,7 @@ class ConsentChoice(BaseModel):
     transcripts: bool
     improvement: bool = False
     outside_eu: bool
+    language: Language | None = None
 
 
 class CreateSession(BaseModel):
@@ -107,9 +108,14 @@ AuthorizedSession = Annotated[Session, Depends(authorized_session)]
     ),
 )
 async def create_session(body: CreateSession, request: Request):
+    choice = body.consent
     consent = Consent(
-        **body.consent.model_dump(),
-        language=body.language.value,
+        version=choice.version,
+        voice=choice.voice,
+        transcripts=choice.transcripts,
+        improvement=choice.improvement,
+        outside_eu=choice.outside_eu,
+        language=(choice.language or body.language).value,
         given_at=datetime.now(UTC),
     )
     session, token = await request.app.state.sessions.create(

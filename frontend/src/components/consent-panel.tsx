@@ -1,15 +1,7 @@
-import { consentKeys, requiredConsents, type ConsentChoices, type ConsentKey } from "@/lib/consent";
+"use client";
 
-const labels: Record<ConsentKey, string> = {
-  voice:
-    "I agree to my voice being recorded during practice sessions and converted to text (transcribed).",
-  transcripts:
-    "I agree to the storage of transcripts of my sessions and session logs (for example date, length and scores), so I can come back to my feedback.",
-  improvement:
-    "I agree to my session data (recordings, transcripts and logs) being used to analyse, develop and improve ensaio, including training and testing AI features.",
-  outside_eu:
-    "I understand and agree that my data may be sent to service providers whose servers are outside the European Union, for example in the USA, where data protection rules may differ from those in the EU.",
-};
+import { consentKeys, requiredConsents, type ConsentChoices, type ConsentKey } from "@/lib/consent";
+import { useLocale } from "@/i18n/locale";
 
 type ConsentPanelProps = {
   choices: ConsentChoices;
@@ -18,12 +10,11 @@ type ConsentPanelProps = {
 };
 
 export function ConsentPanel({ choices, disabled, onChange }: ConsentPanelProps) {
+  const { t } = useLocale();
   return (
     <fieldset disabled={disabled}>
-      <legend className="font-semibold">Consent</legend>
-      <p className="mt-2 text-[13px] leading-relaxed text-muted">
-        To run practice sessions we need to process your data. Please choose what you agree to.
-      </p>
+      <legend className="font-semibold">{t.consent.title}</legend>
+      <p className="mt-2 text-[13px] leading-relaxed text-muted">{t.consent.intro}</p>
       <ul className="mt-4 space-y-3">
         {consentKeys.map((key) => {
           const required = requiredConsents.includes(key);
@@ -46,18 +37,17 @@ export function ConsentPanel({ choices, disabled, onChange }: ConsentPanelProps)
                   </svg>
                 </span>
                 <span>
-                  {labels[key]}{" "}
-                  <span className="text-muted">{required ? "(required)" : "(optional)"}</span>
+                  {t.consent.labels[key]}{" "}
+                  <span className="text-muted">
+                    {required ? t.consent.required : t.consent.optional}
+                  </span>
                 </span>
               </label>
             </li>
           );
         })}
       </ul>
-      <p className="mt-4 text-[13px] leading-relaxed text-muted">
-        You can change these choices at any time on this page. Changing them does not affect
-        sessions you have already had.
-      </p>
+      <p className="mt-4 text-[13px] leading-relaxed text-muted">{t.consent.outro}</p>
     </fieldset>
   );
 }

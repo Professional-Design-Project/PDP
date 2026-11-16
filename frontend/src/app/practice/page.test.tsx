@@ -10,16 +10,16 @@ it("renders the conversation controls", () => {
   expect(scenario).toBeEnabled();
   expect(scenario).toBeChecked();
   expect(context).toHaveAttribute("maxlength", "2000");
-  expect(screen.getByRole("radio", { name: "Polski" })).toBeChecked();
+  expect(screen.getByRole("radio", { name: "English" })).toBeChecked();
   expect(screen.getByRole("button", { name: "Enter the room" })).toBeDisabled();
   expect(screen.getByText("You are talking to an AI.")).toBeInTheDocument();
 });
 
 it("switches the conversation language", () => {
   render(<Home />);
-  fireEvent.click(screen.getByRole("radio", { name: "English" }));
-  expect(screen.getByRole("radio", { name: "English" })).toBeChecked();
-  expect(screen.getByRole("radio", { name: "Polski" })).not.toBeChecked();
+  fireEvent.click(screen.getByRole("radio", { name: "Polski" }));
+  expect(screen.getByRole("radio", { name: "Polski" })).toBeChecked();
+  expect(screen.getByRole("radio", { name: "English" })).not.toBeChecked();
 });
 
 afterEach(() => {

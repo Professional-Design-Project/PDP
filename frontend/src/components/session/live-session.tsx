@@ -14,6 +14,7 @@ import { PersonaPortrait } from "@/components/persona-portrait";
 import { LeavePanel } from "@/components/session/leave-panel";
 import { SpeakingBars } from "@/components/speaking-bars";
 import { formatClock, type LiveState } from "@/components/session/session-state";
+import { useLocale } from "@/i18n/locale";
 
 const LIMIT_SECONDS = 15 * 60;
 
@@ -50,6 +51,7 @@ export function LiveSession({
   onToggleMute,
   onLeave,
 }: LiveSessionProps) {
+  const { t } = useLocale();
   const [showTranscript, setShowTranscript] = useState(false);
   const [leaving, setLeaving] = useState(false);
   const dialogRef = useRef<HTMLDialogElement>(null);
@@ -79,10 +81,10 @@ export function LiveSession({
   }, [state.transcript.length, showTranscript]);
 
   const status = !live
-    ? { label: "Joining the room", tone: "bg-ink-muted" }
+    ? { label: t.live.joining, tone: "bg-ink-muted" }
     : state.botSpeaking
-      ? { label: "Speaking", tone: "" }
-      : { label: "Listening", tone: "bg-persona-sage" };
+      ? { label: t.common.speaking, tone: "" }
+      : { label: t.common.listening, tone: "bg-persona-sage" };
 
   const userTurn = state.userSpeaking || Boolean(state.userCaption);
   const lastQuestion = [...state.transcript].reverse().find((line) => line.role === "assistant");
@@ -102,14 +104,14 @@ export function LiveSession({
         <div className="flex items-center gap-5">
           <p className="text-[28px] leading-none font-bold tracking-[-0.04em] tabular-nums">
             {formatClock(elapsed)}
-            <span className="sr-only"> elapsed of 15 minutes</span>
+            <span className="sr-only">{t.live.elapsed}</span>
           </p>
           <p className="inline-flex items-center gap-2 text-[15px]">
             <span
               aria-hidden="true"
               className={`size-2.5 ${live ? "animate-pulse bg-cobalt" : "bg-ink-muted"}`}
             />
-            {live ? "Live" : "Connecting"}
+            {live ? t.live.live : t.live.connecting}
           </p>
         </div>
       </header>
@@ -131,9 +133,9 @@ export function LiveSession({
                 tabIndex={-1}
                 className="text-[32px] leading-none font-bold tracking-[-0.03em] outline-none sm:text-[48px]"
               >
-                Interviewer
+                {t.common.interviewer}
               </h2>
-              <p className="mt-2 text-ink-muted">AI interviewer, not a human</p>
+              <p className="mt-2 text-ink-muted">{t.live.notHuman}</p>
               <p className="mt-3 inline-flex items-center gap-2 text-[15px]" aria-live="polite">
                 {state.botSpeaking ? (
                   <SpeakingBars className="text-cobalt" />
@@ -151,11 +153,11 @@ export function LiveSession({
             {userTurn ? (
               <div key="user" className="animate-caption">
                 <p className="inline-flex items-center gap-2 text-[15px] font-semibold text-persona-slate">
-                  You
+                  {t.common.you}
                   {state.userSpeaking && <SpeakingBars className="h-3" />}
                 </p>
                 <p className="mt-3 max-w-4xl text-[28px] leading-[1.2] font-medium tracking-tight sm:text-[40px]">
-                  {state.userCaption || "Listening to you…"}
+                  {state.userCaption || t.live.listeningToYou}
                 </p>
               </div>
             ) : state.botCaption ? (
@@ -163,32 +165,32 @@ export function LiveSession({
                 key="bot"
                 className="max-w-4xl animate-caption text-[30px] leading-[1.15] font-medium tracking-tight sm:text-[48px]"
               >
-                “{state.botCaption.trim()}”
+                {t.common.quote(state.botCaption.trim())}
               </blockquote>
             ) : (
               <p
                 key="waiting"
                 className="max-w-2xl animate-caption text-[26px] leading-snug text-ink-muted sm:text-[36px]"
               >
-                {live ? "The interviewer is about to start." : "Setting the room"}
+                {live ? t.live.aboutToStart : t.live.settingRoom}
                 <Loader className="ml-3 align-middle text-[0.5em] text-cobalt" />
               </p>
             )}
 
             <div className="mt-10 grid max-w-3xl gap-6 border-t border-ink-line pt-5 sm:grid-cols-2 sm:gap-10">
               <div>
-                <p className="font-semibold">You</p>
+                <p className="font-semibold">{t.common.you}</p>
                 <p className="mt-1 text-[15px] leading-relaxed text-ink-muted">
                   {muted
-                    ? "Your microphone is muted. Unmute it to answer."
+                    ? t.live.hintMuted
                     : state.botSpeaking
-                      ? "Take a breath. Answer when the question is finished."
-                      : "Speak whenever you are ready. The interviewer waits for you."}
+                      ? t.live.hintWait
+                      : t.live.hintReady}
                 </p>
               </div>
               {userTurn && (state.botCaption || lastQuestion) && (
                 <div>
-                  <p className="font-semibold">Last question</p>
+                  <p className="font-semibold">{t.live.lastQuestion}</p>
                   <p className="mt-1 line-clamp-3 text-[15px] leading-relaxed text-ink-muted">
                     {state.botCaption || lastQuestion?.text}
                   </p>
@@ -199,12 +201,12 @@ export function LiveSession({
 
           <div className="flex flex-wrap items-end justify-between gap-4">
             <fieldset className="flex">
-              <legend className="sr-only">Session controls</legend>
+              <legend className="sr-only">{t.live.controls}</legend>
               <button
                 type="button"
                 onClick={onToggleMute}
                 aria-pressed={muted}
-                aria-label={muted ? "Unmute microphone" : "Mute microphone"}
+                aria-label={muted ? t.live.unmute : t.live.mute}
                 className={`grid size-16 place-items-center focus-visible:z-10 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white ${
                   muted
                     ? "bg-persona-rose text-ink hover:bg-persona-rose/85"
@@ -221,7 +223,7 @@ export function LiveSession({
                 type="button"
                 onClick={() => setShowTranscript((open) => !open)}
                 aria-pressed={showTranscript}
-                aria-label={showTranscript ? "Hide transcript" : "Show transcript"}
+                aria-label={showTranscript ? t.live.hideTranscript : t.live.showTranscript}
                 className={`grid size-16 place-items-center border-l border-ink focus-visible:z-10 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white ${
                   showTranscript
                     ? "bg-raised text-ink hover:bg-white"
@@ -234,31 +236,29 @@ export function LiveSession({
                 type="button"
                 onClick={() => setLeaving(true)}
                 disabled={ending}
-                aria-label="End the session"
+                aria-label={t.live.end}
                 className="grid size-16 place-items-center bg-cobalt text-white hover:bg-cobalt/85 focus-visible:z-10 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white disabled:opacity-60"
               >
                 <HangUpIcon className="size-7" />
               </button>
             </fieldset>
-            <p className="text-[13px] text-ink-muted">
-              {ending
-                ? "Ending the session…"
-                : "Your voice goes to an external AI provider while the session runs."}
-            </p>
+            <p className="text-[13px] text-ink-muted">{ending ? t.live.ending : t.live.provider}</p>
           </div>
         </div>
 
         {showTranscript && (
           <aside
-            aria-label="Transcript"
+            aria-label={t.live.transcript}
             className="absolute top-16 right-0 bottom-28 z-10 lg:bottom-auto flex w-full animate-panel flex-col bg-canvas text-ink sm:w-[26rem] lg:static lg:inset-auto"
           >
             <div className="flex items-center justify-between border-b-2 border-ink px-6 py-5">
-              <h2 className="text-[30px] leading-none font-bold tracking-[-0.03em]">Transcript</h2>
+              <h2 className="text-[30px] leading-none font-bold tracking-[-0.03em]">
+                {t.live.transcript}
+              </h2>
               <button
                 type="button"
                 onClick={() => setShowTranscript(false)}
-                aria-label="Close transcript"
+                aria-label={t.live.closeTranscript}
                 className="grid size-10 place-items-center hover:bg-raised focus-visible:outline-2 focus-visible:outline-cobalt"
               >
                 <CloseIcon className="size-5" />
@@ -266,9 +266,7 @@ export function LiveSession({
             </div>
             <ol ref={listRef} className="min-h-0 flex-1 scroll-smooth overflow-y-auto">
               {state.transcript.length === 0 && (
-                <li className="px-6 py-8 text-[15px] text-muted">
-                  Lines appear here as soon as each turn is finished.
-                </li>
+                <li className="px-6 py-8 text-[15px] text-muted">{t.live.emptyTranscript}</li>
               )}
               {state.transcript.map((line) => (
                 <li
@@ -282,9 +280,9 @@ export function LiveSession({
                   </span>
                   <div>
                     <p className="text-[14px] font-semibold">
-                      {line.role === "user" ? "You" : "Interviewer"}
+                      {line.role === "user" ? t.common.you : t.common.interviewer}
                       {line.interrupted && (
-                        <span className="font-normal text-muted"> · interrupted</span>
+                        <span className="font-normal text-muted">{t.live.interrupted}</span>
                       )}
                     </p>
                     <p className="mt-1 leading-relaxed">{line.text}</p>
@@ -293,7 +291,7 @@ export function LiveSession({
               ))}
             </ol>
             <p className="border-t border-line px-6 py-4 text-[13px] leading-relaxed text-muted">
-              Your interviewer is an AI, not a human. Its voice is synthetic.
+              {t.live.panelNotice}
             </p>
           </aside>
         )}

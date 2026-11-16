@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Schibsted_Grotesk } from "next/font/google";
 import { SiteFooter } from "@/components/site-footer";
 import { SiteHeader } from "@/components/site-header";
+import { LocaleSync } from "@/i18n/locale";
 import "./globals.css";
 
 const schibstedGrotesk = Schibsted_Grotesk({
@@ -19,6 +20,7 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
   return (
     <html lang="en" className={schibstedGrotesk.variable}>
       <body className="flex min-h-screen flex-col">
+        <LocaleSync />
         <SiteHeader />
         <div className="flex-1">{children}</div>
         <SiteFooter />

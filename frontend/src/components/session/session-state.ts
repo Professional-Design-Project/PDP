@@ -108,11 +108,13 @@ export function formatClock(totalSeconds: number) {
   return `${String(minutes).padStart(2, "0")}:${String(seconds).padStart(2, "0")}`;
 }
 
-export function endMessage(reason: string, failed: boolean) {
-  if (reason === "session_timeout") return "Time is up. A session lasts up to 15 minutes.";
-  if (reason === "user_ended") return "You ended the session.";
-  if (failed) return "The connection dropped, so the session ended early.";
-  return "The session has ended.";
+export type EndKind = "timeout" | "user" | "dropped" | "other";
+
+export function endKind(reason: string, failed: boolean): EndKind {
+  if (reason === "session_timeout") return "timeout";
+  if (reason === "user_ended") return "user";
+  if (failed) return "dropped";
+  return "other";
 }
 
 export type FeedbackNote = {
