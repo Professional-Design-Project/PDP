@@ -55,6 +55,6 @@ it("opens the transcript with finished turns", () => {
 
 it("says it is still connecting before the session is ready", () => {
   renderSession({}, { connected: false });
-  expect(screen.getByText("Setting the room…")).toBeInTheDocument();
+  expect(screen.getByText(/Setting the room/)).toBeInTheDocument();
   expect(screen.getByText("Connecting")).toBeInTheDocument();
 });

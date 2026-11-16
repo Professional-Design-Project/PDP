@@ -3,6 +3,7 @@
 import { useEffect, useReducer, useRef, useState } from "react";
 import { arrowMotion } from "@/components/button-styles";
 import { ArrowRightIcon, BriefcaseIcon, MicrophoneIcon } from "@/components/icons";
+import { Loader } from "@/components/loader";
 import { Rise } from "@/components/rise";
 import { Section } from "@/components/section";
 import { LiveSession } from "@/components/session/live-session";
@@ -423,8 +424,12 @@ export default function Home() {
               onClick={() => void startConversation()}
               className="group flex h-14 w-full items-center justify-between bg-cobalt px-5 text-lg font-semibold text-white hover:bg-cobalt/90 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink disabled:cursor-wait disabled:bg-raised disabled:text-muted"
             >
-              {connecting ? "Connecting..." : "Enter the room"}
-              <ArrowRightIcon className={arrowMotion} />
+              {connecting ? "Connecting" : "Enter the room"}
+              {connecting ? (
+                <Loader className="text-[22px]" />
+              ) : (
+                <ArrowRightIcon className={arrowMotion} />
+              )}
             </button>
             <output className="mt-3 block text-[14px] text-muted">
               <StatusLine tone={error ? "bad" : "neutral"}>{status}</StatusLine>

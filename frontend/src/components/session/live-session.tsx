@@ -9,6 +9,7 @@ import {
   MicrophoneOffIcon,
   TranscriptIcon,
 } from "@/components/icons";
+import { Loader } from "@/components/loader";
 import { PersonaPortrait } from "@/components/persona-portrait";
 import { SpeakingBars } from "@/components/speaking-bars";
 import { formatClock, type LiveState } from "@/components/session/session-state";
@@ -130,6 +131,8 @@ export function LiveSession({
               <p className="mt-3 inline-flex items-center gap-2 text-[15px]" aria-live="polite">
                 {state.botSpeaking ? (
                   <SpeakingBars className="text-cobalt" />
+                ) : !live ? (
+                  <Loader className="text-[18px] text-ink-muted" />
                 ) : (
                   <span aria-hidden="true" className={`size-2.5 ${status.tone}`} />
                 )}
@@ -161,7 +164,8 @@ export function LiveSession({
                 key="waiting"
                 className="max-w-2xl animate-caption text-[26px] leading-snug text-ink-muted sm:text-[36px]"
               >
-                {live ? "The interviewer is about to start." : "Setting the room…"}
+                {live ? "The interviewer is about to start." : "Setting the room"}
+                <Loader className="ml-3 align-middle text-[0.5em] text-cobalt" />
               </p>
             )}
 
