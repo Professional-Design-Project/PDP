@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useSyncExternalStore } from "react";
+import { flushSync } from "react-dom";
 import { en, type Dictionary } from "./en";
 import { pl } from "./pl";
 
@@ -39,14 +40,24 @@ function getServerSnapshot(): Locale {
   return "en";
 }
 
-export function setLocale(locale: Locale) {
+function apply(locale: Locale) {
   memory = locale;
   try {
     window.localStorage.setItem(STORAGE_KEY, locale);
   } catch {
     memory = locale;
   }
-  listeners.forEach((listener) => listener());
+  flushSync(() => listeners.forEach((listener) => listener()));
+}
+
+export function setLocale(locale: Locale) {
+  if (locale === memory) return;
+  const reduced = window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
+  if (typeof document.startViewTransition !== "function" || reduced) {
+    apply(locale);
+    return;
+  }
+  document.startViewTransition(() => apply(locale));
 }
 
 export function resetLocaleMemory() {
