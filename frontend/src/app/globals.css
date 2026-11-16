@@ -28,4 +28,21 @@
     color: var(--color-ink);
     font-family: var(--font-sans);
   }
+
+  button,
+  select,
+  summary,
+  [role="button"],
+  label:has(input[type="radio"], input[type="checkbox"]),
+  input[type="radio"],
+  input[type="checkbox"] {
+    cursor: pointer;
+  }
+
+  button:disabled,
+  select:disabled,
+  fieldset:disabled label,
+  label:has(input:disabled) {
+    cursor: not-allowed;
+  }
 }
