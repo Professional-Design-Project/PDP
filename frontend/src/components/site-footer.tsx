@@ -30,9 +30,8 @@ export function SiteFooter() {
       </div>
 
       <div className="border-t border-line">
-        <div className="mx-auto flex max-w-7xl flex-col gap-1 px-4 py-5 text-[13px] text-muted sm:flex-row sm:justify-between sm:px-8">
+        <div className="mx-auto max-w-7xl px-4 py-5 text-[13px] text-muted sm:px-8">
           <p>© 2026 ensaio</p>
-          <p>Professional Design Project</p>
         </div>
       </div>
     </footer>
