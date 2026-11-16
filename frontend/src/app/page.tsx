@@ -3,6 +3,7 @@ import { arrowMotion, buttonStyles } from "@/components/button-styles";
 import { ContextDemo } from "@/components/context-demo";
 import { ArrowRightIcon } from "@/components/icons";
 import { LiveRoom } from "@/components/live-room";
+import { Reveal } from "@/components/reveal";
 import { Rise } from "@/components/rise";
 
 const steps = [
@@ -53,7 +54,7 @@ export default function Landing() {
 
       <section aria-labelledby="context-title" className="bg-white">
         <div className="mx-auto max-w-7xl px-4 py-20 sm:px-8 sm:py-24">
-          <div className="grid gap-6 border-t-2 border-ink pt-5 lg:grid-cols-12 lg:gap-8">
+          <Reveal className="grid gap-6 border-t-2 border-ink pt-5 lg:grid-cols-12 lg:gap-8">
             <h2
               id="context-title"
               className="text-[40px] leading-none font-bold tracking-[-0.03em] text-balance sm:text-[56px] lg:col-span-7"
@@ -64,8 +65,10 @@ export default function Landing() {
               The interviewer reads only what you write. Change a few lines and you get a different
               conversation. These are examples of where it can go.
             </p>
-          </div>
-          <ContextDemo />
+          </Reveal>
+          <Reveal variant="wipe" delay={150}>
+            <ContextDemo />
+          </Reveal>
         </div>
       </section>
 
@@ -74,16 +77,19 @@ export default function Landing() {
         aria-labelledby="how-it-works-title"
         className="mx-auto max-w-7xl scroll-mt-8 px-4 pt-20 sm:px-8 sm:pt-24"
       >
-        <h2
+        <Reveal
+          as="h2"
           id="how-it-works-title"
           className="border-t-2 border-ink pt-5 text-[32px] leading-tight font-bold tracking-tight"
         >
           How it works
-        </h2>
+        </Reveal>
         <ol className="mt-10 grid gap-10 md:grid-cols-3 md:gap-0">
           {steps.map((step, index) => (
-            <li
+            <Reveal
+              as="li"
               key={step.title}
+              delay={120 + index * 140}
               className="md:border-l md:border-line md:px-8 md:first:border-l-0 md:first:pl-0"
             >
               <p className="text-[15px] font-semibold text-cobalt tabular-nums">Step {index + 1}</p>
@@ -91,13 +97,16 @@ export default function Landing() {
                 {step.title}
               </h3>
               <p className="mt-3 max-w-xs leading-relaxed text-ink/80">{step.text}</p>
-            </li>
+            </Reveal>
           ))}
         </ol>
       </section>
 
       <section aria-labelledby="ready-title" className="mx-auto max-w-7xl px-4 pt-24 pb-24 sm:px-8">
-        <div className="grid gap-8 bg-ink p-8 text-white sm:p-12 lg:grid-cols-12 lg:items-end">
+        <Reveal
+          variant="settle"
+          className="grid gap-8 bg-ink p-8 text-white sm:p-12 lg:grid-cols-12 lg:items-end"
+        >
           <div className="lg:col-span-7">
             <h2
               id="ready-title"
@@ -120,7 +129,7 @@ export default function Landing() {
               <ArrowRightIcon className={arrowMotion} />
             </Link>
           </div>
-        </div>
+        </Reveal>
       </section>
     </main>
   );
