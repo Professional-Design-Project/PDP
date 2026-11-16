@@ -11,6 +11,7 @@ import {
 } from "@/components/icons";
 import { Loader } from "@/components/loader";
 import { PersonaPortrait } from "@/components/persona-portrait";
+import { LeavePanel } from "@/components/session/leave-panel";
 import { SpeakingBars } from "@/components/speaking-bars";
 import { formatClock, type LiveState } from "@/components/session/session-state";
 
@@ -24,7 +25,7 @@ type LiveSessionProps = {
   muted: boolean;
   ending: boolean;
   onToggleMute: () => void;
-  onEnd: () => void;
+  onLeave: (withFeedback: boolean) => void;
 };
 
 function useClock(readyAt: number | null) {
@@ -47,9 +48,10 @@ export function LiveSession({
   muted,
   ending,
   onToggleMute,
-  onEnd,
+  onLeave,
 }: LiveSessionProps) {
   const [showTranscript, setShowTranscript] = useState(false);
+  const [leaving, setLeaving] = useState(false);
   const dialogRef = useRef<HTMLDialogElement>(null);
   const headingRef = useRef<HTMLHeadingElement>(null);
   const listRef = useRef<HTMLOListElement>(null);
@@ -161,7 +163,7 @@ export function LiveSession({
                 key="bot"
                 className="max-w-4xl animate-caption text-[30px] leading-[1.15] font-medium tracking-tight sm:text-[48px]"
               >
-                “{state.botCaption}”
+                “{state.botCaption.trim()}”
               </blockquote>
             ) : (
               <p
@@ -230,7 +232,7 @@ export function LiveSession({
               </button>
               <button
                 type="button"
-                onClick={onEnd}
+                onClick={() => setLeaving(true)}
                 disabled={ending}
                 aria-label="End the session"
                 className="grid size-16 place-items-center bg-cobalt text-white hover:bg-cobalt/85 focus-visible:z-10 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white disabled:opacity-60"
@@ -296,6 +298,15 @@ export function LiveSession({
           </aside>
         )}
       </div>
+      {leaving && !ending && (
+        <LeavePanel
+          onLeave={(withFeedback) => {
+            setLeaving(false);
+            onLeave(withFeedback);
+          }}
+          onStay={() => setLeaving(false)}
+        />
+      )}
     </dialog>
   );
 }

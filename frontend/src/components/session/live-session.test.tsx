@@ -7,7 +7,7 @@ function renderSession(
   state: Partial<LiveState>,
   props: Partial<Parameters<typeof LiveSession>[0]> = {},
 ) {
-  const handlers = { onToggleMute: vi.fn(), onEnd: vi.fn() };
+  const handlers = { onToggleMute: vi.fn(), onLeave: vi.fn() };
   render(
     <LiveSession
       state={{ ...initialLiveState, ...state }}
@@ -40,7 +40,12 @@ it("shows the user turn and wires the controls", () => {
   fireEvent.click(screen.getByRole("button", { name: "Mute microphone" }));
   expect(handlers.onToggleMute).toHaveBeenCalled();
   fireEvent.click(screen.getByRole("button", { name: "End the session" }));
-  expect(handlers.onEnd).toHaveBeenCalled();
+  expect(screen.getByRole("heading", { name: "Leave the room?" })).toBeInTheDocument();
+  fireEvent.click(screen.getByRole("button", { name: "Keep talking" }));
+  expect(screen.queryByRole("heading", { name: "Leave the room?" })).not.toBeInTheDocument();
+  fireEvent.click(screen.getByRole("button", { name: "End the session" }));
+  fireEvent.click(screen.getByRole("button", { name: "Leave and get feedback" }));
+  expect(handlers.onLeave).toHaveBeenCalledWith(true);
 });
 
 it("opens the transcript with finished turns", () => {
