@@ -101,3 +101,35 @@ def test_sign_in_is_required_when_supabase_is_configured(tmp_path, keys):
         assert client.post("/v1/documents/extract", files=files).status_code == 401
         extracted = client.post("/v1/documents/extract", files=files, headers=headers)
         assert extracted.status_code == 200
+
+
+class RecordingAdmin:
+    def __init__(self) -> None:
+        self.deleted: list[str] = []
+
+    async def delete_user(self, user_id: str) -> None:
+        self.deleted.append(user_id)
+
+
+def test_users_can_delete_only_their_own_account(tmp_path, keys):
+    private, auth = keys
+    admin = RecordingAdmin()
+    settings = Settings(
+        _env_file=None, database_path=tmp_path / "test.sqlite3", supabase_url=PROJECT
+    )
+    with TestClient(create_app(settings, auth=auth, admin=admin)) as client:
+        assert client.delete("/v1/account").status_code == 401
+        headers = {"Authorization": f"Bearer {token(private)}"}
+        assert client.delete("/v1/account", headers=headers).status_code == 204
+        assert admin.deleted == [USER]
+
+
+def test_account_deletion_needs_the_secret_key(tmp_path, keys):
+    private, auth = keys
+    settings = Settings(
+        _env_file=None, database_path=tmp_path / "test.sqlite3", supabase_url=PROJECT
+    )
+    with TestClient(create_app(settings, auth=auth)) as client:
+        headers = {"Authorization": f"Bearer {token(private)}"}
+        response = client.delete("/v1/account", headers=headers)
+        assert response.status_code == 503

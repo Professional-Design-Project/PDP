@@ -8,6 +8,7 @@ from fastapi.responses import JSONResponse
 from loguru import logger as pipecat_logger
 from pydantic import BaseModel
 
+from voicebot.api.account import router as account_router
 from voicebot.api.auth import AuthenticationRequired
 from voicebot.api.documents import router as documents_router
 from voicebot.api.scenarios import scenario_router
@@ -27,6 +28,7 @@ from voicebot.infrastructure.database import Database
 from voicebot.infrastructure.feedback import GeminiFeedbackWriter
 from voicebot.infrastructure.postgres import PostgresDatabase
 from voicebot.infrastructure.scenarios import load_scenarios
+from voicebot.infrastructure.supabase_admin import AccountDeletionFailed, SupabaseAdmin
 from voicebot.infrastructure.voice.gemini import VoiceUnavailable
 from voicebot.infrastructure.voice.runtime import InvalidSignaling, VoiceRuntime
 from voicebot.settings import Settings
@@ -36,7 +38,9 @@ class ErrorResponse(BaseModel):
     detail: str
 
 
-def create_app(settings: Settings | None = None, feedback_writer=None, auth=None) -> FastAPI:
+def create_app(
+    settings: Settings | None = None, feedback_writer=None, auth=None, admin=None
+) -> FastAPI:
     settings = settings or Settings()
     logging.basicConfig(level=logging.INFO)
     # Pipecat debug output can contain transcripts and provider session handles.
@@ -60,6 +64,12 @@ def create_app(settings: Settings | None = None, feedback_writer=None, auth=None
             await sessions.recover()
             app.state.sessions = sessions
             app.state.settings = settings
+            secret = settings.supabase_secret_key.get_secret_value()
+            app.state.admin = admin or (
+                SupabaseAdmin(settings.supabase_url, secret)
+                if settings.supabase_url and secret
+                else None
+            )
             app.state.auth = auth or (
                 SupabaseAuth(settings.supabase_url) if settings.supabase_url else None
             )
@@ -103,12 +113,13 @@ def create_app(settings: Settings | None = None, feedback_writer=None, auth=None
     app.add_middleware(
         CORSMiddleware,
         allow_origins=settings.cors_origins,
-        allow_methods=["GET", "POST", "PATCH"],
+        allow_methods=["GET", "POST", "PATCH", "DELETE"],
         allow_headers=["Authorization", "Content-Type"],
     )
     app.include_router(scenario_router(scenarios), prefix="/v1")
     app.include_router(sessions_router, prefix="/v1")
     app.include_router(documents_router, prefix="/v1")
+    app.include_router(account_router, prefix="/v1")
 
     @app.middleware("http")
     async def no_session_cache(request: Request, call_next):
@@ -120,6 +131,7 @@ def create_app(settings: Settings | None = None, feedback_writer=None, auth=None
     async def application_error(request: Request, error: Exception):
         errors = {
             AuthenticationRequired: (401, "Sign in required"),
+            AccountDeletionFailed: (503, "Account deletion is not available"),
             ScenarioNotFound: (404, "Scenario not found"),
             ConsentRequired: (400, "Required consent missing"),
             SessionNotFound: (404, "Session not found"),
@@ -140,6 +152,7 @@ def create_app(settings: Settings | None = None, feedback_writer=None, auth=None
 
     for error in (
         AuthenticationRequired,
+        AccountDeletionFailed,
         ScenarioNotFound,
         ConsentRequired,
         SessionNotFound,
