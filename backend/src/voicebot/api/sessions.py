@@ -4,8 +4,15 @@ from uuid import UUID
 
 from fastapi import APIRouter, Depends, Query, Request
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, model_validator
 
+from voicebot.application.documents import (
+    MAX_DOCUMENT_CHARS,
+    MAX_DOCUMENTS,
+    MAX_TOTAL_CHARS,
+    Document,
+    DocumentKind,
+)
 from voicebot.application.feedback import FeedbackKind
 from voicebot.domain.scenario import Language
 from voicebot.domain.session import Consent, Session, SessionStatus
@@ -27,12 +34,26 @@ class ConsentChoice(BaseModel):
     language: Language | None = None
 
 
+class DocumentInput(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+    name: str = Field(min_length=1, max_length=200)
+    kind: DocumentKind = "other"
+    text: str = Field(min_length=1, max_length=MAX_DOCUMENT_CHARS)
+
+
 class CreateSession(BaseModel):
     model_config = ConfigDict(extra="forbid")
     scenario_id: str = Field(min_length=1, max_length=100, pattern=r"^[a-z0-9-]+$")
     language: Language = Language.PL
     context: str = Field(default="", max_length=2000)
     consent: ConsentChoice
+    documents: list[DocumentInput] = Field(default_factory=list, max_length=MAX_DOCUMENTS)
+
+    @model_validator(mode="after")
+    def documents_fit(self):
+        if sum(len(document.text) for document in self.documents) > MAX_TOTAL_CHARS:
+            raise ValueError(f"Documents can hold at most {MAX_TOTAL_CHARS} characters in total")
+        return self
 
 
 class SessionResponse(BaseModel):
@@ -119,7 +140,11 @@ async def create_session(body: CreateSession, request: Request):
         given_at=datetime.now(UTC),
     )
     session, token = await request.app.state.sessions.create(
-        body.scenario_id, body.language, body.context, consent
+        body.scenario_id,
+        body.language,
+        body.context,
+        consent,
+        tuple(Document(item.name, item.kind, item.text) for item in body.documents),
     )
     settings = request.app.state.settings
     return CreatedSession(

@@ -8,8 +8,10 @@ from fastapi.responses import JSONResponse
 from loguru import logger as pipecat_logger
 from pydantic import BaseModel
 
+from voicebot.api.documents import router as documents_router
 from voicebot.api.scenarios import scenario_router
 from voicebot.api.sessions import router as sessions_router
+from voicebot.application.documents import DocumentTooLarge, EmptyDocument, UnsupportedDocument
 from voicebot.application.feedback import FeedbackFailed, FeedbackUnavailable
 from voicebot.application.scenarios import ScenarioNotFound
 from voicebot.application.sessions import (
@@ -86,7 +88,7 @@ def create_app(settings: Settings | None = None, feedback_writer=None) -> FastAP
         ),
         responses={
             status: {"model": ErrorResponse}
-            for status in (400, 401, 403, 404, 409, 502, 503, 504)
+            for status in (400, 401, 403, 404, 409, 413, 415, 422, 502, 503, 504)
         },
     )
     app.add_middleware(
@@ -97,6 +99,7 @@ def create_app(settings: Settings | None = None, feedback_writer=None) -> FastAP
     )
     app.include_router(scenario_router(scenarios), prefix="/v1")
     app.include_router(sessions_router, prefix="/v1")
+    app.include_router(documents_router, prefix="/v1")
     @app.middleware("http")
     async def no_session_cache(request: Request, call_next):
         response = await call_next(request)
@@ -116,6 +119,9 @@ def create_app(settings: Settings | None = None, feedback_writer=None) -> FastAP
             SessionLimitExceeded: (503, "Session capacity reached"),
             TimeoutError: (504, "Voice connection timed out"),
             FeedbackUnavailable: (409, "Not enough answers for feedback"),
+            UnsupportedDocument: (415, "Unsupported or unreadable document"),
+            DocumentTooLarge: (413, "Document is larger than 10 MB"),
+            EmptyDocument: (422, "No text found in the document"),
             FeedbackFailed: (502, "Feedback could not be generated"),
         }
         status, detail = errors[type(error)]
@@ -133,6 +139,9 @@ def create_app(settings: Settings | None = None, feedback_writer=None) -> FastAP
         TimeoutError,
         FeedbackUnavailable,
         FeedbackFailed,
+        UnsupportedDocument,
+        DocumentTooLarge,
+        EmptyDocument,
     ):
         app.add_exception_handler(error, application_error)
 
