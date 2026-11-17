@@ -4,6 +4,7 @@ import secrets
 from datetime import UTC, datetime
 from uuid import uuid4
 
+from voicebot.application.documents import Document
 from voicebot.application.feedback import (
     Feedback,
     FeedbackFailed,
@@ -59,6 +60,7 @@ class Sessions:
         language: Language,
         context: str = "",
         consent: Consent | None = None,
+        documents: tuple[Document, ...] = (),
     ) -> tuple[Session, str]:
         if consent is not None and not consent.allows_session:
             raise ConsentRequired
@@ -68,7 +70,7 @@ class Sessions:
             id=str(uuid4()),
             scenario_id=scenario.id,
             scenario_version=scenario.version,
-            instructions=compile_instructions(scenario, context),
+            instructions=compile_instructions(scenario, context, documents),
             language=scenario.language.value,
             profile="gemini_live",
             model=self.model,
