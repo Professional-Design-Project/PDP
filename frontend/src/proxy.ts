@@ -1,5 +1,5 @@
 import { NextResponse, type NextRequest } from "next/server";
-import { localeCookie, locales, type Locale } from "@/i18n/config";
+import { localeCookie, localeHeader, locales, type Locale } from "@/i18n/config";
 import { preferredLocale } from "@/i18n/negotiate";
 import { localePath, splitLocale } from "@/i18n/paths";
 import { authEnabled } from "@/lib/supabase/config";
@@ -28,7 +28,10 @@ function redirectToLocale(request: NextRequest) {
 }
 
 async function localized(request: NextRequest, locale: Locale, rest: string) {
-  const response = authEnabled ? await updateSession(request, locale, rest) : NextResponse.next();
+  request.headers.set(localeHeader, locale);
+  const response = authEnabled
+    ? await updateSession(request, locale, rest)
+    : NextResponse.next({ request });
   if (response.status === 200) response.headers.set("Link", alternates(request, rest));
   return response;
 }

@@ -14,6 +14,18 @@ export const en = {
     dataMore: "How we handle your data",
   },
   loading: { label: "Loading", text: "Setting things up" },
+  status: {
+    notFoundLabel: "Page not found",
+    notFoundTitle: "This room is empty.",
+    notFoundText:
+      "The page you are looking for does not exist or has moved. Start again from the home page or set up a new session.",
+    home: "Home page",
+    errorLabel: "Something broke",
+    errorTitle: "Something went wrong.",
+    errorText:
+      "This is on our side, not yours. Try again in a moment. If it keeps happening, start again from the home page.",
+    retry: "Try again",
+  },
   common: {
     speaking: "Speaking",
     listening: "Listening",
