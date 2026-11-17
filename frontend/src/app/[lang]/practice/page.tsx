@@ -6,6 +6,7 @@ import { ContextField } from "@/components/practice/context-field";
 import { LanguagePicker } from "@/components/practice/language-picker";
 import { MicrophoneField } from "@/components/practice/microphone-field";
 import { ScenarioPicker } from "@/components/practice/scenario-picker";
+import { StyleField } from "@/components/practice/style-field";
 import { SessionAside } from "@/components/practice/session-aside";
 import { Rise } from "@/components/rise";
 import { Section } from "@/components/section";
@@ -19,6 +20,7 @@ import { useVoiceSession } from "@/hooks/use-voice-session";
 import { useLocale, type Locale } from "@/i18n/locale";
 import { CONSENT_VERSION } from "@/lib/consent";
 import { languageName } from "@/lib/languages";
+import { defaultStyle, type InterviewStyle } from "@/lib/interview-style";
 import type { ScenarioId } from "@/lib/scenarios";
 
 export default function PracticePage() {
@@ -26,6 +28,7 @@ export default function PracticePage() {
   const [scenario, setScenario] = useState<ScenarioId>("job-interview");
   const [chosenLanguage, setLanguage] = useState<Locale | null>(null);
   const [context, setContext] = useState("");
+  const [style, setStyle] = useState<InterviewStyle>(defaultStyle);
   const language = chosenLanguage ?? locale;
   const copy = t.scenarios[scenario];
   const mic = useMicrophone();
@@ -49,6 +52,7 @@ export default function PracticePage() {
         context,
         consent: { version: CONSENT_VERSION, language: locale, ...consent.choices },
         documents: docs.ready.map(({ name, kind, text }) => ({ name, kind, text })),
+        style,
       },
       mic.microphone,
     );
@@ -86,6 +90,7 @@ export default function PracticePage() {
       t.setup.documentsRow,
       docs.ready.length ? t.documents.summary(docs.ready.length) : t.setup.noContext,
     ],
+    [t.setup.style.pressure.title, t.setup.style.summary(style.pressure)],
     [t.setup.microphone, microphoneSummary],
   ];
 
@@ -129,6 +134,10 @@ export default function PracticePage() {
               <LanguagePicker value={language} disabled={locked} onChange={setLanguage} />
               <MicrophoneField mic={mic} disabled={locked} />
             </div>
+          </Section>
+
+          <Section number={3} title={t.setup.style.title} description={t.setup.style.intro}>
+            <StyleField scenario={scenario} value={style} disabled={locked} onChange={setStyle} />
           </Section>
         </Rise>
 

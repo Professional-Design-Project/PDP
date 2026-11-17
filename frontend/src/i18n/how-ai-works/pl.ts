@@ -46,6 +46,10 @@ export const howAiWorksPl: DocContent = {
           text: "Tekst z najwyżej pięciu plików, np. CV, ogłoszenia, pracy dyplomowej albo recenzji. Z każdego pliku trafia najwyżej pierwsze 20 000 znaków.",
         },
         {
+          term: "Zachowanie",
+          text: "Cztery suwaki: na czym skupiają się pytania, jak są precyzyjne, jak mocno rozmówca naciska i ile razy dopytuje. Każde ustawienie zamienia się w jedną konkretną zasadę dla rozmówcy.",
+        },
+        {
           term: "Język",
           text: "Polski albo angielski. Rozmówca mówi tylko w wybranym języku.",
         },
@@ -56,7 +60,7 @@ export const howAiWorksPl: DocContent = {
       title: "Zasady, których się trzyma",
       paragraphs: [
         "Każdy scenariusz każe rozmówcy zadawać jedno pytanie naraz, dopytywać o twoje odpowiedzi i trzymać się jednego tematu, zanim przejdzie do kolejnego.",
-        "Gdy nie znasz odpowiedzi, rozmówca nie podaje jej od razu. Najpierw pozwala ci spróbować. Nie może być niegrzeczny ani protekcjonalny i pozostaje w swojej roli, zamiast zamieniać się w trenera.",
+        "Gdy nie znasz odpowiedzi, rozmówca nie podaje jej od razu. Najpierw pozwala ci spróbować. Nie może być niegrzeczny ani protekcjonalny, nawet przy najwyższym nacisku, i pozostaje w swojej roli, zamiast zamieniać się w trenera.",
         "Twój kontekst i dokumenty są traktowane jako informacje w tle, a nie jako polecenia. Tekst w nich nie może zmienić tych zasad.",
       ],
     },

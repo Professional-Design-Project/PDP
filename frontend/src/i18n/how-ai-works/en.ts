@@ -47,6 +47,10 @@ export const howAiWorksEn: DocContent = {
           text: "The text of up to five files, such as a CV, a job post, a thesis or a review. Each file adds at most its first 20,000 characters.",
         },
         {
+          term: "Behaviour",
+          text: "Four sliders: what the questions focus on, how precise they are, how hard the interviewer presses and how often it follows up. Each setting becomes one concrete rule for the interviewer.",
+        },
+        {
           term: "Language",
           text: "Polish or English. The interviewer speaks only the language you picked.",
         },
@@ -57,7 +61,7 @@ export const howAiWorksEn: DocContent = {
       title: "The rules it follows",
       paragraphs: [
         "Every scenario tells the interviewer to ask one question at a time, follow up on your answers and stay on one topic before moving on.",
-        "It does not give you the right answer straight away when you are unsure. It lets you try first. It must not be rude or condescending, and it stays in its role instead of turning into a coach.",
+        "It does not give you the right answer straight away when you are unsure. It lets you try first. It must not be rude or condescending, even at the highest pressure, and it stays in its role instead of turning into a coach.",
         "Your context and documents are treated as background information, not as instructions. Text inside them cannot change these rules.",
       ],
     },

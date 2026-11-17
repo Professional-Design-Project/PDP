@@ -1,3 +1,4 @@
+import type { ScenarioId } from "@/lib/scenarios";
 import type { Dictionary } from "./en";
 
 export const pl: Dictionary = {
@@ -204,6 +205,54 @@ export const pl: Dictionary = {
       insecure: "Dostęp do mikrofonu wymaga HTTPS albo localhost.",
     },
     documentsRow: "Dokumenty",
+    style: {
+      title: "Zachowanie",
+      intro:
+        "Ustaw, jak dokładny ma być rozmówca i na co ma naciskać. Przy każdym suwaku widać, co zmienia.",
+      changes: "Co to zmienia:",
+      outOf: (max: number) => `z ${max}`,
+      summary: (pressure: number) => `${pressure} z 3`,
+      focus: {
+        title: "Na czym skupiają się pytania",
+        ends: {
+          "job-interview": ["Ogólne pytania", "Twoje CV i rola"],
+          "thesis-defence": ["Dziedzina studiów", "Twoja praca"],
+          "oral-exam": ["Cały przedmiot", "Twoje tematy"],
+        } as Record<ScenarioId, readonly [string, string]>,
+        explain: (focus: number) =>
+          focus === 0
+            ? "Tylko ogólne pytania, bez szczegółów z twojego kontekstu i dokumentów."
+            : focus === 100
+              ? "Każde pytanie opiera się na twoim kontekście i dokumentach."
+              : `Około ${focus}% pytań opiera się na twoim kontekście i dokumentach, reszta to pytania ogólne.`,
+      },
+      precision: {
+        title: "Precyzja pytań",
+        ends: ["Ogólne", "Szczegółowe"] as readonly [string, string],
+        levels: [
+          "Szerokie, otwarte pytania. Bez dopytywania o liczby, definicje i drobne szczegóły.",
+          "Ogólne pytania przeplatane konkretnymi, np. o przykład albo szczegół.",
+          "Precyzyjne pytania o szczegóły, liczby, definicje i uzasadnienie każdej odpowiedzi.",
+        ],
+      },
+      pressure: {
+        title: "Nacisk",
+        ends: ["Cierpliwy", "Wymagający"] as readonly [string, string],
+        levels: [
+          "Rozmówca pozwala dokończyć długie odpowiedzi i przyjmuje rozsądne odpowiedzi.",
+          "Rozmówca jest rzeczowy i mówi wprost, gdy odpowiedź mija się z pytaniem.",
+          "Rozmówca grzecznie przerywa długie odpowiedzi, podważa słabe punkty i prosi o ich obronę.",
+        ],
+      },
+      followUps: {
+        title: "Dopytania",
+        ends: ["Bez dopytań", "Drąży"] as readonly [string, string],
+        explain: (count: number) =>
+          count === 0
+            ? "Po każdej odpowiedzi rozmówca przechodzi do nowego pytania."
+            : `Do ${count} ${count === 1 ? "dopytania" : "dopytań"} o tę samą kwestię, gdy odpowiedź jest niejasna albo niepełna.`,
+      },
+    },
     yourSession: "Twoja sesja",
     language: "Język",
     contextSummary: (count: number) => `${count} znaków`,

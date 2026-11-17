@@ -35,7 +35,7 @@ export const privacyEn: DocContent = {
         },
         {
           term: "Session setup",
-          text: "The scenario, the conversation language and the context you typed.",
+          text: "The scenario, the conversation language, the interviewer behaviour settings and the context you typed.",
         },
         {
           term: "Transcript",
