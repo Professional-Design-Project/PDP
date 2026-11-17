@@ -33,3 +33,20 @@ it("explains what each slider changes and updates it as it moves", () => {
   });
   expect(screen.getByText(/Każde pytanie opiera się/)).toBeInTheDocument();
 });
+
+it("moves one step with the arrow keys", () => {
+  render(
+    <LocaleProvider locale="en">
+      <Field />
+    </LocaleProvider>,
+  );
+  const precision = screen.getByLabelText("Question precision");
+  fireEvent.keyDown(precision, { key: "ArrowRight" });
+  expect(precision).toHaveAttribute("aria-valuenow", "3");
+  expect(screen.getByText(/Precise questions about details/)).toBeInTheDocument();
+  fireEvent.keyDown(precision, { key: "Home" });
+  expect(precision).toHaveAttribute("aria-valuenow", "1");
+  const focus = screen.getByLabelText("Question focus");
+  fireEvent.keyDown(focus, { key: "ArrowLeft" });
+  expect(focus).toHaveAttribute("aria-valuenow", "40");
+});

@@ -20,3 +20,9 @@ export function fillPercent(key: StyleKey, value: number) {
   const { min, max } = styleRanges[key];
   return ((value - min) / (max - min)) * 100;
 }
+
+export function snapStyleValue(key: StyleKey, raw: number) {
+  const { min, max, step } = styleRanges[key];
+  const snapped = min + Math.round((raw - min) / step) * step;
+  return Math.min(max, Math.max(min, snapped));
+}
