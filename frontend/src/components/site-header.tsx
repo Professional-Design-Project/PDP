@@ -1,7 +1,7 @@
 "use client";
 
 import Image from "next/image";
-import Link from "next/link";
+import { LocaleLink as Link } from "@/components/locale-link";
 import { usePathname } from "next/navigation";
 import { ArrowRightIcon } from "@/components/icons";
 import { LocaleSwitch } from "@/components/locale-switch";

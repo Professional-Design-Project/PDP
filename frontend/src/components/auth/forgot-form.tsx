@@ -5,10 +5,11 @@ import { FormError, SubmitButton } from "@/components/auth/form-status";
 import { TextField } from "@/components/auth/text-field";
 import { useLocale } from "@/i18n/locale";
 import { authErrorKey, validateEmail, type AuthErrorKey } from "@/lib/auth-errors";
+import { localePath } from "@/i18n/paths";
 import { browserClient } from "@/lib/supabase/client";
 
 export function ForgotForm() {
-  const { t } = useLocale();
+  const { locale, t } = useLocale();
   const [email, setEmail] = useState("");
   const [working, setWorking] = useState(false);
   const [error, setError] = useState<AuthErrorKey | null>(null);
@@ -26,7 +27,7 @@ export function ForgotForm() {
     setWorking(true);
     setError(null);
     const redirect = new URL("/auth/callback", window.location.origin);
-    redirect.searchParams.set("next", "/account/password");
+    redirect.searchParams.set("next", localePath(locale, "/account/password"));
     const { error: failure } = await supabase.auth.resetPasswordForEmail(email.trim(), {
       redirectTo: redirect.toString(),
     });

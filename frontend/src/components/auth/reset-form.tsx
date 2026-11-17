@@ -1,6 +1,6 @@
 "use client";
 
-import Link from "next/link";
+import { LocaleLink as Link } from "@/components/locale-link";
 import { type FormEvent, useState } from "react";
 import { FormError, SubmitButton } from "@/components/auth/form-status";
 import { TextField } from "@/components/auth/text-field";

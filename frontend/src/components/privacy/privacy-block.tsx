@@ -1,4 +1,4 @@
-import Link from "next/link";
+import { LocaleLink as Link } from "@/components/locale-link";
 import { ArrowRightIcon } from "@/components/icons";
 import { Section } from "@/components/section";
 import type { PrivacySection } from "@/i18n/privacy/en";

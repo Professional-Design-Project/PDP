@@ -5,10 +5,11 @@ import { FormError, SubmitButton } from "@/components/auth/form-status";
 import { TextField } from "@/components/auth/text-field";
 import { useLocale } from "@/i18n/locale";
 import { authErrorKey, validateCredentials, type AuthErrorKey } from "@/lib/auth-errors";
+import { localePath } from "@/i18n/paths";
 import { browserClient } from "@/lib/supabase/client";
 
 export function SignupForm({ next }: { next: string }) {
-  const { t } = useLocale();
+  const { locale, t } = useLocale();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [working, setWorking] = useState(false);
@@ -27,7 +28,7 @@ export function SignupForm({ next }: { next: string }) {
     setWorking(true);
     setError(null);
     const redirect = new URL("/auth/callback", window.location.origin);
-    redirect.searchParams.set("next", next);
+    redirect.searchParams.set("next", localePath(locale, next));
     const { error: failure } = await supabase.auth.signUp({
       email: email.trim(),
       password,

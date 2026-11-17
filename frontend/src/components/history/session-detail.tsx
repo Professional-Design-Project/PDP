@@ -1,6 +1,6 @@
 "use client";
 
-import Link from "next/link";
+import { LocaleLink as Link } from "@/components/locale-link";
 import { Rise } from "@/components/rise";
 import { FeedbackSection } from "@/components/session/feedback-section";
 import { SummaryStats } from "@/components/session/summary-stats";

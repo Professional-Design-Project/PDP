@@ -1,6 +1,6 @@
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { afterEach, expect, it, vi } from "vitest";
-import Home from "@/app/practice/page";
+import Home from "@/app/[lang]/practice/page";
 import { resetConsentMemory } from "@/lib/consent";
 
 it("renders the conversation controls", () => {

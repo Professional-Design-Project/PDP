@@ -1,16 +1,17 @@
 "use client";
 
-import Link from "next/link";
+import { LocaleLink as Link } from "@/components/locale-link";
 import { useRouter } from "next/navigation";
 import { type FormEvent, useState } from "react";
 import { FormError, SubmitButton } from "@/components/auth/form-status";
 import { TextField } from "@/components/auth/text-field";
 import { useLocale } from "@/i18n/locale";
 import { authErrorKey, type AuthErrorKey } from "@/lib/auth-errors";
+import { localePath } from "@/i18n/paths";
 import { browserClient } from "@/lib/supabase/client";
 
 export function LoginForm({ next }: { next: string }) {
-  const { t } = useLocale();
+  const { locale, t } = useLocale();
   const router = useRouter();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -32,7 +33,7 @@ export function LoginForm({ next }: { next: string }) {
       setWorking(false);
       return;
     }
-    router.replace(next);
+    router.replace(localePath(locale, next));
     router.refresh();
   }
 

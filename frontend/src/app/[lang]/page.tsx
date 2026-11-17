@@ -1,6 +1,6 @@
 "use client";
 
-import Link from "next/link";
+import { LocaleLink as Link } from "@/components/locale-link";
 import { arrowMotion, buttonStyles } from "@/components/button-styles";
 import { ContextDemo } from "@/components/context-demo";
 import { ArrowRightIcon } from "@/components/icons";

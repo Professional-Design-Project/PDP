@@ -1,5 +1,7 @@
 import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
+import type { Locale } from "@/i18n/config";
+import { localePath } from "@/i18n/paths";
 import { isProtected, supabaseKey, supabaseUrl } from "@/lib/supabase/config";
 
 function redirectWithCookies(target: URL, from: NextResponse) {
@@ -12,7 +14,7 @@ function redirectWithCookies(target: URL, from: NextResponse) {
   return redirect;
 }
 
-export async function updateSession(request: NextRequest) {
+export async function updateSession(request: NextRequest, locale: Locale | null, rest: string) {
   let response = NextResponse.next({ request });
 
   const supabase = createServerClient(supabaseUrl, supabaseKey, {
@@ -34,17 +36,18 @@ export async function updateSession(request: NextRequest) {
   const { data } = await supabase.auth.getClaims();
   const signedIn = Boolean(data?.claims?.sub);
   const { pathname, search } = request.nextUrl;
+  if (!locale) return response;
 
-  if (!signedIn && isProtected(pathname)) {
+  if (!signedIn && isProtected(rest)) {
     const login = request.nextUrl.clone();
-    login.pathname = "/login";
+    login.pathname = localePath(locale, "/login");
     login.search = `?next=${encodeURIComponent(`${pathname}${search}`)}`;
     return redirectWithCookies(login, response);
   }
 
-  if (signedIn && (pathname === "/login" || pathname === "/signup")) {
+  if (signedIn && (rest === "/login" || rest === "/signup")) {
     const practice = request.nextUrl.clone();
-    practice.pathname = "/practice";
+    practice.pathname = localePath(locale, "/practice");
     practice.search = "";
     return redirectWithCookies(practice, response);
   }
