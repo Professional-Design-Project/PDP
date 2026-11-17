@@ -15,6 +15,18 @@ export const pl: Dictionary = {
     privacy: "Prywatność i AI",
     dataMore: "Jak traktujemy twoje dane",
   },
+  meta: {
+    description:
+      "Ćwicz na głos rozmowy rekrutacyjne, obrony prac i egzaminy ustne z rozmówcą AI, po polsku lub po angielsku.",
+    imageAlt: "ensaio: przećwicz rozmowę, zanim się wydarzy.",
+    practice: "Przygotuj pokój",
+    history: "Twoje sesje",
+    account: "Twoje konto",
+    login: "Zaloguj się",
+    signup: "Załóż konto",
+    forgot: "Zresetuj hasło",
+    authError: "Link nie zadziałał",
+  },
   loading: { label: "Ładowanie", text: "Przygotowujemy wszystko" },
   status: {
     notFoundLabel: "Nie ma takiej strony",
