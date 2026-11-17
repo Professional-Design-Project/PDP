@@ -4,6 +4,7 @@ from typing import Annotated
 from fastapi import APIRouter, File, UploadFile
 from pydantic import BaseModel
 
+from voicebot.api.auth import CurrentUser
 from voicebot.application.documents import MAX_FILE_BYTES, DocumentTooLarge
 from voicebot.infrastructure.documents import extract_text
 
@@ -27,7 +28,7 @@ class ExtractedDocument(BaseModel):
         "documents field when creating a session."
     ),
 )
-async def extract(file: Annotated[UploadFile, File()]):
+async def extract(file: Annotated[UploadFile, File()], user: CurrentUser):
     data = await file.read(MAX_FILE_BYTES + 1)
     if len(data) > MAX_FILE_BYTES:
         raise DocumentTooLarge

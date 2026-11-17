@@ -8,6 +8,7 @@ from fastapi.responses import JSONResponse
 from loguru import logger as pipecat_logger
 from pydantic import BaseModel
 
+from voicebot.api.auth import AuthenticationRequired
 from voicebot.api.documents import router as documents_router
 from voicebot.api.scenarios import scenario_router
 from voicebot.api.sessions import router as sessions_router
@@ -21,8 +22,10 @@ from voicebot.application.sessions import (
     Sessions,
 )
 from voicebot.domain.session import ConsentRequired, SessionConflict
+from voicebot.infrastructure.auth import SupabaseAuth
 from voicebot.infrastructure.database import Database
 from voicebot.infrastructure.feedback import GeminiFeedbackWriter
+from voicebot.infrastructure.postgres import PostgresDatabase
 from voicebot.infrastructure.scenarios import load_scenarios
 from voicebot.infrastructure.voice.gemini import VoiceUnavailable
 from voicebot.infrastructure.voice.runtime import InvalidSignaling, VoiceRuntime
@@ -33,7 +36,7 @@ class ErrorResponse(BaseModel):
     detail: str
 
 
-def create_app(settings: Settings | None = None, feedback_writer=None) -> FastAPI:
+def create_app(settings: Settings | None = None, feedback_writer=None, auth=None) -> FastAPI:
     settings = settings or Settings()
     logging.basicConfig(level=logging.INFO)
     # Pipecat debug output can contain transcripts and provider session handles.
@@ -42,7 +45,10 @@ def create_app(settings: Settings | None = None, feedback_writer=None) -> FastAP
 
     @asynccontextmanager
     async def lifespan(app: FastAPI):
-        database = await Database.open(settings.database_path)
+        dsn = settings.database_url.get_secret_value()
+        database = await (
+            PostgresDatabase.open(dsn) if dsn else Database.open(settings.database_path)
+        )
         try:
             sessions = Sessions(
                 database,
@@ -54,6 +60,9 @@ def create_app(settings: Settings | None = None, feedback_writer=None) -> FastAP
             await sessions.recover()
             app.state.sessions = sessions
             app.state.settings = settings
+            app.state.auth = auth or (
+                SupabaseAuth(settings.supabase_url) if settings.supabase_url else None
+            )
             key = settings.google_api_key.get_secret_value()
             app.state.feedback_writer = feedback_writer or (
                 GeminiFeedbackWriter(key, settings.feedback_model) if key else None
@@ -100,6 +109,7 @@ def create_app(settings: Settings | None = None, feedback_writer=None) -> FastAP
     app.include_router(scenario_router(scenarios), prefix="/v1")
     app.include_router(sessions_router, prefix="/v1")
     app.include_router(documents_router, prefix="/v1")
+
     @app.middleware("http")
     async def no_session_cache(request: Request, call_next):
         response = await call_next(request)
@@ -109,6 +119,7 @@ def create_app(settings: Settings | None = None, feedback_writer=None) -> FastAP
 
     async def application_error(request: Request, error: Exception):
         errors = {
+            AuthenticationRequired: (401, "Sign in required"),
             ScenarioNotFound: (404, "Scenario not found"),
             ConsentRequired: (400, "Required consent missing"),
             SessionNotFound: (404, "Session not found"),
@@ -128,6 +139,7 @@ def create_app(settings: Settings | None = None, feedback_writer=None) -> FastAP
         return JSONResponse(status_code=status, content={"detail": detail})
 
     for error in (
+        AuthenticationRequired,
         ScenarioNotFound,
         ConsentRequired,
         SessionNotFound,
@@ -150,6 +162,7 @@ def create_app(settings: Settings | None = None, feedback_writer=None) -> FastAP
         return {
             "status": "ok",
             "voice_configured": bool(settings.google_api_key.get_secret_value()),
+            "auth_required": bool(settings.supabase_url),
         }
 
     return app
