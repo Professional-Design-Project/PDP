@@ -2,7 +2,7 @@ import type { Dictionary } from "./en";
 
 export const pl: Dictionary = {
   locale: { label: "Język interfejsu", short: "PL", name: "Polski" },
-  header: { home: "Strona główna ensaio", practice: "Ćwicz" },
+  header: { home: "Strona główna ensaio", practice: "Ćwicz", menu: "Menu" },
   footer: {
     tagline: "Przećwicz rozmowę, zanim się wydarzy.",
     aiTitle: "Jak działa AI",
@@ -15,6 +15,7 @@ export const pl: Dictionary = {
     privacy: "Prywatność i AI",
     dataMore: "Jak traktujemy twoje dane",
     aiMore: "Więcej o AI",
+    sitemap: "Mapa strony",
   },
   meta: {
     description:

@@ -1,6 +1,6 @@
 export const en = {
   locale: { label: "Interface language", short: "EN", name: "English" },
-  header: { home: "ensaio home", practice: "Practice" },
+  header: { home: "ensaio home", practice: "Practice", menu: "Menu" },
   footer: {
     tagline: "Rehearse the conversation before it happens.",
     aiTitle: "How the AI works",
@@ -13,6 +13,7 @@ export const en = {
     privacy: "Privacy and AI",
     dataMore: "How we handle your data",
     aiMore: "More about the AI",
+    sitemap: "Site map",
   },
   meta: {
     description:
