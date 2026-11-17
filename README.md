@@ -47,6 +47,16 @@ ensaio is a voice practice partner for job interviews, thesis defences and oral 
 - **Local.** Leave the Supabase variables empty. There are no accounts, and the backend stores data in `backend/data/voicebot.sqlite3`.
 - **Supabase.** Set the Supabase variables in both environment files. Sign-in is required to practise, and sessions, transcripts, feedback and consents are stored in Supabase. See [supabase/README.md](supabase/README.md) for the project setup.
 
+### What each person needs
+
+| Who | What they need |
+|---|---|
+| A user of the app | Nothing. They sign in with email, Google or GitHub on the website. |
+| A developer on the team's Supabase project | The project URL and the publishable key from the project owner, put in `frontend/.env.local`, and the backend values in `backend/.env`. Email, Google and GitHub sign-in then work on `http://localhost:3000` with no extra setup, because the OAuth secrets are stored in Supabase, not in the repo. |
+| A developer with their own Supabase project | Everything in [supabase/README.md](supabase/README.md), including their own Google and GitHub OAuth apps if they want those buttons to work. |
+
+While the Google app is in testing mode, only the Google accounts listed as test users can sign in with Google. Ask the project owner to add yours.
+
 ## Checks
 
 From the repository root:

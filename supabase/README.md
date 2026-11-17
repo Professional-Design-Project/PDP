@@ -46,6 +46,39 @@ The publishable key is safe in the browser. Never put the secret key or the data
 
 Restart both servers after changing the environment.
 
+## 4. Sign in with Google and GitHub (optional)
+
+The login and signup pages always show "Continue with Google" and "Continue with GitHub". Each button works only after its provider is turned on in Supabase. The client secrets stay in the Supabase dashboard. Never put them in the repo or in an environment file.
+
+Both providers send the user back to the same Supabase URL: `https://<project-ref>.supabase.co/auth/v1/callback`. Supabase then sends the user to `/auth/callback` in the app, which must be in the Redirect URLs from step 1.
+
+### GitHub
+
+1. On GitHub, open **Settings → Developer settings → OAuth Apps → New OAuth App**.
+2. Set **Homepage URL** to `http://localhost:3000` and **Authorization callback URL** to the Supabase callback above. Leave **Enable Device Flow** off.
+3. Copy the **Client ID** and generate a **Client secret**.
+4. In Supabase, open **Authentication → Sign In / Providers → GitHub**, turn it on and paste both values.
+
+### Google
+
+1. Create a project at https://console.cloud.google.com.
+2. In **Google Auth Platform → Branding**, set the app name, the support email and the developer contact email.
+3. In **Audience**, choose **External**. While the app is in testing mode, add every Google account that should be able to sign in under **Test users**.
+4. In **Clients → Create client**, choose **Web application** and set:
+   - **Authorized JavaScript origins:** `http://localhost:3000`
+   - **Authorized redirect URIs:** the Supabase callback above
+5. In Supabase, open **Authentication → Sign In / Providers → Google**, turn it on and paste the client ID and secret.
+
+A new Google client can take a few minutes to start working.
+
+### Going live
+
+When the app gets a public domain:
+
+- Add `https://<domain>/auth/callback` to the Supabase Redirect URLs and set the Site URL to `https://<domain>`.
+- Add `https://<domain>` to the Google **Authorized JavaScript origins**, set the privacy policy link in **Branding** to `https://<domain>/en/privacy`, and publish the app in **Audience** so that any Google account can sign in.
+- Set the GitHub OAuth App **Homepage URL** to `https://<domain>`.
+
 ## How access works
 
 | Data | Written by | Readable by |
