@@ -5,6 +5,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { ArrowRightIcon } from "@/components/icons";
 import { LocaleSwitch } from "@/components/locale-switch";
+import { UserMenu } from "@/components/user-menu";
 import { useLocale } from "@/i18n/locale";
 
 export function SiteHeader() {
@@ -22,6 +23,7 @@ export function SiteHeader() {
         </Link>
         <div className="flex items-center gap-3">
           <LocaleSwitch />
+          <UserMenu />
           {!onPractice && (
             <nav aria-label="Main">
               <Link

@@ -1,6 +1,7 @@
 import type { ConsentChoices } from "@/lib/consent";
 import type { DocumentKind } from "@/lib/documents";
 import type { FeedbackResult } from "@/components/session/session-state";
+import { accessToken } from "@/lib/supabase/client";
 
 export const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://127.0.0.1:8000/v1";
 
@@ -38,12 +39,21 @@ async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
   return response.json() as Promise<T>;
 }
 
+async function userHeaders(): Promise<Record<string, string>> {
+  const token = await accessToken();
+  return token ? { Authorization: `Bearer ${token}` } : {};
+}
+
 function bearer(session: VoiceSession) {
   return { Authorization: `Bearer ${session.access_token}` };
 }
 
-export function createSession(body: NewSession) {
-  return request<VoiceSession>("/sessions", { method: "POST", body: JSON.stringify(body) });
+export async function createSession(body: NewSession) {
+  return request<VoiceSession>("/sessions", {
+    method: "POST",
+    headers: await userHeaders(),
+    body: JSON.stringify(body),
+  });
 }
 
 export function endSession(session: VoiceSession) {
@@ -68,7 +78,11 @@ export function fetchFeedback(session: VoiceSession) {
 export async function extractDocument(file: File) {
   const body = new FormData();
   body.append("file", file);
-  const response = await fetch(url("/documents/extract"), { method: "POST", body });
+  const response = await fetch(url("/documents/extract"), {
+    method: "POST",
+    headers: await userHeaders(),
+    body,
+  });
   if (!response.ok) throw new HttpError(response.status);
   return (await response.json()) as { text: string; truncated: boolean };
 }

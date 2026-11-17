@@ -1,10 +1,15 @@
 import { act, fireEvent, render, screen } from "@testing-library/react";
-import { afterEach, expect, it } from "vitest";
+import { afterEach, expect, it, vi } from "vitest";
 import Landing from "@/app/page";
 import { SiteHeader } from "@/components/site-header";
 import { en } from "./en";
 import { resetLocaleMemory, setLocale } from "./locale";
 import { pl } from "./pl";
+
+vi.mock("next/navigation", () => ({
+  usePathname: () => "/",
+  useRouter: () => ({ replace: vi.fn(), refresh: vi.fn(), push: vi.fn() }),
+}));
 
 afterEach(() => {
   window.localStorage.clear();
