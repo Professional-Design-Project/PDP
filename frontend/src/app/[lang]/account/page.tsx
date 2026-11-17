@@ -3,6 +3,7 @@
 import { LocaleLink as Link } from "@/components/locale-link";
 import { ConsentCard } from "@/components/account/consent-card";
 import { DangerZone } from "@/components/account/danger-zone";
+import { DataExport } from "@/components/account/data-export";
 import { ErrorLine, LoadingLine, RequireAccounts } from "@/components/page-state";
 import { Rise } from "@/components/rise";
 import { useAuth } from "@/hooks/use-auth";
@@ -34,6 +35,7 @@ function AccountView() {
           {state.status === "loading" && <LoadingLine label={t.loading.text} />}
           {state.status === "error" && <ErrorLine message={t.account.failed} />}
           {state.status === "ready" && <ConsentCard consent={state.data} onChanged={reload} />}
+          <DataExport />
           <DangerZone />
         </div>
         <aside className="h-fit bg-ink p-6 text-white lg:col-span-4">
