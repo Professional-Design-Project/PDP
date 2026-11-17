@@ -1,5 +1,11 @@
 {
   "$schema": "./node_modules/oxlint/configuration_schema.json",
   "plugins": ["react", "typescript", "nextjs", "jsx-a11y"],
-  "ignorePatterns": [".next/**", "node_modules/**", "coverage/**", "next-env.d.ts"]
+  "ignorePatterns": [".next/**", "node_modules/**", "coverage/**", "next-env.d.ts"],
+  "overrides": [
+    {
+      "files": ["src/app/**/opengraph-image.tsx"],
+      "rules": { "nextjs/no-img-element": "off" }
+    }
+  ]
 }

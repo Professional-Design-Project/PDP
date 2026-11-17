@@ -13,6 +13,18 @@ export const en = {
     privacy: "Privacy and AI",
     dataMore: "How we handle your data",
   },
+  meta: {
+    description:
+      "Practise job interviews, thesis defences and oral exams out loud with an AI interviewer, in Polish or English.",
+    imageAlt: "ensaio: rehearse the conversation before it happens.",
+    practice: "Set the room",
+    history: "Your sessions",
+    account: "Your account",
+    login: "Sign in",
+    signup: "Create an account",
+    forgot: "Reset your password",
+    authError: "Link did not work",
+  },
   loading: { label: "Loading", text: "Setting things up" },
   status: {
     notFoundLabel: "Page not found",

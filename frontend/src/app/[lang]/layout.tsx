@@ -3,10 +3,10 @@ import { notFound } from "next/navigation";
 import { SiteFooter } from "@/components/site-footer";
 import { SiteHeader } from "@/components/site-header";
 import { isLocale, locales } from "@/i18n/config";
-import { en } from "@/i18n/en";
 import { LocaleProvider } from "@/i18n/locale";
-import { pl } from "@/i18n/pl";
 import { schibstedGrotesk } from "@/lib/font";
+import { pageMetadata } from "@/lib/page-metadata";
+import { siteUrl } from "@/lib/site";
 import "../globals.css";
 
 export const dynamicParams = false;
@@ -17,8 +17,11 @@ export function generateStaticParams() {
 
 export async function generateMetadata({ params }: LayoutProps<"/[lang]">): Promise<Metadata> {
   const { lang } = await params;
-  const t = lang === "pl" ? pl : en;
-  return { title: "ensaio", description: t.footer.tagline };
+  return {
+    ...pageMetadata(lang, { path: "/" }),
+    metadataBase: new URL(siteUrl),
+    title: { default: "ensaio", template: "%s · ensaio" },
+  };
 }
 
 export default async function RootLayout({ children, params }: LayoutProps<"/[lang]">) {
