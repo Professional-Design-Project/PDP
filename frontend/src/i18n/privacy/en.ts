@@ -1,4 +1,4 @@
-export type PrivacyTerm = { term: string; text: string };
+export type PrivacyTerm = { term: string; text: string; where?: string };
 
 export type PrivacySection = {
   id: string;
@@ -16,6 +16,7 @@ export type PrivacyContent = {
   contents: string;
   termLabel: string;
   detailLabel: string;
+  whereLabel: string;
   sections: PrivacySection[];
 };
 
@@ -29,6 +30,7 @@ export const privacyEn: PrivacyContent = {
   contents: "On this page",
   termLabel: "What",
   detailLabel: "Details",
+  whereLabel: "Where",
   sections: [
     {
       id: "ai",
@@ -83,10 +85,12 @@ export const privacyEn: PrivacyContent = {
         {
           term: "Google (Gemini)",
           text: "Runs the live conversation (your voice and the session setup) and writes the feedback (the transcript). Google processes this data under its own terms for the Gemini API.",
+          where: "Google LLC, USA. Processing can take place in data centres outside the EU.",
         },
         {
           term: "Supabase",
           text: "Hosts the database and the sign-in for accounts, sessions, transcripts, feedback and consents.",
+          where: "Supabase Inc., USA. The database runs in the region chosen for the project.",
         },
       ],
     },

@@ -345,6 +345,7 @@ export const en = {
     intro:
       "To run practice sessions we need to process your data. Please choose what you agree to.",
     details: "How we handle your data",
+    providers: "See the providers",
     required: "(required)",
     optional: "(optional)",
     outro:

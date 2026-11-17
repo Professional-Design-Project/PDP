@@ -42,6 +42,17 @@ export function ConsentPanel({ choices, disabled, onChange }: ConsentPanelProps)
                   <span className="text-muted">
                     {required ? t.consent.required : t.consent.optional}
                   </span>
+                  {key === "outside_eu" && (
+                    <>
+                      {" "}
+                      <Link
+                        href="/privacy#providers"
+                        className="font-semibold text-ink underline underline-offset-2 hover:text-cobalt focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-cobalt"
+                      >
+                        {t.consent.providers}
+                      </Link>
+                    </>
+                  )}
                 </span>
               </label>
             </li>

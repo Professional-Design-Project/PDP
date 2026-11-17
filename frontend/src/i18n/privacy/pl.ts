@@ -10,6 +10,7 @@ export const privacyPl: PrivacyContent = {
   contents: "Na tej stronie",
   termLabel: "Co",
   detailLabel: "Szczegóły",
+  whereLabel: "Gdzie",
   sections: [
     {
       id: "ai",
@@ -64,10 +65,12 @@ export const privacyPl: PrivacyContent = {
         {
           term: "Google (Gemini)",
           text: "Prowadzi rozmowę na żywo (twój głos i ustawienia sesji) i pisze uwagi (na podstawie transkrypcji). Google przetwarza te dane na własnych warunkach dla Gemini API.",
+          where: "Google LLC, USA. Przetwarzanie może odbywać się w centrach danych poza UE.",
         },
         {
           term: "Supabase",
           text: "Utrzymuje bazę danych i logowanie dla kont, sesji, transkrypcji, uwag i zgód.",
+          where: "Supabase Inc., USA. Baza działa w regionie wybranym dla projektu.",
         },
       ],
     },

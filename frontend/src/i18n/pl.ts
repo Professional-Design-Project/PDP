@@ -347,6 +347,7 @@ export const pl: Dictionary = {
     intro:
       "Aby prowadzić sesje treningowe, musimy przetwarzać Twoje dane. Wybierz, na co się zgadzasz.",
     details: "Jak traktujemy twoje dane",
+    providers: "Zobacz dostawców",
     required: "(wymagane)",
     optional: "(opcjonalne)",
     outro:
