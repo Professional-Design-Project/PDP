@@ -35,7 +35,7 @@ export const privacyPl: DocContent = {
         },
         {
           term: "Ustawienia sesji",
-          text: "Scenariusz, język rozmowy, wpisany kontekst i tekst odczytany z dodanych dokumentów. Same pliki nie są zapisywane.",
+          text: "Scenariusz, język rozmowy i wpisany kontekst.",
         },
         {
           term: "Transkrypcja",
@@ -52,7 +52,7 @@ export const privacyPl: DocContent = {
       title: "Czego nie zapisujemy",
       paragraphs: [
         "ensaio nie zapisuje nagrań twojego głosu. Dźwięk trafia na żywo do dostawcy AI w trakcie sesji i tam jest zamieniany na tekst.",
-        "Dodane pliki są czytane jeden raz, żeby wyciągnąć z nich tekst, a potem są odrzucane.",
+        "Dodane dokumenty są czytane jeden raz, żeby wyciągnąć z nich tekst. Rozmówca dostaje ten tekst na czas sesji, a ani pliki, ani ich tekst nie są zapisywane.",
       ],
     },
     {

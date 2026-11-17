@@ -35,7 +35,7 @@ export const privacyEn: DocContent = {
         },
         {
           term: "Session setup",
-          text: "The scenario, the conversation language, the context you typed and the text read from documents you added. The files themselves are not kept.",
+          text: "The scenario, the conversation language and the context you typed.",
         },
         {
           term: "Transcript",
@@ -52,7 +52,7 @@ export const privacyEn: DocContent = {
       title: "What we do not keep",
       paragraphs: [
         "ensaio does not save recordings of your voice. Audio goes live to the AI provider during the session and is turned into text there.",
-        "Uploaded files are read once to pull out their text and are then dropped.",
+        "Documents you add are read once to pull out their text. The interviewer gets that text for the session, and neither the files nor their text are saved.",
       ],
     },
     {
