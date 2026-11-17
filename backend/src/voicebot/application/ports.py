@@ -1,6 +1,6 @@
 from typing import Protocol
 
-from voicebot.domain.session import Session, SessionEvent
+from voicebot.domain.session import Consent, Session, SessionEvent
 
 
 class SessionRepository(Protocol):
@@ -14,3 +14,4 @@ class SessionRepository(Protocol):
     async def events(
         self, session_id: str, after: int = 0, limit: int = 100, kind: str | None = None
     ) -> list[SessionEvent]: ...
+    async def record_consent(self, user_id: str, consent: Consent) -> None: ...

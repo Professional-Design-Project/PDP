@@ -6,7 +6,7 @@ from pathlib import Path
 import aiosqlite
 from pydantic import TypeAdapter
 
-from voicebot.domain.session import Session, SessionEvent
+from voicebot.domain.session import Consent, Session, SessionEvent
 
 # Initial schema is forward-only; subsequent changes get a new numbered migration.
 MIGRATIONS = (
@@ -110,6 +110,9 @@ class Database:
         )
         await self.connection.commit()
         return SessionEvent(cursor.lastrowid, session_id, kind, now, data)
+
+    async def record_consent(self, user_id: str, consent: Consent) -> None:
+        return None
 
     async def events(
         self, session_id: str, after: int = 0, limit: int = 100, kind: str | None = None

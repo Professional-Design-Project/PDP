@@ -75,6 +75,7 @@ class Session:
     end_reason: str | None = None
     consent: Consent | None = None
     context: str = ""
+    owner_id: str | None = None
 
     @property
     def finished(self) -> bool:

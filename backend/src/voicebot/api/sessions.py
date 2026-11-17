@@ -5,6 +5,7 @@ from uuid import UUID
 from fastapi import APIRouter, Depends, Query, Request
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 
+from voicebot.api.auth import CurrentUser
 from voicebot.api.session_schemas import (
     CreatedSession,
     CreateSession,
@@ -47,7 +48,7 @@ AuthorizedSession = Annotated[Session, Depends(authorized_session)]
         "the consent record is stored as a consent.recorded event."
     ),
 )
-async def create_session(body: CreateSession, request: Request):
+async def create_session(body: CreateSession, request: Request, user: CurrentUser):
     choice = body.consent
     consent = Consent(
         version=choice.version,
@@ -64,6 +65,7 @@ async def create_session(body: CreateSession, request: Request):
         body.context,
         consent,
         tuple(Document(item.name, item.kind, item.text) for item in body.documents),
+        user.user_id if user else None,
     )
     settings = request.app.state.settings
     return CreatedSession(

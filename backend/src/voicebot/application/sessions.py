@@ -61,6 +61,7 @@ class Sessions:
         context: str = "",
         consent: Consent | None = None,
         documents: tuple[Document, ...] = (),
+        owner_id: str | None = None,
     ) -> tuple[Session, str]:
         if consent is not None and not consent.allows_session:
             raise ConsentRequired
@@ -78,6 +79,7 @@ class Sessions:
             created_at=datetime.now(UTC),
             consent=consent,
             context=context.strip(),
+            owner_id=owner_id,
         )
         async with self.lock:
             if len(await self.repository.unfinished()) >= self.max_sessions:
@@ -85,9 +87,9 @@ class Sessions:
             await self.repository.add(session)
             await self.repository.append_event(session.id, "session.created", {})
             if consent is not None:
-                await self.repository.append_event(
-                    session.id, "consent.recorded", consent.record()
-                )
+                await self.repository.append_event(session.id, "consent.recorded", consent.record())
+                if owner_id is not None:
+                    await self.repository.record_consent(owner_id, consent)
         return session, token
 
     async def get(self, session_id: str) -> Session:

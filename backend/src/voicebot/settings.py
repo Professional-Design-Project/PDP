@@ -18,6 +18,8 @@ class Settings(BaseSettings):
     gemini_model: str = "gemini-3.8-live"
     gemini_voice: str = "Charon"
     feedback_model: str = "gemini-3.5-flash"
+    supabase_url: str = ""
+    database_url: SecretStr = SecretStr("")
     database_path: Path = Path("data/voicebot.sqlite3")
     cors_origins: list[str] = ["http://localhost:3000"]
     ice_servers: list[IceServerConfig] = []
