@@ -27,7 +27,7 @@ export const privacyPl: DocContent = {
       terms: [
         {
           term: "Konto",
-          text: "Twój adres e-mail, hasło (przechowywane wyłącznie jako bezpieczny skrót przez usługę logowania) i język interfejsu.",
+          text: "Twój adres e-mail, hasło (przechowywane wyłącznie jako bezpieczny skrót przez usługę logowania) i język interfejsu. Przy logowaniu przez GitHuba zamiast hasła zapisujemy identyfikator konta GitHub, jego nazwę i adres avatara.",
         },
         {
           term: "Zgody",
@@ -71,6 +71,11 @@ export const privacyPl: DocContent = {
           term: "Supabase",
           text: "Utrzymuje bazę danych i logowanie dla kont, sesji, transkrypcji, uwag i zgód.",
           where: "Supabase Inc., USA. Baza działa w regionie wybranym dla projektu.",
+        },
+        {
+          term: "GitHub",
+          text: "Tylko jeśli logujesz się przez GitHuba. Potwierdza, kim jesteś, i przekazuje nam e-mail, nazwę i avatar konta. GitHub nie widzi twoich sesji, transkrypcji ani uwag. Dostęp ensaio do konta GitHub cofniesz w ustawieniach GitHuba, w sekcji Applications.",
+          where: "GitHub, Inc. (Microsoft), USA.",
         },
       ],
     },
