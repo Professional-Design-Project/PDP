@@ -2,6 +2,7 @@
 
 import Image from "next/image";
 import { LocaleLink as Link } from "@/components/locale-link";
+import { FooterSitemap } from "@/components/footer-sitemap";
 import { ArrowRightIcon } from "@/components/icons";
 import { useLocale } from "@/i18n/locale";
 
@@ -10,9 +11,13 @@ export function SiteFooter() {
   return (
     <footer className="border-t border-ink">
       <div className="mx-auto grid max-w-7xl gap-10 px-4 py-12 sm:px-8 md:grid-cols-12 md:gap-8">
-        <div className="md:col-span-5">
+        <div className="md:col-span-3">
           <Image src="/brand/logo.svg" alt="ensaio" width={113} height={40} />
           <p className="mt-4 max-w-xs text-lg leading-snug text-muted">{t.footer.tagline}</p>
+        </div>
+
+        <div className="md:col-span-2">
+          <FooterSitemap />
         </div>
 
         <div className="md:col-span-4">
@@ -42,21 +47,7 @@ export function SiteFooter() {
 
       <div className="border-t border-line">
         <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-5 text-[13px] text-muted sm:px-8">
-          <div className="flex flex-wrap items-center gap-x-6 gap-y-2">
-            <p>© 2026 ensaio</p>
-            <Link
-              href="/how-ai-works"
-              className="font-semibold text-ink underline underline-offset-4 hover:text-cobalt focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-cobalt"
-            >
-              {t.footer.aiTitle}
-            </Link>
-            <Link
-              href="/privacy"
-              className="font-semibold text-ink underline underline-offset-4 hover:text-cobalt focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-cobalt"
-            >
-              {t.footer.privacy}
-            </Link>
-          </div>
+          <p>© 2026 ensaio</p>
           <a
             href="#top"
             className="group inline-flex items-center gap-2 font-semibold text-ink hover:text-cobalt focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-cobalt"

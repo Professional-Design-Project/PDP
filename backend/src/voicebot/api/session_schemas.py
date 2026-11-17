@@ -33,6 +33,14 @@ class DocumentInput(BaseModel):
     text: str = Field(min_length=1, max_length=MAX_DOCUMENT_CHARS)
 
 
+class StyleInput(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+    focus: int = Field(default=50, ge=0, le=100, multiple_of=10)
+    precision: int = Field(default=2, ge=1, le=3)
+    pressure: int = Field(default=2, ge=1, le=3)
+    follow_ups: int = Field(default=2, ge=0, le=3)
+
+
 class CreateSession(BaseModel):
     model_config = ConfigDict(extra="forbid")
     scenario_id: str = Field(min_length=1, max_length=100, pattern=r"^[a-z0-9-]+$")
@@ -40,6 +48,7 @@ class CreateSession(BaseModel):
     context: str = Field(default="", max_length=2000)
     consent: ConsentChoice
     documents: list[DocumentInput] = Field(default_factory=list, max_length=MAX_DOCUMENTS)
+    style: StyleInput = Field(default_factory=StyleInput)
 
     @model_validator(mode="after")
     def documents_fit(self):

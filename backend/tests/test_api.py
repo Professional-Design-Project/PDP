@@ -60,3 +60,20 @@ def test_sessions_require_and_record_consent(tmp_path):
         polish = next(event for event in events if event["kind"] == "consent.recorded")
         assert polish["data"]["language"] == "pl"
         assert record["data"]["given_at"]
+
+
+def test_session_style_is_validated_and_stored_in_the_instructions(tmp_path):
+    settings = Settings(_env_file=None, database_path=tmp_path / "test.sqlite3")
+    app = create_app(settings)
+    with TestClient(app) as client:
+        body = {"scenario_id": "oral-exam", "language": "en", "consent": CONSENT}
+        for style in ({"focus": 45}, {"pressure": 0}, {"follow_ups": 9}, {"tone": 1}):
+            assert client.post("/v1/sessions", json={**body, "style": style}).status_code == 422
+        created = client.post(
+            "/v1/sessions", json={**body, "style": {"precision": 3, "follow_ups": 0}}
+        )
+        assert created.status_code == 201
+        session = client.portal.call(app.state.sessions.get, created.json()["id"])
+        assert "Ask precise questions." in session.instructions
+        assert "Do not ask follow-up questions." in session.instructions
+        assert "about 50% of your questions" in session.instructions

@@ -1,4 +1,5 @@
 from voicebot.application.documents import Document, documents_block
+from voicebot.application.interview_style import InterviewStyle, style_block
 from voicebot.domain.scenario import Language, Scenario
 
 
@@ -23,7 +24,10 @@ class Scenarios:
 
 
 def compile_instructions(
-    scenario: Scenario, context: str = "", documents: tuple[Document, ...] = ()
+    scenario: Scenario,
+    context: str = "",
+    documents: tuple[Document, ...] = (),
+    style: InterviewStyle | None = None,
 ) -> str:
     instructions = [
         f"Scenario: {scenario.id}, version: {scenario.version}.",
@@ -36,6 +40,7 @@ def compile_instructions(
         *(f"- {goal}" for goal in scenario.goals),
         "Constraints:",
         *(f"- {rule}" for rule in scenario.constraints),
+        *style_block(style or InterviewStyle()),
     ]
     if context.strip():
         instructions.extend(

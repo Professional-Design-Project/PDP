@@ -1,6 +1,8 @@
+import type { ScenarioId } from "@/lib/scenarios";
+
 export const en = {
   locale: { label: "Interface language", short: "EN", name: "English" },
-  header: { home: "ensaio home", practice: "Practice" },
+  header: { home: "ensaio home", practice: "Practice", menu: "Menu" },
   footer: {
     tagline: "Rehearse the conversation before it happens.",
     aiTitle: "How the AI works",
@@ -13,6 +15,7 @@ export const en = {
     privacy: "Privacy and AI",
     dataMore: "How we handle your data",
     aiMore: "More about the AI",
+    sitemap: "Site map",
   },
   meta: {
     description:
@@ -199,6 +202,54 @@ export const en = {
       insecure: "Microphone access requires HTTPS or localhost.",
     },
     documentsRow: "Documents",
+    style: {
+      title: "Behaviour",
+      intro:
+        "Set how precise the interviewer is and what it presses on. Each slider says what it changes.",
+      changes: "What this changes:",
+      outOf: (max: number) => `of ${max}`,
+      summary: (pressure: number) => `${pressure} of 3`,
+      focus: {
+        title: "Question focus",
+        ends: {
+          "job-interview": ["General questions", "Your CV and role"],
+          "thesis-defence": ["Field of study", "Your thesis"],
+          "oral-exam": ["Whole subject", "Your topics"],
+        } as Record<ScenarioId, readonly [string, string]>,
+        explain: (focus: number) =>
+          focus === 0
+            ? "Only general questions, nothing from the details of your context and documents."
+            : focus === 100
+              ? "Every question is based on your context and documents."
+              : `About ${focus}% of the questions are based on your context and documents, the rest are general.`,
+      },
+      precision: {
+        title: "Question precision",
+        ends: ["Broad", "Detailed"] as readonly [string, string],
+        levels: [
+          "Broad, open questions. No asking for numbers, definitions or small details.",
+          "Broad questions mixed with specific ones, such as asking for an example or a detail.",
+          "Precise questions about details, numbers, definitions and the reasoning behind every answer.",
+        ],
+      },
+      pressure: {
+        title: "Pressure",
+        ends: ["Patient", "Demanding"] as readonly [string, string],
+        levels: [
+          "The interviewer lets you finish long answers and accepts reasonable ones.",
+          "The interviewer is matter-of-fact and says so when an answer misses the question.",
+          "The interviewer politely cuts long answers short, challenges weak points and asks you to defend them.",
+        ],
+      },
+      followUps: {
+        title: "Follow-ups",
+        ends: ["One and done", "Digs deep"] as readonly [string, string],
+        explain: (count: number) =>
+          count === 0
+            ? "After each answer the interviewer moves on to a new question."
+            : `Up to ${count} follow-up${count === 1 ? "" : "s"} on the same point if your answer is vague or incomplete.`,
+      },
+    },
     yourSession: "Your session",
     language: "Language",
     contextSummary: (count: number) => `${count} characters`,

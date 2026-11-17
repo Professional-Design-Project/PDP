@@ -15,6 +15,7 @@ from voicebot.api.session_schemas import (
     SessionResponse,
 )
 from voicebot.application.documents import Document
+from voicebot.application.interview_style import InterviewStyle
 from voicebot.domain.session import Consent, Session
 from voicebot.infrastructure.voice.runtime import InvalidSignaling
 from voicebot.infrastructure.voice.webrtc import Answer, Candidates, Offer
@@ -43,7 +44,8 @@ AuthorizedSession = Annotated[Session, Depends(authorized_session)]
         "Use the access token as Bearer authorization on all session endpoints. "
         "Connect using SmallWebRTC and the returned signaling URL. "
         "The selected localized scenario defines the conversation language; "
-        "context is optional background information for the conversation. "
+        "context is optional background information for the conversation, "
+        "and style tunes the question focus, precision, pressure and follow-ups. "
         "Voice, transcript and non-EU processing consents are required; "
         "the consent record is stored as a consent.recorded event."
     ),
@@ -66,6 +68,7 @@ async def create_session(body: CreateSession, request: Request, user: CurrentUse
         consent,
         tuple(Document(item.name, item.kind, item.text) for item in body.documents),
         user.user_id if user else None,
+        InterviewStyle(**body.style.model_dump()),
     )
     settings = request.app.state.settings
     return CreatedSession(

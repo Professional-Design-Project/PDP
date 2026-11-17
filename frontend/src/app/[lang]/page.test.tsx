@@ -37,5 +37,8 @@ it("shows how a different context changes the questions", () => {
   expect(
     screen.getByText(/Which decision in this project did research change/),
   ).toBeInTheDocument();
-  expect(screen.queryByText(/store payments/)).not.toBeInTheDocument();
+  expect(screen.getByText(/store payments/).closest("[aria-hidden='true']")).not.toBeNull();
+  expect(
+    screen.getByText(/Which decision in this project/).closest("[aria-hidden='true']"),
+  ).toBeNull();
 });

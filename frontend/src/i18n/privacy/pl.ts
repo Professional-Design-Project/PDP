@@ -35,7 +35,7 @@ export const privacyPl: DocContent = {
         },
         {
           term: "Ustawienia sesji",
-          text: "Scenariusz, język rozmowy i wpisany kontekst.",
+          text: "Scenariusz, język rozmowy, ustawienia zachowania rozmówcy i wpisany kontekst.",
         },
         {
           term: "Transkrypcja",

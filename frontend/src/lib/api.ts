@@ -1,5 +1,6 @@
 import type { ConsentChoices } from "@/lib/consent";
 import type { DocumentKind } from "@/lib/documents";
+import type { InterviewStyle } from "@/lib/interview-style";
 import type { FeedbackResult } from "@/components/session/session-state";
 import { accessToken } from "@/lib/supabase/client";
 
@@ -24,6 +25,7 @@ export type NewSession = {
   context: string;
   consent: ConsentChoices & { version: string; language: string };
   documents: { name: string; kind: DocumentKind; text: string }[];
+  style: InterviewStyle;
 };
 
 function url(path: string) {
