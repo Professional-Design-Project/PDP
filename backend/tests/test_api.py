@@ -23,10 +23,13 @@ def test_health_and_versioned_schema(tmp_path):
         )
         assert session.status_code == 201
         assert session.json()["language"] == "en"
-        assert client.post(
-            "/v1/sessions",
-            json={"scenario_id": "job-interview", "context": "x" * 2001},
-        ).status_code == 422
+        assert (
+            client.post(
+                "/v1/sessions",
+                json={"scenario_id": "job-interview", "context": "x" * 2001},
+            ).status_code
+            == 422
+        )
 
 
 def test_sessions_require_and_record_consent(tmp_path):
