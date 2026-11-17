@@ -13,6 +13,7 @@ from voicebot.application.feedback import (
     FeedbackUnavailable,
     FeedbackWriter,
 )
+from voicebot.application.interview_style import InterviewStyle
 from voicebot.application.ports import SessionRepository
 from voicebot.application.scenarios import Scenarios, compile_instructions
 from voicebot.domain.scenario import Language
@@ -64,6 +65,7 @@ class Sessions:
         consent: Consent | None = None,
         documents: tuple[Document, ...] = (),
         owner_id: str | None = None,
+        style: InterviewStyle | None = None,
     ) -> tuple[Session, str]:
         if consent is not None and not consent.allows_session:
             raise ConsentRequired
@@ -73,7 +75,7 @@ class Sessions:
             id=str(uuid4()),
             scenario_id=scenario.id,
             scenario_version=scenario.version,
-            instructions=compile_instructions(scenario, context),
+            instructions=compile_instructions(scenario, context, style=style),
             language=scenario.language.value,
             profile="gemini_live",
             model=self.model,
@@ -93,7 +95,7 @@ class Sessions:
                 if owner_id is not None:
                     await self.repository.record_consent(owner_id, consent)
             if documents:
-                self.briefs[session.id] = compile_instructions(scenario, context, documents)
+                self.briefs[session.id] = compile_instructions(scenario, context, documents, style)
         return session, token
 
     async def get(self, session_id: str) -> Session:
