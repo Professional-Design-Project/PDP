@@ -17,7 +17,7 @@ export default function Landing() {
         <div className="lg:col-span-6">
           <Rise
             as="h1"
-            className="text-[52px] leading-[0.95] font-bold tracking-[-0.04em] text-balance sm:text-[84px] xl:text-[96px]"
+            className="text-[clamp(40px,14vw,52px)] leading-[0.95] font-bold tracking-[-0.04em] text-balance sm:text-[84px] xl:text-[96px]"
           >
             {t.landing.title}
           </Rise>
