@@ -24,7 +24,7 @@ export function UserMenu() {
       <Link href="/history" className={link}>
         <StableLabel pick={(d) => d.history.nav} />
       </Link>
-      <Link href="/account" className={`${link} max-w-48 max-sm:hidden`} title={user.email}>
+      <Link href="/account" className={`${link} max-w-48 max-md:hidden`} title={user.email}>
         <span className="truncate">{user.email ?? t.auth.account}</span>
       </Link>
       <button type="button" onClick={() => void signOut()} className={link}>
