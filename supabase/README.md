@@ -7,21 +7,23 @@ ensaio runs in two modes:
 
 ## 1. Create the project
 
-1. Create a project at https://supabase.com/dashboard. Choose an EU region, for example Frankfurt.
+1. Create a project at https://supabase.com/dashboard. Choose an EU region.
 2. In **Authentication → URL Configuration**, set:
    - **Site URL:** `http://localhost:3000`
    - **Redirect URLs:** add `http://localhost:3000/auth/callback`
-3. Keep **Authentication → Providers → Email** on, with "Confirm email" enabled.
+3. Keep **Authentication → Sign In / Providers → Email** on, with "Confirm email" enabled and a minimum password length of 8.
 
 ## 2. Apply the schema
 
 ```
 npx supabase login
 npx supabase link --project-ref <project-ref>
-npx supabase db push
+npx supabase db push --remote
 ```
 
-`db push` applies `supabase/migrations/`. It creates `profiles`, `consents`, `practice_sessions` and `session_events`, enables RLS on all of them and adds a trigger that creates a profile for every new user.
+Run these commands in a regular terminal: `login` opens the browser and `link` asks for the database password.
+
+`db push --remote` applies `supabase/migrations/` to the linked project. It creates `profiles`, `consents`, `practice_sessions` and `session_events`, enables RLS on all of them and adds a trigger that creates a profile for every new user.
 
 ## 3. Fill in the environment
 
@@ -36,7 +38,7 @@ NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY=sb_publishable_...
 
 ```
 VOICEBOT_SUPABASE_URL=https://<project-ref>.supabase.co
-VOICEBOT_DATABASE_URL=postgresql://...      # Settings → Database → Connection string → Session pooler
+VOICEBOT_DATABASE_URL=postgresql://...      # Connect → Session pooler; replace [YOUR-PASSWORD]
 VOICEBOT_SUPABASE_SECRET_KEY=sb_secret_...  # only used to delete accounts
 ```
 
