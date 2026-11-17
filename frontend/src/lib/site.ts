@@ -3,7 +3,7 @@ export const siteUrl = (process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:30
   "",
 );
 
-export const publicPages = ["/", "/privacy"];
+export const publicPages = ["/", "/how-ai-works", "/privacy"];
 
 export const privatePages = [
   "/practice",

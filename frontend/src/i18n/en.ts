@@ -12,6 +12,7 @@ export const en = {
     top: "Back to top",
     privacy: "Privacy and AI",
     dataMore: "How we handle your data",
+    aiMore: "More about the AI",
   },
   meta: {
     description:

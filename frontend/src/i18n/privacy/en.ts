@@ -1,26 +1,6 @@
-export type PrivacyTerm = { term: string; text: string; where?: string };
+import type { DocContent } from "@/i18n/doc-types";
 
-export type PrivacySection = {
-  id: string;
-  title: string;
-  paragraphs: string[];
-  terms?: PrivacyTerm[];
-  link?: { href: string; label: string };
-};
-
-export type PrivacyContent = {
-  title: string;
-  intro: string;
-  status: string;
-  updated: string;
-  contents: string;
-  termLabel: string;
-  detailLabel: string;
-  whereLabel: string;
-  sections: PrivacySection[];
-};
-
-export const privacyEn: PrivacyContent = {
+export const privacyEn: DocContent = {
   title: "Privacy and AI.",
   intro:
     "What ensaio is, what it does with your voice and your words, and what you can change at any time.",

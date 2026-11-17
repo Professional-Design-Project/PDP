@@ -1,11 +1,11 @@
-import type { PrivacySection } from "@/i18n/privacy/en";
+import type { DocSection } from "@/i18n/doc-types";
 
-type PrivacyContentsProps = {
+type DocContentsProps = {
   label: string;
-  sections: PrivacySection[];
+  sections: DocSection[];
 };
 
-export function PrivacyContents({ label, sections }: PrivacyContentsProps) {
+export function DocContents({ label, sections }: DocContentsProps) {
   return (
     <nav aria-label={label} className="border-t-2 border-ink pt-5 lg:sticky lg:top-8">
       <p className="text-[13px] font-semibold text-muted">{label}</p>

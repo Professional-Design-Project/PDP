@@ -1,24 +1,18 @@
 import { LocaleLink as Link } from "@/components/locale-link";
 import { ArrowRightIcon } from "@/components/icons";
 import { Section } from "@/components/section";
-import type { PrivacySection } from "@/i18n/privacy/en";
-import { PrivacyTerms } from "./privacy-terms";
+import type { DocSection } from "@/i18n/doc-types";
+import { DocTerms } from "./doc-terms";
 
-type PrivacyBlockProps = {
+type DocBlockProps = {
   number: number;
-  section: PrivacySection;
+  section: DocSection;
   termLabel: string;
   detailLabel: string;
   whereLabel: string;
 };
 
-export function PrivacyBlock({
-  number,
-  section,
-  termLabel,
-  detailLabel,
-  whereLabel,
-}: PrivacyBlockProps) {
+export function DocBlock({ number, section, termLabel, detailLabel, whereLabel }: DocBlockProps) {
   return (
     <div id={section.id} className="scroll-mt-8">
       <Section number={number} title={section.title}>
@@ -28,7 +22,7 @@ export function PrivacyBlock({
           ))}
         </div>
         {section.terms && (
-          <PrivacyTerms
+          <DocTerms
             terms={section.terms}
             labels={{ term: termLabel, detail: detailLabel, where: whereLabel }}
           />

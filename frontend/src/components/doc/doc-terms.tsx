@@ -1,11 +1,11 @@
-import type { PrivacyTerm } from "@/i18n/privacy/en";
+import type { DocTerm } from "@/i18n/doc-types";
 
-type PrivacyTermsProps = {
-  terms: PrivacyTerm[];
+type DocTermsProps = {
+  terms: DocTerm[];
   labels: { term: string; detail: string; where: string };
 };
 
-export function PrivacyTerms({ terms, labels }: PrivacyTermsProps) {
+export function DocTerms({ terms, labels }: DocTermsProps) {
   const located = terms.some((item) => item.where);
   const detailSpan = located ? "sm:col-span-5" : "sm:col-span-8";
   return (
