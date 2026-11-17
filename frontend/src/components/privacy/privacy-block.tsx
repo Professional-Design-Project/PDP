@@ -9,9 +9,16 @@ type PrivacyBlockProps = {
   section: PrivacySection;
   termLabel: string;
   detailLabel: string;
+  whereLabel: string;
 };
 
-export function PrivacyBlock({ number, section, termLabel, detailLabel }: PrivacyBlockProps) {
+export function PrivacyBlock({
+  number,
+  section,
+  termLabel,
+  detailLabel,
+  whereLabel,
+}: PrivacyBlockProps) {
   return (
     <div id={section.id} className="scroll-mt-8">
       <Section number={number} title={section.title}>
@@ -21,7 +28,10 @@ export function PrivacyBlock({ number, section, termLabel, detailLabel }: Privac
           ))}
         </div>
         {section.terms && (
-          <PrivacyTerms terms={section.terms} termLabel={termLabel} detailLabel={detailLabel} />
+          <PrivacyTerms
+            terms={section.terms}
+            labels={{ term: termLabel, detail: detailLabel, where: whereLabel }}
+          />
         )}
         {section.link && (
           <Link

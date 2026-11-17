@@ -41,6 +41,7 @@ export default function PrivacyPage() {
               section={section}
               termLabel={content.termLabel}
               detailLabel={content.detailLabel}
+              whereLabel={content.whereLabel}
             />
           ))}
         </div>
