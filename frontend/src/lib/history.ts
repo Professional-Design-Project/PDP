@@ -16,7 +16,7 @@ export type PastSessionDetail = PastSession & {
   feedback: FeedbackResult | null;
 };
 
-type SessionRow = {
+export type SessionRow = {
   id: string;
   scenario_id: ScenarioId;
   language: "pl" | "en";
@@ -26,21 +26,21 @@ type SessionRow = {
   ended_at: string | null;
 };
 
-type EventRow = {
+export type EventRow = {
   sequence: number;
   kind: string;
   created_at: string;
   data: Record<string, unknown>;
 };
 
-const SESSION_FIELDS = "id, scenario_id, language, status, created_at, started_at, ended_at";
+export const SESSION_FIELDS = "id, scenario_id, language, status, created_at, started_at, ended_at";
 
 function seconds(from: string | null, to: string | null) {
   if (!from || !to) return 0;
   return Math.max(0, Math.round((Date.parse(to) - Date.parse(from)) / 1000));
 }
 
-function toPastSession(row: SessionRow): PastSession {
+export function toPastSession(row: SessionRow): PastSession {
   return {
     id: row.id,
     scenarioId: row.scenario_id,

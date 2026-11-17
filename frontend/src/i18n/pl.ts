@@ -326,6 +326,12 @@ export const pl: Dictionary = {
     no: "Nie",
     withdraw: "Wycofaj zgody",
     withdrawing: "Wycofuję…",
+    exportTitle: "Pobierz swoje dane",
+    exportText:
+      "Plik JSON z kontem, zgodami, sesjami, transkrypcjami i uwagami w takiej postaci, w jakiej są teraz zapisane.",
+    exportButton: "Pobierz moje dane",
+    exporting: "Przygotowuję…",
+    exportFailed: "Nie udało się przygotować pliku. Spróbuj ponownie za chwilę.",
     deleteTitle: "Usuń konto",
     deleteText:
       "To usuwa konto, wszystkie sesje, transkrypcje, uwagi i rekordy zgód. Nie da się tego cofnąć.",

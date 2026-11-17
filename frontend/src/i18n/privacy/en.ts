@@ -111,9 +111,9 @@ export const privacyEn: PrivacyContent = {
       id: "rights",
       title: "Your rights",
       paragraphs: [
-        "You can see everything stored about your sessions in your history, withdraw your consents and delete your account yourself. You also have the right to ask for a copy of your data or to correct it, and to complain to your data protection authority. In Poland this is the President of the Personal Data Protection Office (UODO).",
+        "You can see everything stored about your sessions in your history, download a copy of your data, withdraw your consents and delete single sessions or your whole account yourself, all from your account page and your history. You also have the right to ask us to correct your data, and to complain to your data protection authority. In Poland this is the President of the Personal Data Protection Office (UODO).",
       ],
-      link: { href: "/history", label: "See your sessions" },
+      link: { href: "/account", label: "Go to your account" },
     },
     {
       id: "controller",

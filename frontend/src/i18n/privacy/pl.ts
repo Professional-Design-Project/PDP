@@ -92,9 +92,9 @@ export const privacyPl: PrivacyContent = {
       id: "rights",
       title: "Twoje prawa",
       paragraphs: [
-        "Wszystko, co zapisano o twoich sesjach, widzisz w historii. Zgody wycofasz, a konto usuniesz samodzielnie. Masz też prawo poprosić o kopię swoich danych lub ich poprawienie oraz złożyć skargę do organu ochrony danych, w Polsce do Prezesa Urzędu Ochrony Danych Osobowych (UODO).",
+        "Wszystko, co zapisano o twoich sesjach, widzisz w historii. Na stronie konta i w historii samodzielnie pobierzesz kopię swoich danych, wycofasz zgody i usuniesz pojedyncze sesje albo całe konto. Masz też prawo poprosić o poprawienie danych oraz złożyć skargę do organu ochrony danych, w Polsce do Prezesa Urzędu Ochrony Danych Osobowych (UODO).",
       ],
-      link: { href: "/history", label: "Zobacz swoje sesje" },
+      link: { href: "/account", label: "Przejdź do konta" },
     },
     {
       id: "controller",

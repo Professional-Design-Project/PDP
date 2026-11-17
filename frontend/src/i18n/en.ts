@@ -324,6 +324,12 @@ export const en = {
     no: "No",
     withdraw: "Withdraw consents",
     withdrawing: "Withdrawing…",
+    exportTitle: "Download your data",
+    exportText:
+      "A JSON file with your account, consents, sessions, transcripts and feedback, as they are stored now.",
+    exportButton: "Download my data",
+    exporting: "Preparing…",
+    exportFailed: "The file could not be prepared. Try again in a moment.",
     deleteTitle: "Delete account",
     deleteText:
       "This removes your account, every session, transcript, piece of feedback and consent record. It cannot be undone.",
