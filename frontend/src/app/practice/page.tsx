@@ -10,6 +10,15 @@ import {
   MicrophoneIcon,
 } from "@/components/icons";
 import { ConsentPanel } from "@/components/consent-panel";
+import { DocumentsField } from "@/components/documents-field";
+import {
+  checkFile,
+  guessKind,
+  kindsFor,
+  MAX_DOCUMENTS,
+  type DocumentKind,
+  type SessionDocument,
+} from "@/lib/documents";
 import {
   allowsSession,
   CONSENT_VERSION,
@@ -139,6 +148,77 @@ export default function Home() {
 
   function changeConsent(key: ConsentKey, value: boolean) {
     saveConsent({ ...consent, [key]: value });
+  }
+
+  const [documents, setDocuments] = useState<SessionDocument[]>([]);
+  const kinds = kindsFor[scenario];
+  const readingDocuments = documents.some((document) => document.status === "reading");
+  const readyDocuments = documents.filter((document) => document.status === "ready");
+
+  function updateDocument(id: string, change: Partial<SessionDocument>) {
+    setDocuments((current) =>
+      current.map((document) => (document.id === id ? { ...document, ...change } : document)),
+    );
+  }
+
+  async function readDocument(id: string, file: File) {
+    const body = new FormData();
+    body.append("file", file);
+    try {
+      const response = await fetch(`${API_URL}/documents/extract`, { method: "POST", body });
+      if (!response.ok) {
+        const error =
+          response.status === 415
+            ? "type"
+            : response.status === 413
+              ? "size"
+              : response.status === 422
+                ? "empty"
+                : "read";
+        updateDocument(id, { status: "error", error });
+        return;
+      }
+      const result = (await response.json()) as { text: string; truncated: boolean };
+      updateDocument(id, { status: "ready", text: result.text, truncated: result.truncated });
+    } catch {
+      updateDocument(id, { status: "error", error: "read" });
+    }
+  }
+
+  function addFiles(files: File[]) {
+    const room = Math.max(0, MAX_DOCUMENTS - documents.length);
+    const added = files.slice(0, room).map((file) => {
+      const error = checkFile(file);
+      return {
+        file,
+        document: {
+          id: `${file.name}-${file.size}-${crypto.randomUUID()}`,
+          name: file.name,
+          size: file.size,
+          kind: guessKind(file.name, scenario),
+          status: error ? "error" : "reading",
+          text: "",
+          truncated: false,
+          error,
+        } satisfies SessionDocument,
+      };
+    });
+    if (!added.length) return;
+    setDocuments((current) => [...current, ...added.map((item) => item.document)]);
+    added
+      .filter((item) => item.document.status === "reading")
+      .forEach((item) => void readDocument(item.document.id, item.file));
+  }
+
+  function chooseScenario(id: ScenarioId) {
+    setScenario(id);
+    setDocuments((current) =>
+      current.map((document) =>
+        kindsFor[id].includes(document.kind)
+          ? document
+          : { ...document, kind: guessKind(document.name, id) },
+      ),
+    );
   }
 
   const canEnter = allowsSession(consent);
@@ -274,6 +354,7 @@ export default function Home() {
           language,
           context,
           consent: { version: CONSENT_VERSION, language: locale, ...consent },
+          documents: readyDocuments.map(({ name, kind, text }) => ({ name, kind, text })),
         }),
       });
       const peer = new RTCPeerConnection({ iceServers: session.ice_servers });
@@ -382,7 +463,7 @@ export default function Home() {
                       name="scenario"
                       value={id}
                       checked={scenario === id}
-                      onChange={() => setScenario(id)}
+                      onChange={() => chooseScenario(id)}
                       className="sr-only"
                     />
                     <Icon className="size-6 transition-transform duration-300 ease-(--ease-soft) group-hover:-translate-y-0.5" />
@@ -415,10 +496,27 @@ export default function Home() {
                   maxLength={CONTEXT_LIMIT}
                   disabled={locked}
                   onChange={(event) => setContext(event.target.value)}
+                  onPaste={(event) => {
+                    const files = Array.from(event.clipboardData.files);
+                    if (!files.length) return;
+                    event.preventDefault();
+                    addFiles(files);
+                  }}
                   placeholder={copy.placeholder}
                   className="mt-2 block min-h-36 w-full resize-y border border-line bg-white p-4 placeholder:text-muted/80 focus-visible:border-ink focus-visible:outline-none disabled:bg-raised disabled:text-muted"
                 />
               </div>
+
+              <DocumentsField
+                documents={documents}
+                kinds={kinds}
+                disabled={locked}
+                onAdd={addFiles}
+                onRemove={(id) =>
+                  setDocuments((current) => current.filter((document) => document.id !== id))
+                }
+                onKindChange={(id, kind: DocumentKind) => updateDocument(id, { kind })}
+              />
 
               <fieldset disabled={locked}>
                 <legend className="font-semibold">{t.setup.conversationLanguage}</legend>
@@ -499,6 +597,12 @@ export default function Home() {
                     ? t.setup.contextSummary(context.trim().length)
                     : t.setup.noContext,
                 ],
+                [
+                  t.setup.documentsRow,
+                  readyDocuments.length
+                    ? t.documents.summary(readyDocuments.length)
+                    : t.setup.noContext,
+                ],
                 [t.setup.microphone, microphoneSummary],
               ].map(([term, value]) => (
                 <div
@@ -523,7 +627,7 @@ export default function Home() {
             <div className="mt-6 border-t border-line pt-6" />
             <button
               type="button"
-              disabled={locked || !canEnter}
+              disabled={locked || !canEnter || readingDocuments}
               onClick={() => void startConversation()}
               className={`group flex h-14 w-full items-center justify-between bg-cobalt px-5 text-lg font-semibold text-white hover:bg-cobalt/90 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink disabled:bg-raised disabled:text-muted ${connecting ? "disabled:cursor-wait" : "disabled:cursor-not-allowed"}`}
             >
