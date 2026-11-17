@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { StableLabel } from "@/components/stable-label";
 import { useAuth } from "@/hooks/use-auth";
 import { useLocale } from "@/i18n/locale";
 
@@ -14,20 +15,20 @@ export function UserMenu() {
   if (!user) {
     return (
       <Link href="/login" className={link}>
-        {t.auth.signIn}
+        <StableLabel pick={(d) => d.auth.signIn} />
       </Link>
     );
   }
   return (
     <div className="flex items-center gap-1">
       <Link href="/history" className={link}>
-        {t.history.nav}
+        <StableLabel pick={(d) => d.history.nav} />
       </Link>
       <Link href="/account" className={`${link} max-w-48 max-sm:hidden`} title={user.email}>
         <span className="truncate">{user.email ?? t.auth.account}</span>
       </Link>
       <button type="button" onClick={() => void signOut()} className={link}>
-        {t.auth.signOut}
+        <StableLabel pick={(d) => d.auth.signOut} />
       </button>
     </div>
   );
