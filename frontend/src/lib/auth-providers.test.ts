@@ -12,21 +12,20 @@ it("sends the provider back to the callback with the localized next page", () =>
   );
 });
 
-it("tells password accounts from GitHub accounts", () => {
+it("tells password accounts from accounts linked to providers", () => {
   expect(signInMethods(userWith({ provider: "email", providers: ["email"] }))).toEqual({
     password: true,
-    github: false,
+    linked: [],
   });
   expect(signInMethods(userWith({ provider: "github", providers: ["github"] }))).toEqual({
     password: false,
-    github: true,
+    linked: ["github"],
   });
-  expect(signInMethods(userWith({ provider: "email", providers: ["email", "github"] }))).toEqual({
-    password: true,
-    github: true,
-  });
-  expect(signInMethods(userWith({ provider: "github" }))).toEqual({
+  expect(
+    signInMethods(userWith({ provider: "email", providers: ["github", "email", "google"] })),
+  ).toEqual({ password: true, linked: ["google", "github"] });
+  expect(signInMethods(userWith({ provider: "google" }))).toEqual({
     password: false,
-    github: true,
+    linked: ["google"],
   });
 });

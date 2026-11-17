@@ -4,7 +4,7 @@ import { LocaleLink as Link } from "@/components/locale-link";
 import { ConsentCard } from "@/components/account/consent-card";
 import { DangerZone } from "@/components/account/danger-zone";
 import { DataExport } from "@/components/account/data-export";
-import { GitHubIcon } from "@/components/icons";
+import { ProviderIcon } from "@/components/auth/provider-icon";
 import { ErrorLine, LoadingLine, RequireAccounts } from "@/components/page-state";
 import { Rise } from "@/components/rise";
 import { useAuth } from "@/hooks/use-auth";
@@ -44,12 +44,12 @@ function AccountView() {
         <aside className="h-fit bg-ink p-6 text-white lg:col-span-4">
           <p className="text-[14px] text-ink-muted">{t.account.signedInAs}</p>
           <p className="mt-1 truncate text-lg font-semibold">{user?.email ?? "…"}</p>
-          {methods.github && (
-            <p className="mt-3 inline-flex items-center gap-2 text-[14px] text-ink-muted">
-              <GitHubIcon className="size-4 shrink-0" />
-              {t.account.viaGithub}
+          {methods.linked.map((provider) => (
+            <p key={provider} className="mt-3 flex items-center gap-2 text-[14px] text-ink-muted">
+              <ProviderIcon provider={provider} className="size-4 shrink-0" />
+              {t.auth.providers[provider].linked}
             </p>
-          )}
+          ))}
           {methods.password && (
             <Link
               href="/account/password"
