@@ -74,3 +74,58 @@ async def test_sessions_events_and_consents_are_stored_in_postgres(dsn):
     assert row["version"] == "v1"
     assert row["outside_eu"] is True
     assert row["improvement"] is False
+
+
+OTHER = "9a8b7c6d-5e4f-4a3b-8c2d-1e0f9a8b7c6d"
+
+
+async def _insert_session(connection, owner, status):
+    return await connection.fetchval(
+        """
+        insert into public.practice_sessions
+          (id, user_id, scenario_id, scenario_version, language, profile, model, status,
+           created_at, instructions, token_hash)
+        values (gen_random_uuid(), $1, 'oral-exam', 1, 'en', 'p', 'm', $2, now(), 'i', 'h')
+        returning id
+        """,
+        owner,
+        status,
+    )
+
+
+async def _delete_as(connection, user, session_id):
+    async with connection.transaction():
+        await connection.execute("set local role authenticated")
+        await connection.execute("select set_config('request.jwt.claim.sub', $1, true)", user)
+        return await connection.fetch(
+            "delete from public.practice_sessions where id = $1 returning id", session_id
+        )
+
+
+async def test_owners_can_delete_only_their_finished_sessions(dsn):
+    connection = await asyncpg.connect(dsn)
+    try:
+        await connection.execute("insert into auth.users (id) values ($1)", OTHER)
+        finished = await _insert_session(connection, USER, "ended")
+        live = await _insert_session(connection, USER, "active")
+        await connection.execute(
+            "insert into public.session_events (session_id, kind) values ($1, 'transcript.final')",
+            finished,
+        )
+
+        assert await _delete_as(connection, OTHER, finished) == []
+        assert await _delete_as(connection, USER, live) == []
+        assert len(await _delete_as(connection, USER, finished)) == 1
+
+        remaining = await connection.fetchval(
+            "select count(*) from public.session_events where session_id = $1", finished
+        )
+        assert remaining == 0
+        assert (
+            await connection.fetchval(
+                "select count(*) from public.practice_sessions where id = $1", live
+            )
+            == 1
+        )
+    finally:
+        await connection.close()
