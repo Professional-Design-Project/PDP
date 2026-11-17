@@ -10,6 +10,8 @@ export const en = {
     dataText:
       "Your voice is sent to an external AI provider to run the conversation. Use a headset and a quiet room for the best results.",
     top: "Back to top",
+    privacy: "Privacy and AI",
+    dataMore: "How we handle your data",
   },
   loading: { label: "Loading", text: "Setting things up" },
   common: {
@@ -327,6 +329,7 @@ export const en = {
     title: "Consent",
     intro:
       "To run practice sessions we need to process your data. Please choose what you agree to.",
+    details: "How we handle your data",
     required: "(required)",
     optional: "(optional)",
     outro:

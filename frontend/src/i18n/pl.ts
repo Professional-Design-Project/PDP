@@ -12,6 +12,8 @@ export const pl: Dictionary = {
     dataText:
       "Twój głos trafia do zewnętrznego dostawcy AI, który prowadzi rozmowę. Najlepiej sprawdzają się słuchawki i cichy pokój.",
     top: "Na górę",
+    privacy: "Prywatność i AI",
+    dataMore: "Jak traktujemy twoje dane",
   },
   loading: { label: "Ładowanie", text: "Przygotowujemy wszystko" },
   common: {
@@ -331,6 +333,7 @@ export const pl: Dictionary = {
     title: "Zgody",
     intro:
       "Aby prowadzić sesje treningowe, musimy przetwarzać Twoje dane. Wybierz, na co się zgadzasz.",
+    details: "Jak traktujemy twoje dane",
     required: "(wymagane)",
     optional: "(opcjonalne)",
     outro:

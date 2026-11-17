@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { consentKeys, requiredConsents, type ConsentChoices, type ConsentKey } from "@/lib/consent";
 import { useLocale } from "@/i18n/locale";
 
@@ -47,7 +48,15 @@ export function ConsentPanel({ choices, disabled, onChange }: ConsentPanelProps)
           );
         })}
       </ul>
-      <p className="mt-4 text-[13px] leading-relaxed text-muted">{t.consent.outro}</p>
+      <p className="mt-4 text-[13px] leading-relaxed text-muted">
+        {t.consent.outro}{" "}
+        <Link
+          href="/privacy"
+          className="font-semibold text-ink underline underline-offset-2 hover:text-cobalt focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-cobalt"
+        >
+          {t.consent.details}
+        </Link>
+      </p>
     </fieldset>
   );
 }
