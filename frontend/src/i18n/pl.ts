@@ -353,7 +353,7 @@ export const pl: Dictionary = {
     withdrawing: "Wycofuję…",
     exportTitle: "Pobierz swoje dane",
     exportText:
-      "Plik JSON z kontem, zgodami, sesjami, transkrypcjami i uwagami w takiej postaci, w jakiej są teraz zapisane.",
+      "Plik JSON z kontem, zgodami, sesjami razem z wpisanym kontekstem, transkrypcjami i uwagami w takiej postaci, w jakiej są teraz zapisane.",
     exportButton: "Pobierz moje dane",
     exporting: "Przygotowuję…",
     exportFailed: "Nie udało się przygotować pliku. Spróbuj ponownie za chwilę.",

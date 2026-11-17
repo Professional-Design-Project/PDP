@@ -351,7 +351,7 @@ export const en = {
     withdrawing: "Withdrawing…",
     exportTitle: "Download your data",
     exportText:
-      "A JSON file with your account, consents, sessions, transcripts and feedback, as they are stored now.",
+      "A JSON file with your account, consents, sessions with the context you typed, transcripts and feedback, as they are stored now.",
     exportButton: "Download my data",
     exporting: "Preparing…",
     exportFailed: "The file could not be prepared. Try again in a moment.",

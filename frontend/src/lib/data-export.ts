@@ -9,12 +9,13 @@ import {
 } from "@/lib/history";
 
 type EventWithSession = EventRow & { session_id: string };
+type SessionWithContext = SessionRow & { context: string };
 
 export function buildExport(
   user: Pick<User, "id" | "email" | "created_at">,
   profile: unknown,
   consents: unknown[],
-  sessions: SessionRow[],
+  sessions: SessionWithContext[],
   events: EventWithSession[],
   exportedAt = new Date(),
 ) {
@@ -27,6 +28,7 @@ export function buildExport(
       const rows = events.filter((event) => event.session_id === session.id);
       return {
         ...toPastSession(session),
+        context: session.context,
         startedAt: session.started_at,
         endedAt: session.ended_at,
         transcript: toTranscript(rows, session.started_at),
@@ -40,11 +42,11 @@ export async function collectExport(supabase: SupabaseClient, user: User) {
   const [profile, consents, sessions] = await Promise.all([
     supabase.from("profiles").select("locale, created_at").maybeSingle(),
     supabase.from("consents").select("*").order("given_at"),
-    supabase.from("practice_sessions").select(SESSION_FIELDS).order("created_at"),
+    supabase.from("practice_sessions").select(`${SESSION_FIELDS}, context`).order("created_at"),
   ]);
   const failure = profile.error ?? consents.error ?? sessions.error;
   if (failure) throw failure;
-  const sessionRows = (sessions.data ?? []) as SessionRow[];
+  const sessionRows = (sessions.data ?? []) as SessionWithContext[];
   let events: EventWithSession[] = [];
   if (sessionRows.length) {
     const result = await supabase
