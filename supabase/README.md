@@ -50,7 +50,7 @@ Restart both servers after changing the environment.
 
 | Data | Written by | Readable by |
 |---|---|---|
-| `practice_sessions` | backend | the owner, only public columns (no instructions, context or token hash) |
+| `practice_sessions` | backend | the owner, only public columns (no instructions, context or token hash). The owner can delete a finished session, which also deletes its events |
 | `session_events` | backend | the owner, only `transcript.final` and `feedback.created` |
 | `consents` | backend, when a session starts | the owner, who can also withdraw them |
 | `profiles` | trigger on sign-up | the owner, who can change `locale` |
