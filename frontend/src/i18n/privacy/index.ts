@@ -1,5 +1,6 @@
 import type { Locale } from "@/i18n/locale";
-import { privacyEn, type PrivacyContent } from "./en";
+import type { DocContent } from "@/i18n/doc-types";
+import { privacyEn } from "./en";
 import { privacyPl } from "./pl";
 
-export const privacy: Record<Locale, PrivacyContent> = { pl: privacyPl, en: privacyEn };
+export const privacy: Record<Locale, DocContent> = { pl: privacyPl, en: privacyEn };

@@ -14,6 +14,7 @@ export const pl: Dictionary = {
     top: "Na górę",
     privacy: "Prywatność i AI",
     dataMore: "Jak traktujemy twoje dane",
+    aiMore: "Więcej o AI",
   },
   meta: {
     description:

@@ -1,6 +1,6 @@
-import type { PrivacyContent } from "./en";
+import type { DocContent } from "@/i18n/doc-types";
 
-export const privacyPl: PrivacyContent = {
+export const privacyPl: DocContent = {
   title: "Prywatność i AI.",
   intro:
     "Czym jest ensaio, co robi z twoim głosem i twoimi słowami oraz co możesz zmienić w dowolnym momencie.",
