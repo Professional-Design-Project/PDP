@@ -7,7 +7,7 @@ import { useLocale } from "@/i18n/locale";
 import type { Dictionary } from "@/i18n/en";
 import { authEnabled } from "@/lib/supabase/config";
 
-export type AuthVariant = "login" | "signup" | "forgot" | "reset" | "error";
+export type AuthVariant = "login" | "signup" | "forgot" | "reset" | "error" | "providerError";
 
 type AuthPageProps = {
   variant: AuthVariant;
@@ -23,6 +23,7 @@ function copyFor(variant: AuthVariant, t: Dictionary) {
     forgot: { title: auth.forgotTitle, intro: auth.forgotIntro },
     reset: { title: auth.resetTitle, intro: auth.resetIntro },
     error: { title: auth.errorTitle, intro: auth.errorText },
+    providerError: { title: auth.providerErrorTitle, intro: auth.providerErrorText },
   };
   return copy[variant];
 }
@@ -70,7 +71,11 @@ export function AuthPage({ variant, next = "/practice", children }: AuthPageProp
   const { title, intro } = copyFor(variant, t);
   const footer = <Footer variant={variant} next={next} t={t} />;
   return (
-    <AuthShell title={title} intro={intro} footer={variant === "error" ? undefined : footer}>
+    <AuthShell
+      title={title}
+      intro={intro}
+      footer={variant === "error" || variant === "providerError" ? undefined : footer}
+    >
       {children ?? footer}
     </AuthShell>
   );

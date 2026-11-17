@@ -288,6 +288,12 @@ export const en = {
     backToLogin: "Back to sign in",
     errorTitle: "That link did not work.",
     errorText: "It may have expired or already been used. Sign in again or ask for a new link.",
+    withGithub: "Continue with GitHub",
+    or: "or with email",
+    providerFailed: "Could not connect to GitHub. Try again in a moment.",
+    providerErrorTitle: "Sign-in was interrupted.",
+    providerErrorText:
+      "GitHub did not confirm the sign-in, for example because it was cancelled. Try again or sign in with email.",
     disabledTitle: "Sign-in is not set up yet.",
     disabledText: "This copy of ensaio runs without accounts, so you can practise straight away.",
     goPractise: "Go to practice",
@@ -338,6 +344,7 @@ export const en = {
     intro: "Your sign-in, your consents and your data, all in one place.",
     signedInAs: "Signed in as",
     changePassword: "Change password",
+    viaGithub: "Connected to a GitHub account",
     consentTitle: "Consents",
     consentIntro: "These are the choices you gave before your last session.",
     consentNone:
