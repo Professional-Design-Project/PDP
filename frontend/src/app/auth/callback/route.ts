@@ -31,5 +31,7 @@ export async function GET(request: NextRequest) {
     failed = Boolean(error);
   }
 
-  return NextResponse.redirect(new URL(failed ? "/auth/error" : next, origin));
+  if (!failed) return NextResponse.redirect(new URL(next, origin));
+  const reason = searchParams.has("error") ? "?reason=provider" : "";
+  return NextResponse.redirect(new URL(`/auth/error${reason}`, origin));
 }

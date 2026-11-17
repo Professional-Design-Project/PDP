@@ -2,10 +2,12 @@
 
 import { type FormEvent, useState } from "react";
 import { FormError, SubmitButton } from "@/components/auth/form-status";
+import { ProviderSignIn } from "@/components/auth/provider-sign-in";
 import { TextField } from "@/components/auth/text-field";
 import { useLocale } from "@/i18n/locale";
 import { authErrorKey, validateCredentials, type AuthErrorKey } from "@/lib/auth-errors";
 import { localePath } from "@/i18n/paths";
+import { callbackUrl } from "@/lib/auth-providers";
 import { browserClient } from "@/lib/supabase/client";
 
 export function SignupForm({ next }: { next: string }) {
@@ -27,12 +29,10 @@ export function SignupForm({ next }: { next: string }) {
     }
     setWorking(true);
     setError(null);
-    const redirect = new URL("/auth/callback", window.location.origin);
-    redirect.searchParams.set("next", localePath(locale, next));
     const { error: failure } = await supabase.auth.signUp({
       email: email.trim(),
       password,
-      options: { emailRedirectTo: redirect.toString() },
+      options: { emailRedirectTo: callbackUrl(window.location.origin, localePath(locale, next)) },
     });
     setWorking(false);
     if (failure) {
@@ -54,28 +54,31 @@ export function SignupForm({ next }: { next: string }) {
   }
 
   return (
-    <form onSubmit={submit} className="space-y-5" noValidate>
-      <TextField
-        id="email"
-        label={t.auth.email}
-        type="email"
-        value={email}
-        autoComplete="email"
-        disabled={working}
-        onChange={setEmail}
-      />
-      <TextField
-        id="password"
-        label={t.auth.password}
-        type="password"
-        value={password}
-        autoComplete="new-password"
-        hint={t.auth.passwordHint}
-        disabled={working}
-        onChange={setPassword}
-      />
-      <FormError message={error ? t.auth.errors[error] : null} />
-      <SubmitButton label={t.auth.signUp} working={working} />
-    </form>
+    <>
+      <ProviderSignIn next={next} />
+      <form onSubmit={submit} className="space-y-5" noValidate>
+        <TextField
+          id="email"
+          label={t.auth.email}
+          type="email"
+          value={email}
+          autoComplete="email"
+          disabled={working}
+          onChange={setEmail}
+        />
+        <TextField
+          id="password"
+          label={t.auth.password}
+          type="password"
+          value={password}
+          autoComplete="new-password"
+          hint={t.auth.passwordHint}
+          disabled={working}
+          onChange={setPassword}
+        />
+        <FormError message={error ? t.auth.errors[error] : null} />
+        <SubmitButton label={t.auth.signUp} working={working} />
+      </form>
+    </>
   );
 }

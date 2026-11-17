@@ -27,7 +27,7 @@ export const privacyEn: DocContent = {
       terms: [
         {
           term: "Account",
-          text: "Your e-mail address, your password (stored only as a secure hash by the sign-in service) and your interface language.",
+          text: "Your e-mail address, your password (stored only as a secure hash by the sign-in service) and your interface language. If you sign in with GitHub, we keep your GitHub account ID, name and avatar address instead of a password.",
         },
         {
           term: "Consents",
@@ -71,6 +71,11 @@ export const privacyEn: DocContent = {
           term: "Supabase",
           text: "Hosts the database and the sign-in for accounts, sessions, transcripts, feedback and consents.",
           where: "Supabase Inc., USA. The database runs in the region chosen for the project.",
+        },
+        {
+          term: "GitHub",
+          text: "Only if you sign in with GitHub. It confirms who you are and sends us the e-mail, name and avatar of the account. GitHub does not see your sessions, transcripts or feedback. You can revoke ensaio's access to your GitHub account in your GitHub settings, under Applications.",
+          where: "GitHub, Inc. (Microsoft), USA.",
         },
       ],
     },

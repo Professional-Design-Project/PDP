@@ -4,6 +4,7 @@ import { LocaleLink as Link } from "@/components/locale-link";
 import { useRouter } from "next/navigation";
 import { type FormEvent, useState } from "react";
 import { FormError, SubmitButton } from "@/components/auth/form-status";
+import { ProviderSignIn } from "@/components/auth/provider-sign-in";
 import { TextField } from "@/components/auth/text-field";
 import { useLocale } from "@/i18n/locale";
 import { authErrorKey, type AuthErrorKey } from "@/lib/auth-errors";
@@ -38,33 +39,36 @@ export function LoginForm({ next }: { next: string }) {
   }
 
   return (
-    <form onSubmit={submit} className="space-y-5" noValidate>
-      <TextField
-        id="email"
-        label={t.auth.email}
-        type="email"
-        value={email}
-        autoComplete="email"
-        disabled={working}
-        onChange={setEmail}
-      />
-      <TextField
-        id="password"
-        label={t.auth.password}
-        type="password"
-        value={password}
-        autoComplete="current-password"
-        disabled={working}
-        onChange={setPassword}
-      />
-      <Link
-        href="/forgot-password"
-        className="inline-block text-[14px] font-semibold underline underline-offset-4 hover:text-cobalt"
-      >
-        {t.auth.forgot}
-      </Link>
-      <FormError message={error ? t.auth.errors[error] : null} />
-      <SubmitButton label={t.auth.signIn} working={working} />
-    </form>
+    <>
+      <ProviderSignIn next={next} />
+      <form onSubmit={submit} className="space-y-5" noValidate>
+        <TextField
+          id="email"
+          label={t.auth.email}
+          type="email"
+          value={email}
+          autoComplete="email"
+          disabled={working}
+          onChange={setEmail}
+        />
+        <TextField
+          id="password"
+          label={t.auth.password}
+          type="password"
+          value={password}
+          autoComplete="current-password"
+          disabled={working}
+          onChange={setPassword}
+        />
+        <Link
+          href="/forgot-password"
+          className="inline-block text-[14px] font-semibold underline underline-offset-4 hover:text-cobalt"
+        >
+          {t.auth.forgot}
+        </Link>
+        <FormError message={error ? t.auth.errors[error] : null} />
+        <SubmitButton label={t.auth.signIn} working={working} />
+      </form>
+    </>
   );
 }
