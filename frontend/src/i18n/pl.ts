@@ -16,6 +16,18 @@ export const pl: Dictionary = {
     dataMore: "Jak traktujemy twoje dane",
   },
   loading: { label: "Ładowanie", text: "Przygotowujemy wszystko" },
+  status: {
+    notFoundLabel: "Nie ma takiej strony",
+    notFoundTitle: "Ten pokój jest pusty.",
+    notFoundText:
+      "Strona, której szukasz, nie istnieje albo została przeniesiona. Zacznij od strony głównej albo przygotuj nową sesję.",
+    home: "Strona główna",
+    errorLabel: "Coś się zepsuło",
+    errorTitle: "Coś poszło nie tak.",
+    errorText:
+      "To błąd po naszej stronie, nie po twojej. Spróbuj ponownie za chwilę. Jeśli to się powtarza, zacznij od strony głównej.",
+    retry: "Spróbuj ponownie",
+  },
   common: {
     speaking: "Mówi",
     listening: "Słucha",

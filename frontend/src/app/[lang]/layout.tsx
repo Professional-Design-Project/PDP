@@ -1,5 +1,4 @@
 import type { Metadata } from "next";
-import { Schibsted_Grotesk } from "next/font/google";
 import { notFound } from "next/navigation";
 import { SiteFooter } from "@/components/site-footer";
 import { SiteHeader } from "@/components/site-header";
@@ -7,13 +6,8 @@ import { isLocale, locales } from "@/i18n/config";
 import { en } from "@/i18n/en";
 import { LocaleProvider } from "@/i18n/locale";
 import { pl } from "@/i18n/pl";
+import { schibstedGrotesk } from "@/lib/font";
 import "../globals.css";
-
-const schibstedGrotesk = Schibsted_Grotesk({
-  subsets: ["latin", "latin-ext"],
-  variable: "--font-schibsted-grotesk",
-  display: "swap",
-});
 
 export const dynamicParams = false;
 
