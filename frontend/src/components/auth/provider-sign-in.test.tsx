@@ -31,6 +31,15 @@ it("starts GitHub sign-in and keeps the localized next page", async () => {
   );
 });
 
+it("starts Google sign-in from its own button", async () => {
+  signInWithOAuth.mockResolvedValue({ data: {}, error: null });
+  renderButton("pl");
+  fireEvent.click(screen.getByRole("button", { name: "Kontynuuj z Google" }));
+  await waitFor(() =>
+    expect(signInWithOAuth).toHaveBeenCalledWith(expect.objectContaining({ provider: "google" })),
+  );
+});
+
 it("says so when GitHub cannot be reached", async () => {
   signInWithOAuth.mockResolvedValue({ data: {}, error: new Error("offline") });
   renderButton("pl");

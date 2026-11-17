@@ -293,12 +293,22 @@ export const pl: Dictionary = {
     backToLogin: "Wróć do logowania",
     errorTitle: "Ten link nie zadziałał.",
     errorText: "Mógł wygasnąć albo został już użyty. Zaloguj się ponownie lub poproś o nowy link.",
-    withGithub: "Kontynuuj z GitHubem",
+    providers: {
+      google: {
+        continue: "Kontynuuj z Google",
+        failed: "Nie udało się połączyć z Google. Spróbuj ponownie za chwilę.",
+        linked: "Połączono z kontem Google",
+      },
+      github: {
+        continue: "Kontynuuj z GitHubem",
+        failed: "Nie udało się połączyć z GitHubem. Spróbuj ponownie za chwilę.",
+        linked: "Połączono z kontem GitHub",
+      },
+    },
     or: "albo e-mailem",
-    providerFailed: "Nie udało się połączyć z GitHubem. Spróbuj ponownie za chwilę.",
     providerErrorTitle: "Logowanie przerwane.",
     providerErrorText:
-      "GitHub nie potwierdził logowania, np. dlatego, że je anulowano. Spróbuj ponownie albo zaloguj się e-mailem.",
+      "Google albo GitHub nie potwierdził logowania, np. dlatego, że je anulowano. Spróbuj ponownie albo zaloguj się e-mailem.",
     disabledTitle: "Logowanie nie jest jeszcze skonfigurowane.",
     disabledText: "Ta wersja ensaio działa bez kont, więc możesz od razu ćwiczyć.",
     goPractise: "Przejdź do ćwiczeń",
@@ -347,7 +357,6 @@ export const pl: Dictionary = {
     intro: "Logowanie, zgody i twoje dane w jednym miejscu.",
     signedInAs: "Zalogowano jako",
     changePassword: "Zmień hasło",
-    viaGithub: "Połączono z kontem GitHub",
     consentTitle: "Zgody",
     consentIntro: "To wybory, których dokonano przed ostatnią sesją.",
     consentNone: "Nie udzielono jeszcze żadnych zgód. Pytanie pojawi się przed pierwszą sesją.",
