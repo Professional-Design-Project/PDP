@@ -15,6 +15,7 @@ it("puts every session with its own transcript into the export", () => {
         created_at: "2026-11-17T10:00:00Z",
         started_at: "2026-11-17T10:00:00Z",
         ended_at: "2026-11-17T10:02:00Z",
+        context: "Operating systems exam",
       },
       {
         id: "s2",
@@ -24,6 +25,7 @@ it("puts every session with its own transcript into the export", () => {
         created_at: "2026-11-17T11:00:00Z",
         started_at: null,
         ended_at: null,
+        context: "",
       },
     ],
     [
@@ -44,6 +46,11 @@ it("puts every session with its own transcript into the export", () => {
     createdAt: "2026-11-01T00:00:00Z",
   });
   expect(data.sessions.map((session) => session.transcript.length)).toEqual([1, 0]);
-  expect(data.sessions[0]).toMatchObject({ id: "s1", duration: 120, feedback: null });
+  expect(data.sessions[0]).toMatchObject({
+    id: "s1",
+    duration: 120,
+    context: "Operating systems exam",
+    feedback: null,
+  });
   expect(data.sessions[0].transcript[0]).toMatchObject({ role: "user", text: "Hello", at: 30 });
 });

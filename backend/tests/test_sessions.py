@@ -75,3 +75,24 @@ async def test_session_domain_and_storage(tmp_path):
         assert await database.events(other.id, kind="transcript.final") == []
     finally:
         await database.close()
+
+
+async def test_document_text_reaches_the_conversation_but_is_not_stored(tmp_path):
+    from voicebot.application.documents import Document
+    from voicebot.application.sessions import Sessions
+
+    database = await Database.open(tmp_path / "test.sqlite3")
+    try:
+        sessions = Sessions(database, load_scenarios(), "test-model")
+        cv = Document("cv.pdf", "cv", "Built a payments ledger in Kotlin.")
+        session, _ = await sessions.create("job-interview", "en", "Backend role", documents=(cv,))
+
+        stored = await database.get(session.id)
+        assert "payments ledger" not in stored.instructions
+        assert "Backend role" in stored.instructions
+        assert "payments ledger" in (await sessions.for_conversation(session.id)).instructions
+
+        await sessions.transition(session.id, SessionStatus.ENDED, "user_ended")
+        assert "payments ledger" not in (await sessions.for_conversation(session.id)).instructions
+    finally:
+        await database.close()
