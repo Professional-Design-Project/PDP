@@ -130,3 +130,33 @@ export function ExamIcon({ className }: IconProps) {
     </svg>
   );
 }
+
+export function UploadIcon({ className }: IconProps) {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.75"
+      aria-hidden="true"
+      className={className}
+    >
+      <path d="M12 16V4M7 9l5-5 5 5M4 15v5h16v-5" />
+    </svg>
+  );
+}
+
+export function FileIcon({ className }: IconProps) {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.75"
+      aria-hidden="true"
+      className={className}
+    >
+      <path d="M6 3h8l4 4v14H6ZM14 3v4h4" />
+    </svg>
+  );
+}
