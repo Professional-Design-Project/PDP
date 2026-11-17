@@ -297,6 +297,15 @@ export const en = {
       created: "Not started",
     },
     duration: (time: string) => `${time} min`,
+    deleteTitle: "Delete this session",
+    deleteText:
+      "This removes the session, its transcript and its feedback from your account. It cannot be undone.",
+    deleteButton: "Delete session",
+    deleteConfirm: "Yes, delete it",
+    deleteCancel: "Keep it",
+    deleting: "Deleting…",
+    deleteFailed:
+      "The session could not be deleted. A session that is still running cannot be deleted.",
     feedbackMissing: "No feedback was requested for this session.",
   },
   account: {

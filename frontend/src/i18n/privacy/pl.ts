@@ -85,7 +85,7 @@ export const privacyPl: PrivacyContent = {
       id: "retention",
       title: "Jak długo to trzymamy",
       paragraphs: [
-        "Sesje zostają na koncie, dopóki go nie usuniesz. Usunięcie konta kasuje od razu konto, wszystkie sesje, transkrypcje, uwagi i rekordy zgód. Nie da się tego cofnąć.",
+        "Sesje zostają na koncie, dopóki nie usuniesz ich pojedynczo w historii albo nie usuniesz konta. Usunięcie konta kasuje od razu konto, wszystkie sesje, transkrypcje, uwagi i rekordy zgód. Nie da się tego cofnąć.",
       ],
     },
     {

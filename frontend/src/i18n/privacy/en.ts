@@ -104,7 +104,7 @@ export const privacyEn: PrivacyContent = {
       id: "retention",
       title: "How long we keep it",
       paragraphs: [
-        "Your sessions stay in your account until you delete your account. Deleting the account removes the account, all sessions, transcripts, feedback and consent records at once. This cannot be undone.",
+        "Your sessions stay in your account until you delete them one by one in your history or delete your account. Deleting the account removes the account, all sessions, transcripts, feedback and consent records at once. This cannot be undone.",
       ],
     },
     {

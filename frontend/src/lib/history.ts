@@ -122,3 +122,13 @@ export async function loadSession(supabase: SupabaseClient, id: string) {
   };
   return detail;
 }
+
+export async function deleteSession(supabase: SupabaseClient, id: string) {
+  const { data, error } = await supabase
+    .from("practice_sessions")
+    .delete()
+    .eq("id", id)
+    .select("id");
+  if (error) throw error;
+  if (!data?.length) throw new Error("Session was not deleted");
+}

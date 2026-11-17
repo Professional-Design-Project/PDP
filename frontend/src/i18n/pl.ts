@@ -302,6 +302,13 @@ export const pl: Dictionary = {
       created: "Nierozpoczęta",
     },
     duration: (time: string) => `${time} min`,
+    deleteTitle: "Usuń tę sesję",
+    deleteText: "To usuwa z konta sesję, jej transkrypcję i uwagi. Nie da się tego cofnąć.",
+    deleteButton: "Usuń sesję",
+    deleteConfirm: "Tak, usuń ją",
+    deleteCancel: "Zostaw ją",
+    deleting: "Usuwam…",
+    deleteFailed: "Nie udało się usunąć sesji. Sesji, która wciąż trwa, nie można usunąć.",
     feedbackMissing: "Dla tej sesji nie poproszono o uwagi.",
   },
   account: {
