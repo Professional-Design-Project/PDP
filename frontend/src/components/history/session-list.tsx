@@ -1,6 +1,6 @@
 "use client";
 
-import Link from "next/link";
+import { LocaleLink as Link } from "@/components/locale-link";
 import { ArrowRightIcon } from "@/components/icons";
 import { formatClock } from "@/components/session/session-state";
 import { useLocale } from "@/i18n/locale";

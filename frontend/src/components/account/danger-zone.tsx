@@ -4,12 +4,13 @@ import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { Loader } from "@/components/loader";
 import { useLocale } from "@/i18n/locale";
+import { localePath } from "@/i18n/paths";
 import { deleteAccount } from "@/lib/account";
 import { noConsent, saveConsent } from "@/lib/consent";
 import { accessToken, browserClient } from "@/lib/supabase/client";
 
 export function DangerZone() {
-  const { t } = useLocale();
+  const { locale, t } = useLocale();
   const router = useRouter();
   const [confirming, setConfirming] = useState(false);
   const [working, setWorking] = useState(false);
@@ -24,7 +25,7 @@ export function DangerZone() {
       await deleteAccount(token);
       saveConsent(noConsent);
       await browserClient()?.auth.signOut();
-      router.replace("/");
+      router.replace(localePath(locale, "/"));
       router.refresh();
     } catch {
       setFailed(true);

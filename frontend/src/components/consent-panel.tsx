@@ -1,6 +1,6 @@
 "use client";
 
-import Link from "next/link";
+import { LocaleLink as Link } from "@/components/locale-link";
 import { consentKeys, requiredConsents, type ConsentChoices, type ConsentKey } from "@/lib/consent";
 import { useLocale } from "@/i18n/locale";
 

@@ -1,6 +1,6 @@
 "use client";
 
-import Link from "next/link";
+import { LocaleLink as Link } from "@/components/locale-link";
 import { buttonStyles } from "@/components/button-styles";
 import { SessionList } from "@/components/history/session-list";
 import { ErrorLine, LoadingLine, RequireAccounts } from "@/components/page-state";

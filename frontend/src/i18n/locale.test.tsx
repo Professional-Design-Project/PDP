@@ -1,20 +1,23 @@
-import { act, fireEvent, render, screen } from "@testing-library/react";
-import { afterEach, expect, it, vi } from "vitest";
-import Landing from "@/app/page";
+import { fireEvent, render, screen } from "@testing-library/react";
+import { afterEach, beforeEach, expect, it, vi } from "vitest";
+import Landing from "@/app/[lang]/page";
 import { SiteHeader } from "@/components/site-header";
 import { en } from "./en";
-import { resetLocaleMemory, setLocale } from "./locale";
+import { LocaleProvider } from "./locale";
 import { pl } from "./pl";
 
+const push = vi.fn();
+
 vi.mock("next/navigation", () => ({
-  usePathname: () => "/",
-  useRouter: () => ({ replace: vi.fn(), refresh: vi.fn(), push: vi.fn() }),
+  usePathname: () => "/en/practice",
+  useRouter: () => ({ replace: vi.fn(), refresh: vi.fn(), push }),
 }));
 
-afterEach(() => {
-  window.localStorage.clear();
-  resetLocaleMemory();
+beforeEach(() => {
+  document.cookie = "ensaio.locale=; max-age=0; path=/";
 });
+
+afterEach(() => push.mockClear());
 
 function keys(value: unknown, prefix = ""): string[] {
   if (typeof value !== "object" || value === null) return [prefix];
@@ -25,17 +28,26 @@ it("has the same keys in every language", () => {
   expect(keys(pl).sort()).toEqual(keys(en).sort());
 });
 
-it("switches the interface to Polish and remembers it", () => {
+it("renders the language from the route", () => {
   render(
-    <>
-      <SiteHeader />
+    <LocaleProvider locale="pl">
       <Landing />
-    </>,
+    </LocaleProvider>,
   );
-  expect(screen.getByRole("heading", { level: 1 })).toHaveTextContent(en.landing.title);
-  fireEvent.click(screen.getByRole("radio", { name: "Polski" }));
   expect(screen.getByRole("heading", { level: 1 })).toHaveTextContent(pl.landing.title);
-  expect(window.localStorage.getItem("ensaio.locale")).toBe("pl");
-  act(() => setLocale("en"));
-  expect(screen.getByRole("heading", { level: 1 })).toHaveTextContent(en.landing.title);
+  screen
+    .getAllByRole("link", { name: new RegExp(pl.common.setTheRoom) })
+    .forEach((link) => expect(link).toHaveAttribute("href", "/pl/practice"));
+});
+
+it("moves to the same page in the other language and remembers the choice", () => {
+  render(
+    <LocaleProvider locale="en">
+      <SiteHeader />
+    </LocaleProvider>,
+  );
+  expect(screen.getByRole("radio", { name: "English" })).toBeChecked();
+  fireEvent.click(screen.getByRole("radio", { name: "Polski" }));
+  expect(push).toHaveBeenCalledWith("/pl/practice", { scroll: false });
+  expect(document.cookie).toContain("ensaio.locale=pl");
 });

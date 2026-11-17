@@ -1,6 +1,6 @@
 "use client";
 
-import Link from "next/link";
+import { LocaleLink as Link } from "@/components/locale-link";
 import { ConsentCard } from "@/components/account/consent-card";
 import { DangerZone } from "@/components/account/danger-zone";
 import { ErrorLine, LoadingLine, RequireAccounts } from "@/components/page-state";

@@ -1,6 +1,6 @@
 import { fireEvent, render, screen } from "@testing-library/react";
 import { expect, it } from "vitest";
-import Landing from "@/app/page";
+import Landing from "@/app/[lang]/page";
 
 it("introduces ensaio and links to the setup screen", () => {
   render(<Landing />);
@@ -9,7 +9,7 @@ it("introduces ensaio and links to the setup screen", () => {
   ).toBeInTheDocument();
   const links = screen.getAllByRole("link", { name: /Set the room/ });
   expect(links.length).toBeGreaterThan(0);
-  links.forEach((link) => expect(link).toHaveAttribute("href", "/practice"));
+  links.forEach((link) => expect(link).toHaveAttribute("href", "/en/practice"));
   expect(screen.getByRole("link", { name: "How it works" })).toHaveAttribute(
     "href",
     "#how-it-works",

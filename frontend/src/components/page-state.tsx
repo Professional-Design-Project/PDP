@@ -1,6 +1,6 @@
 "use client";
 
-import Link from "next/link";
+import { LocaleLink as Link } from "@/components/locale-link";
 import type { ReactNode } from "react";
 import { AuthShell } from "@/components/auth/auth-shell";
 import { Loader } from "@/components/loader";

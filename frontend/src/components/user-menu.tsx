@@ -1,6 +1,6 @@
 "use client";
 
-import Link from "next/link";
+import { LocaleLink as Link } from "@/components/locale-link";
 import { StableLabel } from "@/components/stable-label";
 import { useAuth } from "@/hooks/use-auth";
 import { useLocale } from "@/i18n/locale";

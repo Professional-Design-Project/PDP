@@ -1,6 +1,6 @@
 "use client";
 
-import Link from "next/link";
+import { LocaleLink as Link } from "@/components/locale-link";
 import { SessionDetail } from "@/components/history/session-detail";
 import { ErrorLine, LoadingLine, RequireAccounts } from "@/components/page-state";
 import { useSupabaseQuery } from "@/hooks/use-supabase-query";
