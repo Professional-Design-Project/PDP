@@ -7,7 +7,6 @@ export function ContextDemo() {
   const { t } = useLocale();
   const examples = t.demo.examples;
   const [current, setCurrent] = useState(0);
-  const example = examples[current];
 
   return (
     <div className="mt-12 grid border border-ink lg:grid-cols-12">
@@ -34,37 +33,50 @@ export function ContextDemo() {
         </fieldset>
 
         <p className="mt-8 text-[13px] font-semibold text-muted">{t.demo.yourContext}</p>
-        <p
-          key={example.context}
-          className="mt-3 animate-caption border border-line bg-canvas p-4 text-lg leading-relaxed"
-        >
-          {example.context}
-          <span
-            aria-hidden="true"
-            className="ml-0.5 inline-block h-[1.1em] w-[2px] translate-y-[3px] animate-caret bg-cobalt"
-          />
-        </p>
+        <div className="mt-3 grid">
+          {examples.map((item, index) => (
+            <p
+              key={index === current ? `${item.label}-active` : item.label}
+              aria-hidden={index !== current}
+              className={`col-start-1 row-start-1 border border-line bg-canvas p-4 text-lg leading-relaxed ${index === current ? "animate-caption" : "invisible"}`}
+            >
+              {item.context}
+              <span
+                aria-hidden="true"
+                className="ml-0.5 inline-block h-[1.1em] w-[2px] translate-y-[3px] animate-caret bg-cobalt"
+              />
+            </p>
+          ))}
+        </div>
       </div>
 
       <div className="p-5 sm:p-7 lg:col-span-7" aria-live="polite">
         <p className="text-[13px] font-semibold text-muted">{t.demo.questions}</p>
-        <ul className="mt-3">
-          {example.questions.map((question, index) => (
-            <li
-              key={`${current}-${question.text}`}
-              className="animate-caption border-t border-line py-5 first:border-t-0 first:pt-2"
-              style={{ animationDelay: `${index * 50}ms` }}
+        <div className="mt-3 grid">
+          {examples.map((item, index) => (
+            <ul
+              key={item.label}
+              aria-hidden={index !== current}
+              className={`col-start-1 row-start-1 ${index === current ? "" : "invisible"}`}
             >
-              <p className="text-[22px] leading-snug font-medium tracking-tight sm:text-[24px]">
-                {t.common.quote(question.text)}
-              </p>
-              <p className="mt-2 text-[14px] text-muted">
-                <span className="font-semibold text-cobalt">{t.demo.fromContext}</span>{" "}
-                {question.why}
-              </p>
-            </li>
+              {item.questions.map((question, order) => (
+                <li
+                  key={index === current ? `${current}-${question.text}` : question.text}
+                  className={`border-t border-line py-5 first:border-t-0 first:pt-2 ${index === current ? "animate-caption" : ""}`}
+                  style={{ animationDelay: `${order * 50}ms` }}
+                >
+                  <p className="text-[22px] leading-snug font-medium tracking-tight sm:text-[24px]">
+                    {t.common.quote(question.text)}
+                  </p>
+                  <p className="mt-2 text-[14px] text-muted">
+                    <span className="font-semibold text-cobalt">{t.demo.fromContext}</span>{" "}
+                    {question.why}
+                  </p>
+                </li>
+              ))}
+            </ul>
           ))}
-        </ul>
+        </div>
       </div>
     </div>
   );
