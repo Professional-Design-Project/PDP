@@ -9,7 +9,7 @@ export type Locale = "pl" | "en";
 
 export const locales: Locale[] = ["pl", "en"];
 
-const dictionaries: Record<Locale, Dictionary> = { pl, en };
+export const dictionaries: Record<Locale, Dictionary> = { pl, en };
 const STORAGE_KEY = "ensaio.locale";
 const listeners = new Set<() => void>();
 let memory: Locale | null = null;

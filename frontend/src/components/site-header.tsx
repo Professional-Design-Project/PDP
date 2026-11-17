@@ -5,6 +5,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { ArrowRightIcon } from "@/components/icons";
 import { LocaleSwitch } from "@/components/locale-switch";
+import { StableLabel } from "@/components/stable-label";
 import { UserMenu } from "@/components/user-menu";
 import { useLocale } from "@/i18n/locale";
 
@@ -31,7 +32,7 @@ export function SiteHeader() {
                 data-pressable
                 className="group inline-flex h-10 items-center gap-3 bg-ink px-4 text-[15px] font-semibold text-white hover:bg-cobalt focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-cobalt"
               >
-                {t.header.practice}
+                <StableLabel pick={(d) => d.header.practice} />
                 <ArrowRightIcon className="size-4 transition-transform duration-300 ease-(--ease-soft) group-hover:translate-x-0.5" />
               </Link>
             </nav>
