@@ -129,3 +129,22 @@ async def test_owners_can_delete_only_their_finished_sessions(dsn):
         )
     finally:
         await connection.close()
+
+
+async def test_owners_can_read_their_context_but_not_the_instructions(dsn):
+    connection = await asyncpg.connect(dsn)
+    try:
+        session_id = await _insert_session(connection, USER, "ended")
+        async with connection.transaction():
+            await connection.execute("set local role authenticated")
+            await connection.execute("select set_config('request.jwt.claim.sub', $1, true)", USER)
+            context = await connection.fetchval(
+                "select context from public.practice_sessions where id = $1", session_id
+            )
+            assert context == ""
+        with pytest.raises(asyncpg.InsufficientPrivilegeError):
+            async with connection.transaction():
+                await connection.execute("set local role authenticated")
+                await connection.fetch("select instructions from public.practice_sessions")
+    finally:
+        await connection.close()
