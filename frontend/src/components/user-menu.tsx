@@ -20,6 +20,9 @@ export function UserMenu() {
   }
   return (
     <div className="flex items-center gap-1">
+      <Link href="/history" className={link}>
+        {t.history.nav}
+      </Link>
       <Link href="/account" className={`${link} max-w-48 max-sm:hidden`} title={user.email}>
         <span className="truncate">{user.email ?? t.auth.account}</span>
       </Link>

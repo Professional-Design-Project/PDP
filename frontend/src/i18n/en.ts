@@ -276,6 +276,53 @@ export const en = {
       generic: "Something went wrong. Try again in a moment.",
     },
   },
+  history: {
+    nav: "History",
+    title: "Your sessions.",
+    intro:
+      "Every session you finish is here with its transcript and feedback. Only you can see them.",
+    empty: "No sessions yet. Your first one will appear here when it ends.",
+    start: "Start a session",
+    loading: "Loading your sessions",
+    failed: "Your sessions could not be loaded. Try again in a moment.",
+    notFound: "This session does not exist or belongs to someone else.",
+    back: "All sessions",
+    status: {
+      ended: "Finished",
+      failed: "Ended early",
+      active: "In progress",
+      connecting: "In progress",
+      created: "Not started",
+    },
+    duration: (time: string) => `${time} min`,
+    feedbackMissing: "No feedback was requested for this session.",
+  },
+  account: {
+    title: "Your account.",
+    intro: "Your sign-in, your consents and your data, all in one place.",
+    signedInAs: "Signed in as",
+    changePassword: "Change password",
+    consentTitle: "Consents",
+    consentIntro: "These are the choices you gave before your last session.",
+    consentNone:
+      "You have not given any consents yet. You will be asked before your first session.",
+    consentGiven: (date: string) => `Given on ${date}`,
+    consentWithdrawn: (date: string) =>
+      `Withdrawn on ${date}. You will be asked again before your next session.`,
+    yes: "Yes",
+    no: "No",
+    withdraw: "Withdraw consents",
+    withdrawing: "Withdrawing…",
+    deleteTitle: "Delete account",
+    deleteText:
+      "This removes your account, every session, transcript, piece of feedback and consent record. It cannot be undone.",
+    deleteButton: "Delete my account",
+    deleteConfirm: "Yes, delete everything",
+    deleteCancel: "Keep my account",
+    deleting: "Deleting…",
+    deleteFailed: "The account could not be deleted. Try again later.",
+    failed: "Something went wrong. Try again in a moment.",
+  },
   consent: {
     title: "Consent",
     intro:
