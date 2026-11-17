@@ -1,6 +1,7 @@
 import asyncio
 import hashlib
 import secrets
+from dataclasses import replace
 from datetime import UTC, datetime
 from uuid import uuid4
 
@@ -53,6 +54,7 @@ class Sessions:
         self.lock = asyncio.Lock()
         self.max_sessions = max_sessions
         self.token_ttl_seconds = token_ttl_seconds
+        self.briefs: dict[str, str] = {}
 
     async def create(
         self,
@@ -71,7 +73,7 @@ class Sessions:
             id=str(uuid4()),
             scenario_id=scenario.id,
             scenario_version=scenario.version,
-            instructions=compile_instructions(scenario, context, documents),
+            instructions=compile_instructions(scenario, context),
             language=scenario.language.value,
             profile="gemini_live",
             model=self.model,
@@ -90,6 +92,8 @@ class Sessions:
                 await self.repository.append_event(session.id, "consent.recorded", consent.record())
                 if owner_id is not None:
                     await self.repository.record_consent(owner_id, consent)
+            if documents:
+                self.briefs[session.id] = compile_instructions(scenario, context, documents)
         return session, token
 
     async def get(self, session_id: str) -> Session:
@@ -97,6 +101,11 @@ class Sessions:
         if session is None:
             raise SessionNotFound(session_id)
         return session
+
+    async def for_conversation(self, session_id: str) -> Session:
+        session = await self.get(session_id)
+        brief = self.briefs.get(session_id)
+        return replace(session, instructions=brief) if brief else session
 
     async def authorize(self, session_id: str, token: str) -> Session:
         session = await self.get(session_id)
@@ -115,6 +124,8 @@ class Sessions:
                 return session
             session = session.transition(status, datetime.now(UTC), reason)
             await self.repository.save(session)
+            if session.finished:
+                self.briefs.pop(session.id, None)
             await self.repository.append_event(session.id, f"session.{status}", {"reason": reason})
             return session
 
@@ -188,6 +199,7 @@ class Sessions:
                 ):
                     ended = session.transition(SessionStatus.ENDED, now, "connection_timeout")
                     await self.repository.save(ended)
+                    self.briefs.pop(session.id, None)
                     await self.repository.append_event(
                         session.id, "session.ended", {"reason": "connection_timeout"}
                     )

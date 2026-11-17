@@ -40,7 +40,7 @@ class VoiceRuntime:
         if not self.settings.google_api_key.get_secret_value():
             raise VoiceUnavailable
         async with self.lock:
-            session = await self.sessions.get(session_id)
+            session = await self.sessions.for_conversation(session_id)
             if session.finished:
                 raise SessionConflict("Session has ended")
             entry = self.active.get(session_id)
