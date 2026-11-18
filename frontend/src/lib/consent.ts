@@ -18,6 +18,7 @@ export const noConsent: ConsentChoices = {
 const STORAGE_KEY = "ensaio.consent";
 const listeners = new Set<() => void>();
 let memory: ConsentChoices | null = null;
+let chosen = false;
 
 export function allowsSession(choices: ConsentChoices) {
   return requiredConsents.every((key) => choices[key]);
@@ -32,6 +33,16 @@ function readStorage(): ConsentChoices {
     ) as ConsentChoices;
   } catch {
     return noConsent;
+  }
+}
+
+export function hasStoredConsent() {
+  if (chosen) return true;
+  try {
+    const stored = JSON.parse(window.localStorage.getItem(STORAGE_KEY) ?? "null");
+    return stored?.version === CONSENT_VERSION;
+  } catch {
+    return false;
   }
 }
 
@@ -65,6 +76,7 @@ export function getServerConsent() {
 
 export function saveConsent(choices: ConsentChoices) {
   memory = choices;
+  chosen = true;
   try {
     window.localStorage.setItem(STORAGE_KEY, JSON.stringify({ version: CONSENT_VERSION, choices }));
   } catch {
@@ -75,4 +87,5 @@ export function saveConsent(choices: ConsentChoices) {
 
 export function resetConsentMemory() {
   memory = null;
+  chosen = false;
 }
