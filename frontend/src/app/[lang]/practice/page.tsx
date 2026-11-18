@@ -5,6 +5,7 @@ import { DocumentsField } from "@/components/documents-field";
 import { ContextField } from "@/components/practice/context-field";
 import { LanguagePicker } from "@/components/practice/language-picker";
 import { MicrophoneField } from "@/components/practice/microphone-field";
+import { PresetNotice } from "@/components/practice/preset-notice";
 import { ScenarioPicker } from "@/components/practice/scenario-picker";
 import { StyleField } from "@/components/practice/style-field";
 import { SessionAside } from "@/components/practice/session-aside";
@@ -16,6 +17,7 @@ import { useDocuments } from "@/hooks/use-documents";
 import { useFeedback } from "@/hooks/use-feedback";
 import { useMicrophone } from "@/hooks/use-microphone";
 import { usePracticeConsent } from "@/hooks/use-practice-consent";
+import { usePracticePreset } from "@/hooks/use-practice-preset";
 import { useVoiceSession } from "@/hooks/use-voice-session";
 import { useLocale, type Locale } from "@/i18n/locale";
 import { CONSENT_VERSION } from "@/lib/consent";
@@ -36,6 +38,12 @@ export default function PracticePage() {
   const consent = usePracticeConsent();
   const feedback = useFeedback();
   const voice = useVoiceSession({ onFinished: feedback.choose });
+  const presetState = usePracticePreset((preset) => {
+    chooseScenario(preset.scenarioId);
+    setLanguage(preset.language);
+    setContext(preset.context);
+    setStyle(preset.style);
+  });
   const locked = voice.phase !== "setup" || voice.connecting;
 
   function chooseScenario(id: ScenarioId) {
@@ -107,6 +115,10 @@ export default function PracticePage() {
           {t.setup.intro}
         </Rise>
       </div>
+
+      {presetState.preset && (
+        <PresetNotice preset={presetState.preset} onDismiss={presetState.dismiss} />
+      )}
 
       <div className="mt-14 grid gap-12 lg:grid-cols-12 lg:gap-8">
         <Rise delay={100} className="space-y-14 lg:col-span-8">
