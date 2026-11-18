@@ -37,8 +37,10 @@ it("puts every session with its own transcript into the export", () => {
         data: { role: "user", text: "Hello" },
       },
     ],
+    [{ kind: "idea", message: "Dark mode", status: "new" }],
     new Date("2026-11-17T12:00:00Z"),
   );
+  expect(data.reports).toEqual([{ kind: "idea", message: "Dark mode", status: "new" }]);
   expect(data.exportedAt).toBe("2026-11-17T12:00:00.000Z");
   expect(data.account).toEqual({
     id: "u1",

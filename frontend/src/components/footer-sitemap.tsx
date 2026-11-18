@@ -10,6 +10,7 @@ export function FooterSitemap() {
     { href: "/practice", label: t.header.practice },
     { href: "/history", label: t.history.nav },
     { href: "/account", label: t.auth.account },
+    { href: "/report", label: t.report.nav },
     { href: "/how-ai-works", label: t.footer.aiTitle },
     { href: "/privacy", label: t.footer.privacy },
   ];

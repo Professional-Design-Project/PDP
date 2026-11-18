@@ -14,6 +14,8 @@ it("protects practice, account and history", () => {
   expect(isProtected("/practice")).toBe(true);
   expect(isProtected("/account/password")).toBe(true);
   expect(isProtected("/history")).toBe(true);
+  expect(isProtected("/report")).toBe(true);
+  expect(isProtected("/admin")).toBe(true);
   expect(isProtected("/")).toBe(false);
   expect(isProtected("/login")).toBe(false);
   expect(isProtected("/practiceroom")).toBe(false);

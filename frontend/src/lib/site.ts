@@ -9,6 +9,8 @@ export const privatePages = [
   "/practice",
   "/history",
   "/account",
+  "/report",
+  "/admin",
   "/login",
   "/signup",
   "/forgot-password",

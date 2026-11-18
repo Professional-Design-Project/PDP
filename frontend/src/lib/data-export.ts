@@ -18,6 +18,7 @@ export function buildExport(
   consents: unknown[],
   sessions: SessionWithContext[],
   events: EventWithSession[],
+  reports: unknown[] = [],
   exportedAt = new Date(),
 ) {
   return {
@@ -36,16 +37,22 @@ export function buildExport(
         feedback: toFeedback(rows),
       };
     }),
+    reports,
   };
 }
 
 export async function collectExport(supabase: SupabaseClient, user: User) {
-  const [profile, consents, sessions] = await Promise.all([
+  const [profile, consents, sessions, reports] = await Promise.all([
     supabase.from("profiles").select("locale, created_at").maybeSingle(),
     supabase.from("consents").select("*").order("given_at"),
     supabase.from("practice_sessions").select(`${SESSION_FIELDS}, context`).order("created_at"),
+    supabase
+      .from("feedback_reports")
+      .select("kind, message, status, created_at")
+      .eq("user_id", user.id)
+      .order("created_at"),
   ]);
-  const failure = profile.error ?? consents.error ?? sessions.error;
+  const failure = profile.error ?? consents.error ?? sessions.error ?? reports.error;
   if (failure) throw failure;
   const sessionRows = (sessions.data ?? []) as SessionWithContext[];
   let events: EventWithSession[] = [];
@@ -61,7 +68,14 @@ export async function collectExport(supabase: SupabaseClient, user: User) {
     if (result.error) throw result.error;
     events = result.data as EventWithSession[];
   }
-  return buildExport(user, profile.data, consents.data ?? [], sessionRows, events);
+  return buildExport(
+    user,
+    profile.data,
+    consents.data ?? [],
+    sessionRows,
+    events,
+    reports.data ?? [],
+  );
 }
 
 export function downloadJson(data: unknown, filename: string) {
