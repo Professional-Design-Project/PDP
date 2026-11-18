@@ -6,22 +6,16 @@ from datetime import UTC, datetime
 from uuid import uuid4
 
 from voicebot.application.documents import Document
-from voicebot.application.feedback import (
-    Feedback,
-    FeedbackFailed,
-    FeedbackRequest,
-    FeedbackUnavailable,
-    FeedbackWriter,
-)
+from voicebot.application.feedback import Feedback, FeedbackWriter
 from voicebot.application.interview_style import InterviewStyle
 from voicebot.application.ports import SessionRepository
 from voicebot.application.scenarios import Scenarios, compile_instructions
+from voicebot.application.session_feedback import session_feedback
 from voicebot.domain.scenario import Language
 from voicebot.domain.session import (
     Consent,
     ConsentRequired,
     Session,
-    SessionConflict,
     SessionEvent,
     SessionStatus,
     Speaker,
@@ -157,35 +151,7 @@ class Sessions:
         self, session_id: str, writer: FeedbackWriter | None
     ) -> tuple[Feedback, list[int]]:
         session = await self.get(session_id)
-        if not session.finished:
-            raise SessionConflict("Session is still running")
-        events = await self.repository.events(session_id, limit=500, kind="transcript.final")
-        turns = [event for event in events if str(event.data.get("text") or "").strip()]
-        sequences = [event.sequence for event in turns]
-        cached = await self.repository.events(session_id, limit=500, kind="feedback.created")
-        if cached:
-            return Feedback.model_validate_json(str(cached[-1].data["payload"])), sequences
-        if not any(event.data.get("role") == "user" for event in turns):
-            raise FeedbackUnavailable
-        if writer is None:
-            raise FeedbackFailed
-        language = Language(session.language)
-        scenario = self.scenarios.get(session.scenario_id, language)
-        lines = [
-            (index, str(event.data["role"]), str(event.data["text"]).strip())
-            for index, event in enumerate(turns, start=1)
-        ]
-        feedback = await writer.write(
-            FeedbackRequest(scenario.title, language, session.context, lines)
-        )
-        notes = [note for note in feedback.notes if note.line <= len(lines)]
-        if not notes:
-            raise FeedbackFailed
-        feedback = feedback.model_copy(update={"notes": notes})
-        await self.repository.append_event(
-            session_id, "feedback.created", {"payload": feedback.model_dump_json()}
-        )
-        return feedback, sequences
+        return await session_feedback(self.repository, self.scenarios, session, writer)
 
     async def recover(self) -> None:
         for session in await self.repository.unfinished():
