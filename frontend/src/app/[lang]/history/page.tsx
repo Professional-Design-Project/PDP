@@ -2,7 +2,7 @@
 
 import { LocaleLink as Link } from "@/components/locale-link";
 import { buttonStyles } from "@/components/button-styles";
-import { SessionList } from "@/components/history/session-list";
+import { HistoryOverview } from "@/components/history/history-overview";
 import { ErrorLine, LoadingLine, RequireAccounts } from "@/components/page-state";
 import { Rise } from "@/components/rise";
 import { useSupabaseQuery } from "@/hooks/use-supabase-query";
@@ -35,7 +35,9 @@ function HistoryView() {
           </Link>
         </div>
       )}
-      {state.status === "ready" && state.data.length > 0 && <SessionList sessions={state.data} />}
+      {state.status === "ready" && state.data.length > 0 && (
+        <HistoryOverview sessions={state.data} />
+      )}
     </main>
   );
 }

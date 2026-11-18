@@ -90,6 +90,41 @@ export const accountPl: AccountDictionary = {
     deleteCancel: "Zostaw ją",
     deleting: "Usuwam…",
     deleteFailed: "Nie udało się usunąć sesji. Sesji, która wciąż trwa, nie można usunąć.",
+    again: "Ćwicz ponownie",
+    progress: {
+      title: "Twój postęp",
+      intro: "Ile ćwiczysz i na co wskazywały uwagi w ostatnich sesjach.",
+      filter: "Pokaż scenariusz",
+      all: "Wszystkie scenariusze",
+      sessions: (count: number) =>
+        count === 1
+          ? "sesja"
+          : count % 10 >= 2 && count % 10 <= 4 && (count % 100 < 12 || count % 100 > 14)
+            ? "sesje"
+            : "sesji",
+      time: "czas ćwiczeń (min)",
+      answers: (count: number) => (count === 1 ? "odpowiedź" : "odpowiedzi"),
+      words: "słów na odpowiedź średnio",
+      timeline: "Co mówiły uwagi",
+      timelineIntro: "Od najnowszej. Jeśli punkt do poprawy przestaje wracać, to dobry znak.",
+      strengths: "Mocne strony",
+      workOn: "Do poprawy",
+      noFeedback: "Nie ma jeszcze uwag. Poproś o nie na końcu sesji, a pojawią się tutaj.",
+      note: {
+        title: "Jak to liczymy?",
+        points: [
+          "Bierzemy Twoje ostatnie 30 sesji, które się rozpoczęły, także te zakończone wcześniej.",
+          "Czas ćwiczeń liczymy od chwili, gdy rozmówca jest gotowy, do końca sesji.",
+          "Odpowiedzi to Twoje wypowiedzi w transkrypcji. Słowa na odpowiedź to ich średnia długość. Dłużej nie zawsze znaczy lepiej: widać po tym, czy odpowiadasz zbyt krótko, czy zbyt rozwlekle.",
+          "Mocne strony i punkty do poprawy to tytuły z uwag AI, tylko z sesji, w których poprosiłeś o uwagi. AI może się mylić.",
+          "Nie ma żadnej oceny. ensaio Cię nie ocenia, bo to trening.",
+          "Wszystko liczy się w Twojej przeglądarce z Twoich własnych sesji. Nic nowego nie jest zapisywane, a usunięta sesja znika też stąd.",
+        ],
+      },
+    },
+    pdf: "Pobierz PDF",
+    pdfHint:
+      "Ćwicz ponownie otwiera pokój z tym samym scenariuszem, językiem, kontekstem i zachowaniem. Aby pobrać PDF, w oknie drukowania wybierz Zapisz jako PDF.",
     feedbackMissing: "Dla tej sesji nie poproszono o uwagi.",
   },
   account: {
