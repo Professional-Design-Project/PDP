@@ -120,8 +120,9 @@ export const accountEn = {
       },
     },
     pdf: "Download PDF",
+    markdown: "Download Markdown",
     pdfHint:
-      "Practise again opens the room with the same scenario, language, context and behaviour. For the PDF, choose Save as PDF in the print window.",
+      "Practise again opens the room with the same scenario, language, context and behaviour. For the PDF, choose Save as PDF in the print window. Markdown is a plain text file you can open in any editor or paste into notes.",
   },
   account: {
     title: "Your account.",

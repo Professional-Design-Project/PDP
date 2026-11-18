@@ -44,3 +44,21 @@ it("prints the session under a file-friendly title and restores the page title",
   expect(print).toHaveBeenCalledOnce();
   expect(document.title).toBe("Your sessions");
 });
+
+it("downloads the session as a Markdown file", () => {
+  const createObjectURL = vi.fn(() => "blob:session");
+  Object.assign(URL, { createObjectURL, revokeObjectURL: vi.fn() });
+  const click = vi.spyOn(HTMLAnchorElement.prototype, "click").mockImplementation(function (
+    this: HTMLAnchorElement,
+  ) {
+    expect(this.download).toBe("ensaio-oral-exam-2026-11-18.md");
+  });
+  render(
+    <LocaleProvider locale="en">
+      <SessionActions session={session} />
+    </LocaleProvider>,
+  );
+  fireEvent.click(screen.getByRole("button", { name: /Download Markdown/ }));
+  expect(click).toHaveBeenCalledOnce();
+  expect(createObjectURL).toHaveBeenCalledOnce();
+});
