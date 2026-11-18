@@ -16,9 +16,19 @@ export function useFeedback() {
     try {
       setFeedback({ status: "ready", result: await fetchFeedback(session) });
     } catch (caught) {
-      setFeedback({
-        status: caught instanceof HttpError && caught.status === 409 ? "unavailable" : "failed",
-      });
+      const code = caught instanceof HttpError ? caught.code : undefined;
+      const reasons = {
+        feedback_rate_limited: "rate_limited",
+        feedback_provider_unavailable: "provider_unavailable",
+        feedback_not_configured: "not_configured",
+        feedback_invalid_response: "invalid_response",
+        feedback_request_rejected: "request_rejected",
+        session_conflict: "session_conflict",
+      } as const;
+      const reason = Object.entries(reasons).find(([key]) => key === code)?.[1];
+      setFeedback(
+        code === "feedback_unavailable" ? { status: "unavailable" } : { status: "failed", reason },
+      );
     }
   }
 

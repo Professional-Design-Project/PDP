@@ -91,7 +91,7 @@ export function FeedbackSection({ state, transcript, onRequest }: FeedbackSectio
       {state.status === "failed" && (
         <div className="mt-8 flex animate-caption flex-col gap-4 sm:flex-row sm:items-center">
           <p role="alert" className="text-lg text-ink/80">
-            {t.feedback.failed}
+            {state.reason ? t.feedback.errors[state.reason] : t.feedback.failed}
           </p>
           <button
             type="button"

@@ -1,12 +1,15 @@
 import logging
 
+import aiohttp
+import httpx
 from google import genai
-from google.genai import types
+from google.genai import errors, types
 from pydantic import ValidationError
 
 from voicebot.application.feedback import (
     Feedback,
     FeedbackFailed,
+    FeedbackFailure,
     FeedbackRequest,
     feedback_instructions,
     feedback_prompt,
@@ -34,8 +37,19 @@ class GeminiFeedbackWriter:
             )
             return Feedback.model_validate_json(response.text or "")
         except ValidationError as error:
-            logger.error("Feedback response was not valid")
-            raise FeedbackFailed from error
-        except Exception as error:
-            logger.error("Feedback request failed: %s", type(error).__name__)
-            raise FeedbackFailed from error
+            logger.warning("Feedback response failed schema validation")
+            raise FeedbackFailed(FeedbackFailure.INVALID_RESPONSE) from error
+        except errors.APIError as error:
+            logger.warning("Feedback provider request failed: status=%s", error.code)
+            if error.code == 429:
+                reason = FeedbackFailure.RATE_LIMITED
+            elif error.code in (401, 403, 404):
+                reason = FeedbackFailure.NOT_CONFIGURED
+            elif error.code >= 500:
+                reason = FeedbackFailure.PROVIDER_UNAVAILABLE
+            else:
+                reason = FeedbackFailure.REQUEST_REJECTED
+            raise FeedbackFailed(reason) from error
+        except (httpx.RequestError, aiohttp.ClientError, TimeoutError) as error:
+            logger.warning("Feedback provider connection failed: %s", type(error).__name__)
+            raise FeedbackFailed(FeedbackFailure.PROVIDER_UNAVAILABLE) from error

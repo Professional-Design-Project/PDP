@@ -64,6 +64,16 @@ export const sessionPl: SessionDictionary = {
     unavailable:
       "Było za mało twoich odpowiedzi, żeby napisać uwagi. Spróbuj dłuższej sesji i odpowiedz na kilka pytań.",
     failed: "Tym razem nie udało się napisać uwag.",
+    errors: {
+      rate_limited: "Usługa AI osiągnęła limit żądań lub wykorzystania. Spróbuj później.",
+      provider_unavailable: "Usługa AI jest chwilowo niedostępna. Spróbuj ponownie później.",
+      not_configured:
+        "Usługa uwag jest nieprawidłowo skonfigurowana. Skontaktuj się z administratorem.",
+      invalid_response: "Usługa AI zwróciła nieprawidłowe uwagi. Spróbuj ponownie.",
+      request_rejected: "Usługa AI nie mogła przetworzyć prośby o uwagi. Spróbuj ponownie później.",
+      session_conflict:
+        "Uwagi są dostępne po zakończeniu rozmowy. Spróbuj ponownie po jej zakończeniu.",
+    },
     retry: "Spróbuj ponownie",
     keep: "Tak trzymaj",
     work: "Nad tym popracuj",

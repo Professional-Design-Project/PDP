@@ -137,4 +137,13 @@ export type FeedbackState =
   | { status: "loading" }
   | { status: "ready"; result: FeedbackResult }
   | { status: "unavailable" }
-  | { status: "failed" };
+  | {
+      status: "failed";
+      reason?:
+        | "rate_limited"
+        | "provider_unavailable"
+        | "not_configured"
+        | "invalid_response"
+        | "request_rejected"
+        | "session_conflict";
+    };

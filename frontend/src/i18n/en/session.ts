@@ -61,6 +61,15 @@ export const sessionEn = {
     unavailable:
       "There were not enough of your answers to give feedback on. Try a longer session and answer a few questions.",
     failed: "The feedback could not be written this time.",
+    errors: {
+      rate_limited: "The AI service has reached a request or usage limit. Please try again later.",
+      provider_unavailable: "The AI service is temporarily unavailable. Please try again later.",
+      not_configured: "The feedback service is not configured correctly. Contact an administrator.",
+      invalid_response: "The AI service returned invalid feedback. Please try again.",
+      request_rejected:
+        "The AI service could not process the feedback request. Please try again later.",
+      session_conflict: "Feedback is available after the session has ended. Please try again then.",
+    },
     retry: "Try again",
     keep: "Keep this",
     work: "Work on this",

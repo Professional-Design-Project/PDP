@@ -62,3 +62,17 @@ it("explains when there is not enough to give feedback on", () => {
   render(<FeedbackSection state={{ status: "unavailable" }} transcript={[]} onRequest={vi.fn()} />);
   expect(screen.getByText(/not enough of your answers/)).toBeInTheDocument();
 });
+
+it("explains a provider outage and allows retrying", () => {
+  const retry = vi.fn();
+  render(
+    <FeedbackSection
+      state={{ status: "failed", reason: "provider_unavailable" }}
+      transcript={[]}
+      onRequest={retry}
+    />,
+  );
+  expect(screen.getByRole("alert")).toHaveTextContent("AI service is temporarily unavailable");
+  fireEvent.click(screen.getByRole("button", { name: "Try again" }));
+  expect(retry).toHaveBeenCalledOnce();
+});

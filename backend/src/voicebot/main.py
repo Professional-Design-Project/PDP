@@ -1,12 +1,16 @@
 import asyncio
 import logging
+import traceback
 from contextlib import asynccontextmanager, suppress
 
 from fastapi import FastAPI, Request
+from fastapi.encoders import jsonable_encoder
+from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from loguru import logger as pipecat_logger
 from pydantic import BaseModel
+from starlette.exceptions import HTTPException as StarletteHTTPException
 
 from voicebot.api.account import router as account_router
 from voicebot.api.auth import AuthenticationRequired
@@ -14,7 +18,7 @@ from voicebot.api.documents import router as documents_router
 from voicebot.api.scenarios import scenario_router
 from voicebot.api.sessions import router as sessions_router
 from voicebot.application.documents import DocumentTooLarge, EmptyDocument, UnsupportedDocument
-from voicebot.application.feedback import FeedbackFailed, FeedbackUnavailable
+from voicebot.application.feedback import FeedbackFailed, FeedbackFailure, FeedbackUnavailable
 from voicebot.application.scenarios import ScenarioNotFound
 from voicebot.application.sessions import (
     SessionAccessDenied,
@@ -36,7 +40,58 @@ from voicebot.settings import Settings
 
 
 class ErrorResponse(BaseModel):
-    detail: str
+    code: str
+    detail: str | list[dict]
+
+
+logger = logging.getLogger(__name__)
+
+
+APPLICATION_ERRORS = {
+    AuthenticationRequired: (401, "authentication_required", "Sign in required"),
+    AccountDeletionFailed: (503, "account_deletion_failed", "Account deletion is not available"),
+    ScenarioNotFound: (404, "scenario_not_found", "Scenario not found"),
+    ConsentRequired: (400, "consent_required", "Required consent missing"),
+    SessionNotFound: (404, "session_not_found", "Session not found"),
+    SessionAccessDenied: (403, "session_access_denied", "Session access denied"),
+    SessionConflict: (409, "session_conflict", "Session state conflict"),
+    InvalidSignaling: (400, "invalid_signaling", "Invalid WebRTC signaling"),
+    VoiceUnavailable: (503, "voice_unavailable", "Voice provider is not configured"),
+    SessionLimitExceeded: (503, "session_limit_exceeded", "Session capacity reached"),
+    TimeoutError: (504, "voice_timeout", "Voice connection timed out"),
+    FeedbackUnavailable: (409, "feedback_unavailable", "Not enough answers for feedback"),
+    UnsupportedDocument: (415, "unsupported_document", "Unsupported or unreadable document"),
+    DocumentTooLarge: (413, "document_too_large", "Document is larger than 10 MB"),
+    EmptyDocument: (422, "empty_document", "No text found in the document"),
+}
+
+FEEDBACK_ERRORS = {
+    FeedbackFailure.RATE_LIMITED: (
+        503,
+        "feedback_rate_limited",
+        "Feedback provider rate limit reached",
+    ),
+    FeedbackFailure.PROVIDER_UNAVAILABLE: (
+        503,
+        "feedback_provider_unavailable",
+        "Feedback provider is temporarily unavailable",
+    ),
+    FeedbackFailure.NOT_CONFIGURED: (
+        503,
+        "feedback_not_configured",
+        "Feedback provider is not configured correctly",
+    ),
+    FeedbackFailure.INVALID_RESPONSE: (
+        502,
+        "feedback_invalid_response",
+        "Feedback provider returned an invalid response",
+    ),
+    FeedbackFailure.REQUEST_REJECTED: (
+        502,
+        "feedback_request_rejected",
+        "Feedback provider rejected the request",
+    ),
+}
 
 
 def create_app(
@@ -108,7 +163,7 @@ def create_app(
         ),
         responses={
             status: {"model": ErrorResponse}
-            for status in (400, 401, 403, 404, 409, 413, 415, 422, 502, 503, 504)
+            for status in (400, 401, 403, 404, 409, 413, 415, 422, 500, 502, 503, 504)
         },
     )
     app.add_middleware(
@@ -130,45 +185,37 @@ def create_app(
         return response
 
     async def application_error(request: Request, error: Exception):
-        errors = {
-            AuthenticationRequired: (401, "Sign in required"),
-            AccountDeletionFailed: (503, "Account deletion is not available"),
-            ScenarioNotFound: (404, "Scenario not found"),
-            ConsentRequired: (400, "Required consent missing"),
-            SessionNotFound: (404, "Session not found"),
-            SessionAccessDenied: (403, "Session access denied"),
-            SessionConflict: (409, "Session state conflict"),
-            InvalidSignaling: (400, "Invalid WebRTC signaling"),
-            VoiceUnavailable: (503, "Voice provider is not configured"),
-            SessionLimitExceeded: (503, "Session capacity reached"),
-            TimeoutError: (504, "Voice connection timed out"),
-            FeedbackUnavailable: (409, "Not enough answers for feedback"),
-            UnsupportedDocument: (415, "Unsupported or unreadable document"),
-            DocumentTooLarge: (413, "Document is larger than 10 MB"),
-            EmptyDocument: (422, "No text found in the document"),
-            FeedbackFailed: (502, "Feedback could not be generated"),
-        }
-        status, detail = errors[type(error)]
-        return JSONResponse(status_code=status, content={"detail": detail})
+        status, code, detail = (
+            FEEDBACK_ERRORS[error.reason]
+            if isinstance(error, FeedbackFailed)
+            else APPLICATION_ERRORS[type(error)]
+        )
+        return JSONResponse(status_code=status, content={"code": code, "detail": detail})
 
-    for error in (
-        AuthenticationRequired,
-        AccountDeletionFailed,
-        ScenarioNotFound,
-        ConsentRequired,
-        SessionNotFound,
-        SessionAccessDenied,
-        SessionConflict,
-        InvalidSignaling,
-        VoiceUnavailable,
-        SessionLimitExceeded,
-        TimeoutError,
-        FeedbackUnavailable,
-        FeedbackFailed,
-        UnsupportedDocument,
-        DocumentTooLarge,
-        EmptyDocument,
-    ):
+    async def validation_error(request: Request, error: RequestValidationError):
+        return JSONResponse(
+            status_code=422,
+            content={"code": "validation_error", "detail": jsonable_encoder(error.errors())},
+        )
+
+    async def http_error(request: Request, error: StarletteHTTPException):
+        return JSONResponse(
+            status_code=error.status_code,
+            content={"code": "http_error", "detail": error.detail},
+            headers=error.headers,
+        )
+
+    async def unexpected_error(request: Request, error: Exception):
+        frames = [(frame.name, frame.lineno) for frame in traceback.extract_tb(error.__traceback__)]
+        logger.error("Unhandled request error: type=%s frames=%s", type(error).__name__, frames)
+        return JSONResponse(
+            status_code=500, content={"code": "internal_error", "detail": "Internal server error"}
+        )
+
+    app.add_exception_handler(RequestValidationError, validation_error)
+    app.add_exception_handler(StarletteHTTPException, http_error)
+    app.add_exception_handler(Exception, unexpected_error)
+    for error in (*APPLICATION_ERRORS, FeedbackFailed):
         app.add_exception_handler(error, application_error)
 
     @app.get("/v1/health", tags=["health"])

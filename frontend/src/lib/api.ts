@@ -7,7 +7,10 @@ import { accessToken } from "@/lib/supabase/client";
 export const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://127.0.0.1:8000/v1";
 
 export class HttpError extends Error {
-  constructor(readonly status: number) {
+  constructor(
+    readonly status: number,
+    readonly code?: string,
+  ) {
     super(`Request failed (${status})`);
   }
 }
@@ -37,7 +40,14 @@ async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
     ...options,
     headers: { "Content-Type": "application/json", ...options.headers },
   });
-  if (!response.ok) throw new HttpError(response.status);
+  if (!response.ok) {
+    const body: unknown = await response.json().catch(() => null);
+    const code =
+      body && typeof body === "object" && "code" in body && typeof body.code === "string"
+        ? body.code
+        : undefined;
+    throw new HttpError(response.status, code);
+  }
   return response.json() as Promise<T>;
 }
 

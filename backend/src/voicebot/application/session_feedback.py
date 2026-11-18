@@ -1,6 +1,7 @@
 from voicebot.application.feedback import (
     Feedback,
     FeedbackFailed,
+    FeedbackFailure,
     FeedbackRequest,
     FeedbackUnavailable,
     FeedbackWriter,
@@ -28,7 +29,7 @@ async def session_feedback(
     if not any(event.data.get("role") == "user" for event in turns):
         raise FeedbackUnavailable
     if writer is None:
-        raise FeedbackFailed
+        raise FeedbackFailed(FeedbackFailure.NOT_CONFIGURED)
     feedback = await _write(scenarios, session, turns, writer)
     await repository.append_event(
         session.id, "feedback.created", {"payload": feedback.model_dump_json()}
@@ -57,5 +58,5 @@ async def _write(
         and note.quote in lines[note.line - 1][2]
     ]
     if not notes:
-        raise FeedbackFailed
+        raise FeedbackFailed(FeedbackFailure.INVALID_RESPONSE)
     return feedback.model_copy(update={"notes": notes})

@@ -1,4 +1,5 @@
 from dataclasses import dataclass
+from enum import StrEnum
 from typing import Literal, Protocol
 
 from pydantic import BaseModel, Field
@@ -33,8 +34,18 @@ class FeedbackUnavailable(Exception):
     pass
 
 
+class FeedbackFailure(StrEnum):
+    RATE_LIMITED = "rate_limited"
+    PROVIDER_UNAVAILABLE = "provider_unavailable"
+    NOT_CONFIGURED = "not_configured"
+    INVALID_RESPONSE = "invalid_response"
+    REQUEST_REJECTED = "request_rejected"
+
+
 class FeedbackFailed(Exception):
-    pass
+    def __init__(self, reason: FeedbackFailure):
+        self.reason = reason
+        super().__init__(reason.value)
 
 
 class FeedbackWriter(Protocol):
