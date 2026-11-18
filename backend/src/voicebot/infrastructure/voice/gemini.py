@@ -26,8 +26,9 @@ from pipecat.workers.runner import WorkerRunner
 from voicebot.domain.session import ConversationEndReason, Session, Speaker
 from voicebot.infrastructure.voice.completion import (
     AssistantTranscriptSavedFrame,
+    BeginClosingFrame,
+    ClosingAudio,
     ConversationCompletion,
-    ConversationEndFrame,
 )
 from voicebot.settings import Settings
 
@@ -69,8 +70,9 @@ class GeminiConversation:
                 standard_tools=[
                     FunctionSchema(
                         name="finish_session",
-                        description="End the meeting after your spoken closing statement. "
-                        "Do not speak or ask another question after calling this tool.",
+                        description="Request the end of the meeting BEFORE saying goodbye. "
+                        "After the tool succeeds, say one brief closing statement, "
+                        "then remain silent.",
                         properties={
                             "reason": {
                                 "type": "string",
@@ -88,11 +90,13 @@ class GeminiConversation:
             user_params=LLMUserAggregatorParams(user_turn_strategies=ExternalUserTurnStrategies()),
         )
         self.completion = ConversationCompletion()
+        self.closing_audio = ClosingAudio()
         pipeline = Pipeline(
             [
                 self.transport.input(),
                 self.user,
                 self.llm,
+                self.closing_audio,
                 self.transport.output(),
                 self.assistant,
                 self.completion,
@@ -121,23 +125,29 @@ class GeminiConversation:
                 properties=FunctionCallResultProperties(run_llm=False),
             )
             return
-        if self._end_reason is None:
-            self._end_reason = reason
-            self.llm.set_audio_input_paused(True)
-
+        if self._end_reason is not None:
+            await params.result_callback(
+                {"status": "already_closing"},
+                properties=FunctionCallResultProperties(run_llm=False),
+            )
+            return
+        self._end_reason = reason
+        self.llm.set_audio_input_paused(True)
+        await self.llm.push_frame(BeginClosingFrame(reason))
         await params.result_callback(
-            {"status": "closing"},
-            properties=FunctionCallResultProperties(run_llm=False),
+            {
+                "status": "closing",
+                "instruction": "Say one brief goodbye in character now, then remain silent.",
+            },
+            properties=FunctionCallResultProperties(run_llm=True),
         )
-        # Unlike tool-result system frames, this marker waits behind queued audio.
-        await self.llm.push_frame(ConversationEndFrame(self._end_reason))
 
     async def run(
         self,
         stop: asyncio.Event,
         on_ready: Callable[[], Awaitable[None]],
         on_transcript: Callable[[Speaker, str, bool, str], Awaitable[None]],
-        on_completed: Callable[[ConversationEndReason], Awaitable[None]],
+        on_completed: Callable[[ConversationEndReason, bytes], Awaitable[None]],
     ) -> None:
         pipeline_ready = False
         client_connected = False
@@ -203,7 +213,7 @@ class GeminiConversation:
                 and not self.failed
                 and self.completion.reason is not None
             ):
-                await on_completed(self.completion.reason)
+                await on_completed(self.completion.reason, self.closing_audio.wav)
                 if not stop.is_set():
                     await self.worker.stop_when_done()
                     await asyncio.wait((run_task, stop_task), return_when=asyncio.FIRST_COMPLETED)

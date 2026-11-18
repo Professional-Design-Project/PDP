@@ -59,7 +59,12 @@ class FakePeer extends EventTarget {
   localDescription = offer;
   ontrack: ((event: RTCTrackEvent) => void) | null = null;
   onconnectionstatechange: (() => void) | null = null;
-  channel = { onmessage: null as ((event: MessageEvent) => void) | null, close: vi.fn() };
+  channel = {
+    onmessage: null as ((event: MessageEvent) => void) | null,
+    close: vi.fn(),
+    send: vi.fn(),
+    readyState: "open",
+  };
   addTrack = vi.fn();
   close = vi.fn();
   createDataChannel = vi.fn(() => this.channel);
@@ -163,6 +168,54 @@ it("shows the completed summary with the closing line and stops the microphone o
   expect(peers[0].close).toHaveBeenCalledOnce();
   expect(endSession).toHaveBeenCalledExactlyOnceWith(session);
   expect(onFinished).toHaveBeenCalledExactlyOnceWith(undefined, session);
+});
+
+it("acknowledges the closing clip only after playback ends and keeps the session open", async () => {
+  const mic = microphone();
+  getUserMedia.mockResolvedValue(mic.stream);
+  const audio = {
+    srcObject: null,
+    src: "",
+    onended: null as (() => void) | null,
+    onerror: null as (() => void) | null,
+    play: vi.fn().mockResolvedValue(undefined),
+    pause: vi.fn(),
+    removeAttribute: vi.fn(),
+  };
+  vi.stubGlobal(
+    "Audio",
+    vi.fn(function () {
+      return audio;
+    }),
+  );
+  vi.stubGlobal("URL", { createObjectURL: vi.fn(() => "blob:closing"), revokeObjectURL: vi.fn() });
+  const { result } = renderHook(() => useVoiceSession({ onFinished: vi.fn() }));
+  await act(() => result.current.start(body, ""));
+  const channel = peers[0].channel;
+  const message = (data: object) =>
+    channel.onmessage?.(
+      new MessageEvent("message", {
+        data: JSON.stringify({ type: "server-message", data }),
+      }),
+    );
+
+  await act(async () => {
+    message({ kind: "playback.start", id: "closing", bytes: 48 });
+    message({ kind: "playback.audio", id: "closing", audio: btoa("x".repeat(48)) });
+    message({ kind: "playback.end", id: "closing" });
+  });
+  expect(audio.play).toHaveBeenCalledOnce();
+  expect(channel.send).not.toHaveBeenCalled();
+  expect(mic.track.enabled).toBe(false);
+  expect(result.current.phase).toBe("session");
+  act(() => audio.onended?.());
+  expect(channel.send).toHaveBeenCalledExactlyOnceWith(
+    JSON.stringify({
+      type: "playback.finished",
+      data: { id: "closing", played: true },
+    }),
+  );
+  expect(result.current.phase).toBe("session");
 });
 
 it("ends a late-created session without touching the next conversation", async () => {

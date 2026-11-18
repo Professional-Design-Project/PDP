@@ -6,6 +6,7 @@ from voicebot.application.sessions import Sessions
 from voicebot.domain.session import ConversationEndReason, SessionConflict, SessionStatus, Speaker
 from voicebot.infrastructure.voice.active_session import ActiveSession, InvalidSignaling
 from voicebot.infrastructure.voice.gemini import GeminiConversation, VoiceUnavailable
+from voicebot.infrastructure.voice.playback import PlaybackFailed, confirm_playback
 from voicebot.infrastructure.voice.webrtc import Answer, Candidates, Offer, add_candidates
 from voicebot.settings import Settings
 
@@ -125,12 +126,25 @@ class VoiceRuntime:
                     }
                 )
 
-        async def completed(reason: ConversationEndReason):
+        async def completed(reason: ConversationEndReason, closing_audio: bytes):
             if entry.stop.is_set():
                 return
-            ended = await self.sessions.transition(session_id, SessionStatus.ENDED, reason)
+            failure = None
+            played = False
+            try:
+                played = await confirm_playback(entry.connection, entry.stop, closing_audio)
+            except TimeoutError:
+                failure = "playback_timeout"
+            except PlaybackFailed:
+                failure = "playback_failed"
+            if entry.stop.is_set() or (not played and failure is None):
+                return
+            status = SessionStatus.FAILED if failure else SessionStatus.ENDED
+            ended = await self.sessions.transition(session_id, status, failure or reason)
             entry.reason = ended.end_reason
             entry.send({"kind": f"session.{ended.status}", "reason": ended.end_reason})
+            if failure:
+                entry.fail(failure)
 
         await conversation.run(entry.stop, ready, transcript, completed)
 

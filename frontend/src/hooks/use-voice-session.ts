@@ -2,6 +2,7 @@
 
 import { useEffect, useReducer, useRef, useState } from "react";
 import { audioConstraints } from "@/hooks/use-microphone";
+import { ClosingPlayback } from "@/lib/closing-playback";
 import {
   createSession,
   endSession,
@@ -28,6 +29,7 @@ type Options = {
 type ConnectionAttempt = {
   controller: AbortController;
   muted: boolean;
+  closing?: boolean;
   stream?: MediaStream;
   session?: VoiceSession;
   peer?: RTCPeerConnection;
@@ -142,7 +144,7 @@ export function useVoiceSession({ onFinished }: Options) {
     attempt.peer = peer;
     stream.getTracks().forEach((track) => peer.addTrack(track, stream));
     peer.ontrack = (event) => {
-      if (!isCurrent(attempt)) return;
+      if (!isCurrent(attempt) || attempt.closing) return;
       const audio = attempt.audio ?? new Audio();
       audio.autoplay = true;
       attempt.audio = audio;
@@ -156,10 +158,30 @@ export function useVoiceSession({ onFinished }: Options) {
     };
     const channel = peer.createDataChannel("rtvi-ai");
     attempt.channel = channel;
+    const playback = new ClosingPlayback(
+      () => (attempt.audio ??= new Audio()),
+      (message) => {
+        if (isCurrent(attempt) && channel.readyState === "open") {
+          channel.send(JSON.stringify(message));
+        }
+      },
+      attempt.controller.signal,
+    );
     channel.onmessage = (event) => {
       if (!isCurrent(attempt)) return;
       try {
-        dispatch({ type: "message", message: JSON.parse(event.data), now: Date.now() });
+        const message = JSON.parse(event.data);
+        if (message.type === "server-message" && message.data && typeof message.data === "object") {
+          if (message.data.kind === "playback.start") {
+            attempt.closing = true;
+            setEnding(true);
+            attempt.stream?.getAudioTracks().forEach((track) => {
+              track.enabled = false;
+            });
+          }
+          playback.receive(message.data);
+        }
+        dispatch({ type: "message", message, now: Date.now() });
       } catch {
         return;
       }
@@ -230,7 +252,7 @@ export function useVoiceSession({ onFinished }: Options) {
 
   function toggleMute() {
     const attempt = attemptRef.current;
-    if (!attempt || !isCurrent(attempt)) return;
+    if (!attempt || !isCurrent(attempt) || attempt.closing) return;
     const next = !attempt.muted;
     attempt.muted = next;
     attempt.stream?.getAudioTracks().forEach((track) => {

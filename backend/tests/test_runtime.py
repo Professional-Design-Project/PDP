@@ -1,5 +1,8 @@
 import asyncio
+import base64
+import io
 import json
+import wave
 from types import SimpleNamespace
 from unittest.mock import AsyncMock, Mock
 
@@ -14,7 +17,6 @@ from pipecat.frames.frames import (
     TTSStoppedFrame,
     TTSTextFrame,
 )
-from pipecat.services.llm_service import FunctionCallFromLLM
 
 from voicebot.application.documents import Document
 from voicebot.application.sessions import Sessions
@@ -105,10 +107,13 @@ async def test_completion_is_saved_and_sent_before_disconnect(tmp_path, monkeypa
         entry.ready.set()
         runtime = VoiceRuntime(sessions, Settings(_env_file=None))
         runtime.active[session.id] = entry
+        monkeypatch.setattr(
+            "voicebot.infrastructure.voice.runtime.confirm_playback", AsyncMock(return_value=True)
+        )
 
         async def run(stop, ready, transcript, completed):
             await transcript("assistant", "Dziękuję, egzamin zakończony.", False, "now")
-            await completed(reason)
+            await completed(reason, b"closing audio")
             saved = await sessions.get(session.id)
             assert saved.status == "ended"
             assert saved.end_reason == reason
@@ -155,7 +160,7 @@ async def test_completion_does_not_override_an_external_stop(tmp_path, monkeypat
         async def run(stop, ready, transcript, completed):
             entry.reason = "session_timeout"
             stop.set()
-            await completed(ConversationEndReason.SCENARIO_COMPLETED)
+            await completed(ConversationEndReason.SCENARIO_COMPLETED, b"closing audio")
 
         monkeypatch.setattr(
             "voicebot.infrastructure.voice.runtime.GeminiConversation",
@@ -167,7 +172,10 @@ async def test_completion_does_not_override_an_external_stop(tmp_path, monkeypat
         await database.close()
 
 
-async def test_real_pipeline_delivers_closing_audio_and_completion(tmp_path, monkeypatch):
+@pytest.mark.parametrize("played", [True, False])
+async def test_real_pipeline_waits_for_client_playback_before_completion(
+    tmp_path, monkeypatch, played
+):
     database = await Database.open(tmp_path / "pipeline.sqlite3")
     sessions = Sessions(database, load_scenarios(), "test-model")
     runtime = VoiceRuntime(sessions, Settings(_env_file=None, google_api_key="test-key"))
@@ -199,18 +207,27 @@ async def test_real_pipeline_delivers_closing_audio_and_completion(tmp_path, mon
     peer = RTCPeerConnection(RTCConfiguration(iceServers=[]))
     ready = asyncio.Event()
     ended = asyncio.Event()
+    clip_ready = asyncio.Event()
     messages = []
+    audio_chunks = []
+    playback_id = None
     channel = peer.createDataChannel("rtvi-ai")
 
     @channel.on("message")
     def receive(message):
-        nonlocal audio_bytes_at_end
+        nonlocal audio_bytes_at_end, playback_id
         data = json.loads(message)
         if data.get("type") == "server-message":
             messages.append(data["data"])
             if data["data"]["kind"] == "session.ready":
                 ready.set()
-            if data["data"]["kind"] == "session.ended":
+            if data["data"]["kind"] == "playback.start":
+                playback_id = data["data"]["id"]
+            if data["data"]["kind"] == "playback.audio":
+                audio_chunks.append(base64.b64decode(data["data"]["audio"]))
+            if data["data"]["kind"] == "playback.end":
+                clip_ready.set()
+            if data["data"]["kind"] in ("session.ended", "session.failed"):
                 audio_bytes_at_end = audio_bytes_sent
                 ended.set()
 
@@ -224,6 +241,11 @@ async def test_real_pipeline_delivers_closing_audio_and_completion(tmp_path, mon
         async with asyncio.timeout(10):
             await ready.wait()
             conversation = conversations[0]
+            await conversation._finish_session(
+                SimpleNamespace(
+                    arguments={"reason": "scenario_completed"}, result_callback=AsyncMock()
+                )
+            )
             for frame in [
                 LLMFullResponseStartFrame(),
                 TTSStartedFrame(),
@@ -231,30 +253,37 @@ async def test_real_pipeline_delivers_closing_audio_and_completion(tmp_path, mon
                 TTSAudioRawFrame(audio=b"\x01\x00" * 12000, sample_rate=24000, num_channels=1),
             ]:
                 await conversation.llm.push_frame(frame)
-            await conversation.llm.run_function_calls(
-                [
-                    FunctionCallFromLLM(
-                        context=conversation.context,
-                        tool_call_id="finish",
-                        function_name="finish_session",
-                        arguments={"reason": "scenario_completed"},
-                    )
-                ]
-            )
             await conversation.llm.push_frame(TTSStoppedFrame())
             await conversation.llm.push_frame(LLMFullResponseEndFrame())
+            await clip_ready.wait()
+            assert not ended.is_set()
+            assert (await sessions.get(session.id)).status == "active"
+            assert not entry.task.done()
+            assert entry.connection.is_connected()
+            with wave.open(io.BytesIO(b"".join(audio_chunks)), "rb") as clip:
+                assert clip.getnframes() == 12000
+                assert clip.getframerate() == 24000
+                assert clip.readframes(12000) == b"\x01\x00" * 12000
+            channel.send(
+                json.dumps(
+                    {"type": "playback.finished", "data": {"id": playback_id, "played": played}}
+                )
+            )
             await ended.wait()
             await entry.task
 
         final = await sessions.get(session.id)
-        assert final.end_reason == "scenario_completed"
-        assert [message["kind"] for message in messages] == [
+        assert final.end_reason == ("scenario_completed" if played else "playback_failed")
+        session_messages = [
+            message for message in messages if not message["kind"].startswith("playback.")
+        ]
+        assert [message["kind"] for message in session_messages] == [
             "session.ready",
             "transcript.final",
-            "session.ended",
+            "session.ended" if played else "session.failed",
         ]
-        assert messages[1]["text"] == "Goodbye."
-        assert audio_bytes_at_end >= 24000
+        assert session_messages[1]["text"] == "Goodbye."
+        assert audio_bytes_at_end == 0
         assert not runtime.active
     finally:
         await runtime.close()
