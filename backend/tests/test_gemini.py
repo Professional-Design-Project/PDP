@@ -232,3 +232,24 @@ async def test_closing_waits_for_tts_after_llm_response(conversation):
     completed.assert_awaited_once_with(
         ConversationEndReason.SCENARIO_COMPLETED, conversation.closing_audio.wav
     )
+
+
+async def test_closing_tool_called_during_response_captures_remaining_audio(conversation):
+    completed = AsyncMock()
+    task = asyncio.create_task(
+        conversation.run(asyncio.Event(), AsyncMock(), AsyncMock(), completed)
+    )
+    await conversation.started.wait()
+    await conversation.llm.push_frame(LLMFullResponseStartFrame())
+    await call_finish(conversation, {"reason": "scenario_completed"})
+    await conversation.llm.push_frame(TTSAudioRawFrame(b"\x01\x00" * 2400, 24000, 1))
+    await conversation.llm.push_frame(TTSStoppedFrame())
+    await conversation.llm.push_frame(LLMFullResponseEndFrame())
+    await conversation.assistant.emit(
+        "on_assistant_turn_stopped",
+        SimpleNamespace(content="Goodbye.", interrupted=False, timestamp="now"),
+    )
+    await asyncio.wait_for(task, 1)
+    completed.assert_awaited_once_with(
+        ConversationEndReason.SCENARIO_COMPLETED, conversation.closing_audio.wav
+    )

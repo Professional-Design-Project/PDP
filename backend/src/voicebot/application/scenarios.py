@@ -57,6 +57,10 @@ def compile_instructions(
         "closing statement in character, then remain silent. Do not ask another question "
         "or call the tool again. Never announce that the meeting is over without first "
         "calling finish_session.",
+        "If you ask the participant a question, stop speaking and wait for their answer. "
+        "Do not answer it for them or say goodbye in the same turn. If you offer them a "
+        "chance to ask questions, wait for their response and address their questions before "
+        "calling finish_session. Do not offer that chance after calling finish_session.",
         f"Scenario: {scenario.id}, version: {scenario.version}.",
         f"Conversation language: {scenario.language.prompt_name} ({scenario.language.value}).",
         f"Speak only in {scenario.language.prompt_name}, unless the user explicitly "

@@ -72,4 +72,5 @@ def test_session_boundaries_apply_to_every_scenario(scenario_id, language):
     assert "call finish_session with reason 'scenario_completed'" in instructions
     assert "call finish_session with reason 'user_ended'" in instructions
     assert "Call the tool BEFORE saying goodbye" in instructions
+    assert "wait for their response and address their questions" in instructions
     assert instructions.index("Session rules take precedence") < instructions.index("Scenario:")

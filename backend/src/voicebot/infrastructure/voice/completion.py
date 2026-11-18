@@ -34,6 +34,7 @@ class ClosingAudio(FrameProcessor):
         super().__init__()
         self.wav = b""
         self._reason: ConversationEndReason | None = None
+        self._responding = False
         self._recording = False
         self._response_ended = False
         self._audio_ended = False
@@ -43,8 +44,13 @@ class ClosingAudio(FrameProcessor):
     async def process_frame(self, frame: Frame, direction: FrameDirection):
         await super().process_frame(frame, direction)
         if direction == FrameDirection.DOWNSTREAM:
+            if isinstance(frame, LLMFullResponseStartFrame):
+                self._responding = True
+            elif isinstance(frame, (LLMFullResponseEndFrame, InterruptionFrame)):
+                self._responding = False
             if isinstance(frame, BeginClosingFrame):
                 self._reason = frame.reason
+                self._recording = self._responding
             elif isinstance(frame, LLMFullResponseStartFrame) and self._reason is not None:
                 self._recording = True
             elif isinstance(frame, OutputAudioRawFrame) and self._recording:
