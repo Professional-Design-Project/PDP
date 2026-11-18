@@ -66,6 +66,15 @@ cd backend && uv run ruff check && uv run pytest
 cd frontend && corepack pnpm typecheck && corepack pnpm lint && corepack pnpm test
 ```
 
+The Postgres tests run only when `VOICEBOT_TEST_DATABASE_URL` points to a disposable Postgres server, for example:
+
+```
+docker run -d --rm --name ensaio-pg-test -e POSTGRES_PASSWORD=postgres -p 55432:5432 postgres:17
+VOICEBOT_TEST_DATABASE_URL=postgresql://postgres:postgres@127.0.0.1:55432/postgres uv run pytest
+```
+
+GitHub Actions (`.github/workflows/ci.yml`) runs all checks, the Postgres tests and the frontend build on every pull request and on every push to `main`.
+
 ## Repository
 
 | Path | Contents |
