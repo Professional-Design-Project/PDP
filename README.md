@@ -73,7 +73,14 @@ docker run -d --rm --name ensaio-pg-test -e POSTGRES_PASSWORD=postgres -p 55432:
 VOICEBOT_TEST_DATABASE_URL=postgresql://postgres:postgres@127.0.0.1:55432/postgres uv run pytest
 ```
 
-GitHub Actions (`.github/workflows/ci.yml`) runs all checks, the Postgres tests and the frontend build on every pull request and on every push to `main`.
+The end-to-end tests use Playwright. They build the frontend in local mode, start it on port 3100 and mock the backend, so they need no servers and no Supabase project:
+
+```
+cd frontend && corepack pnpm exec playwright install chromium
+cd frontend && corepack pnpm e2e
+```
+
+GitHub Actions (`.github/workflows/ci.yml`) runs all checks, the Postgres tests, the frontend build and the end-to-end tests on every pull request and on every push to `main`.
 
 ## Repository
 
