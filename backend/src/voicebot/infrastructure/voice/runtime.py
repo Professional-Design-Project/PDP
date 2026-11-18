@@ -93,7 +93,7 @@ class VoiceRuntime:
     async def _serve(self, session_id: str, entry: ActiveSession) -> None:
         if entry.stop.is_set():
             return
-        session = await self.sessions.get(session_id)
+        session = await self.sessions.for_conversation(session_id)
         conversation = GeminiConversation(session, entry.connection, self.settings)
 
         async def ready():

@@ -1,8 +1,11 @@
 import asyncio
+from types import SimpleNamespace
+from unittest.mock import AsyncMock, Mock
 
 import pytest
 from aiortc import RTCConfiguration, RTCPeerConnection, RTCSessionDescription
 
+from voicebot.application.documents import Document
 from voicebot.application.sessions import Sessions
 from voicebot.domain.session import SessionConflict
 from voicebot.infrastructure.database import Database
@@ -10,6 +13,33 @@ from voicebot.infrastructure.scenarios import load_scenarios
 from voicebot.infrastructure.voice.runtime import VoiceRuntime
 from voicebot.infrastructure.voice.webrtc import Offer
 from voicebot.settings import Settings
+
+
+async def test_runtime_passes_document_brief_to_gemini_without_storing_it(tmp_path, monkeypatch):
+    database = await Database.open(tmp_path / "runtime.sqlite3")
+    try:
+        sessions = Sessions(database, load_scenarios(), "test-model")
+        document = Document("cv.txt", "cv", "Built a payments ledger in Kotlin.")
+        session, _ = await sessions.create(
+            "job-interview", "en", "Backend role", documents=(document,)
+        )
+        conversation = Mock(run=AsyncMock())
+        factory = Mock(return_value=conversation)
+        monkeypatch.setattr("voicebot.infrastructure.voice.runtime.GeminiConversation", factory)
+        entry = SimpleNamespace(stop=asyncio.Event(), connection=object())
+        runtime = VoiceRuntime(sessions, Settings(_env_file=None))
+
+        await runtime._serve(session.id, entry)
+
+        supplied = factory.call_args.args[0]
+        assert supplied.instructions == (await sessions.for_conversation(session.id)).instructions
+        assert document.text in supplied.instructions
+        assert "Backend role" in supplied.instructions
+        assert "Stay in character" in supplied.instructions
+        assert document.text not in (await database.get(session.id)).instructions
+        conversation.run.assert_awaited_once()
+    finally:
+        await database.close()
 
 
 async def test_real_webrtc_signaling_and_cleanup(tmp_path, monkeypatch):
