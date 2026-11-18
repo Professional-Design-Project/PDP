@@ -124,6 +124,47 @@ it("connects normally and releases the active session once", async () => {
   expect(result.current.connecting).toBe(false);
 });
 
+it("shows the completed summary with the closing line and stops the microphone once", async () => {
+  const mic = microphone();
+  getUserMedia.mockResolvedValue(mic.stream);
+  const now = vi.spyOn(Date, "now").mockReturnValue(1000);
+  const onFinished = vi.fn();
+  const { result } = renderHook(() => useVoiceSession({ onFinished }));
+  await act(() => result.current.start(body, ""));
+  const receive = peers[0].channel.onmessage;
+  function message(data: Record<string, unknown>) {
+    receive?.(
+      new MessageEvent("message", {
+        data: JSON.stringify({ type: "server-message", data }),
+      }),
+    );
+  }
+  act(() => message({ kind: "session.ready" }));
+  now.mockReturnValue(6000);
+
+  await act(async () => {
+    message({ kind: "transcript.final", sequence: 1, role: "assistant", text: "Goodbye." });
+    message({ kind: "session.ended", reason: "scenario_completed" });
+    message({ kind: "session.ended", reason: "scenario_completed" });
+  });
+  await act(async () => {
+    message({ kind: "session.ended", reason: "scenario_completed" });
+  });
+
+  expect(result.current.phase).toBe("summary");
+  expect(result.current.summary).toMatchObject({
+    duration: 5,
+    end: "completed",
+    transcript: [{ role: "assistant", text: "Goodbye." }],
+  });
+  expect(result.current.connected).toBe(false);
+  expect(result.current.live.botSpeaking).toBe(false);
+  expect(mic.track.stop).toHaveBeenCalledOnce();
+  expect(peers[0].close).toHaveBeenCalledOnce();
+  expect(endSession).toHaveBeenCalledExactlyOnceWith(session);
+  expect(onFinished).toHaveBeenCalledExactlyOnceWith(undefined, session);
+});
+
 it("ends a late-created session without touching the next conversation", async () => {
   const pending = Promise.withResolvers<VoiceSession>();
   vi.mocked(createSession).mockReturnValueOnce(pending.promise);

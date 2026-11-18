@@ -108,12 +108,13 @@ export function formatClock(totalSeconds: number) {
   return `${String(minutes).padStart(2, "0")}:${String(seconds).padStart(2, "0")}`;
 }
 
-export type EndKind = "timeout" | "user" | "dropped" | "other";
+export type EndKind = "completed" | "timeout" | "user" | "dropped" | "other";
 
 export function endKind(reason: string, failed: boolean): EndKind {
+  if (failed) return "dropped";
+  if (reason === "scenario_completed") return "completed";
   if (reason === "session_timeout") return "timeout";
   if (reason === "user_ended") return "user";
-  if (failed) return "dropped";
   return "other";
 }
 

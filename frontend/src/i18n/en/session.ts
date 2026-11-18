@@ -43,6 +43,7 @@ export const sessionEn = {
     transcript: "Transcript",
     empty: "Nothing was said in this session, so there is nothing to read back.",
     ended: {
+      completed: "The scenario is complete.",
       timeout: "Time is up. A session lasts up to 15 minutes.",
       user: "You ended the session.",
       dropped: "The connection dropped, so the session ended early.",

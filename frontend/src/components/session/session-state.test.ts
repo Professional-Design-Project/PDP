@@ -78,6 +78,8 @@ it("records why the session ended", () => {
   expect(endKind("session_timeout", false)).toBe("timeout");
   expect(endKind("transport_failed", true)).toBe("dropped");
   expect(endKind("user_ended", false)).toBe("user");
+  expect(endKind("scenario_completed", false)).toBe("completed");
+  expect(endKind("scenario_completed", true)).toBe("dropped");
 });
 
 it("formats the session clock", () => {

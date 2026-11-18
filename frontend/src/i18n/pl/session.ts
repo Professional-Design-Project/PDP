@@ -46,6 +46,7 @@ export const sessionPl: SessionDictionary = {
     transcript: "Transkrypcja",
     empty: "W tej sesji nic nie padło, więc nie ma czego czytać.",
     ended: {
+      completed: "Scenariusz został zakończony.",
       timeout: "Czas minął. Sesja trwa najwyżej 15 minut.",
       user: "Sesja została zakończona.",
       dropped: "Połączenie zostało przerwane, więc sesja skończyła się wcześniej.",
