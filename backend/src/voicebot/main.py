@@ -29,8 +29,9 @@ from voicebot.infrastructure.feedback import GeminiFeedbackWriter
 from voicebot.infrastructure.postgres import PostgresDatabase
 from voicebot.infrastructure.scenarios import load_scenarios
 from voicebot.infrastructure.supabase_admin import AccountDeletionFailed, SupabaseAdmin
+from voicebot.infrastructure.voice.active_session import InvalidSignaling
 from voicebot.infrastructure.voice.gemini import VoiceUnavailable
-from voicebot.infrastructure.voice.runtime import InvalidSignaling, VoiceRuntime
+from voicebot.infrastructure.voice.runtime import VoiceRuntime
 from voicebot.settings import Settings
 
 

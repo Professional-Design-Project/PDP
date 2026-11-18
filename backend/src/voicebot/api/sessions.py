@@ -17,7 +17,7 @@ from voicebot.api.session_schemas import (
 from voicebot.application.documents import Document
 from voicebot.application.interview_style import InterviewStyle
 from voicebot.domain.session import Consent, Session
-from voicebot.infrastructure.voice.runtime import InvalidSignaling
+from voicebot.infrastructure.voice.active_session import InvalidSignaling
 from voicebot.infrastructure.voice.webrtc import Answer, Candidates, Offer
 
 router = APIRouter(prefix="/sessions", tags=["sessions"])
