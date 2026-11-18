@@ -96,3 +96,21 @@ async def test_document_text_reaches_the_conversation_but_is_not_stored(tmp_path
         assert "payments ledger" not in (await sessions.for_conversation(session.id)).instructions
     finally:
         await database.close()
+
+
+async def test_the_chosen_style_is_kept_so_the_session_can_be_repeated(tmp_path):
+    from voicebot.application.interview_style import InterviewStyle
+    from voicebot.application.sessions import Sessions
+
+    database = await Database.open(tmp_path / "test.sqlite3")
+    try:
+        sessions = Sessions(database, load_scenarios(), "test-model")
+        style = InterviewStyle(focus=80, precision=3, pressure=1, follow_ups=0)
+        styled, _ = await sessions.create("oral-exam", "en", style=style)
+        plain, _ = await sessions.create("oral-exam", "en")
+
+        created = await database.events(styled.id, kind="session.created")
+        assert created[0].data == {"focus": 80, "precision": 3, "pressure": 1, "follow_ups": 0}
+        assert (await database.events(plain.id, kind="session.created"))[0].data == {}
+    finally:
+        await database.close()
