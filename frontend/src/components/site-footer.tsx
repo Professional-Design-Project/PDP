@@ -9,7 +9,7 @@ import { useLocale } from "@/i18n/locale";
 export function SiteFooter() {
   const { t } = useLocale();
   return (
-    <footer className="border-t border-ink">
+    <footer className="border-t border-ink print:hidden">
       <div className="mx-auto grid max-w-7xl gap-10 px-4 py-12 sm:px-8 md:grid-cols-12 md:gap-8">
         <div className="md:col-span-3">
           <Image src="/brand/logo.svg" alt="ensaio" width={113} height={40} />
