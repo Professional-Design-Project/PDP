@@ -91,6 +91,37 @@ export const accountEn = {
     deleteFailed:
       "The session could not be deleted. A session that is still running cannot be deleted.",
     feedbackMissing: "No feedback was requested for this session.",
+    again: "Practise again",
+    progress: {
+      title: "Your progress",
+      intro:
+        "How much you have practised and what the feedback kept pointing at, from your recent sessions.",
+      filter: "Show scenario",
+      all: "All scenarios",
+      sessions: (count: number): string => (count === 1 ? "session" : "sessions"),
+      time: "practice time (min)",
+      answers: (count: number): string => (count === 1 ? "answer given" : "answers given"),
+      words: "words per answer on average",
+      timeline: "What the feedback said",
+      timelineIntro: "Newest first. If a point to work on stops coming back, that is a good sign.",
+      strengths: "Strengths",
+      workOn: "To work on",
+      noFeedback: "No feedback yet. Ask for it at the end of a session and it will show here.",
+      note: {
+        title: "How is this calculated?",
+        points: [
+          "We use your last 30 sessions that started, including the ones that ended early.",
+          "Practice time runs from the moment the interviewer is ready until the session ends.",
+          "Answers are your turns in the transcript. Words per answer is their average length. Longer is not always better: it shows whether you answer too briefly or go on too long.",
+          "Strengths and points to work on are the titles from the AI feedback, only for sessions where you asked for feedback. The AI can be wrong.",
+          "There is no score. ensaio does not grade you, because this is practice.",
+          "Everything is worked out in your browser from your own sessions. Nothing new is saved, and a deleted session disappears from here too.",
+        ],
+      },
+    },
+    pdf: "Download PDF",
+    pdfHint:
+      "Practise again opens the room with the same scenario, language, context and behaviour. For the PDF, choose Save as PDF in the print window.",
   },
   account: {
     title: "Your account.",

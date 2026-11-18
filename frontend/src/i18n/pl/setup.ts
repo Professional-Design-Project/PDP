@@ -4,6 +4,11 @@ import type { SetupDictionary } from "../en";
 export const setupPl: SetupDictionary = {
   setup: {
     title: "Przygotuj pokój.",
+    preset: {
+      title: (date: string) => `Ustawienia z Twojej sesji z ${date}`,
+      text: "Scenariusz, język, kontekst i zachowanie są już uzupełnione. Dokumentów nie zapisujemy po sesji, więc dodaj je ponownie, jeśli są potrzebne.",
+      dismiss: "Ukryj tę informację",
+    },
     intro:
       "Wybierz scenariusz, opisz sytuację, którą chcesz przećwiczyć, i sprawdź mikrofon. Rozmówca pracuje tylko na tym, co mu dasz.",
     scenario: "Scenariusz",

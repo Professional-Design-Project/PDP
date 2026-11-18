@@ -1,6 +1,7 @@
 "use client";
 
 import { DeleteSession } from "@/components/history/delete-session";
+import { SessionActions } from "@/components/history/session-actions";
 import { LocaleLink as Link } from "@/components/locale-link";
 import { Rise } from "@/components/rise";
 import { FeedbackSection } from "@/components/session/feedback-section";
@@ -17,7 +18,7 @@ export function SessionDetail({ session }: { session: PastSessionDetail }) {
     <>
       <Link
         href="/history"
-        className="text-[15px] font-semibold underline underline-offset-4 hover:text-cobalt"
+        className="text-[15px] font-semibold underline underline-offset-4 hover:text-cobalt print:hidden"
       >
         {t.history.back}
       </Link>
@@ -32,6 +33,7 @@ export function SessionDetail({ session }: { session: PastSessionDetail }) {
           {formatDate(session.createdAt, locale)} · {languageName(session.language)}
         </Rise>
       </div>
+      <SessionActions session={session} />
       <SummaryStats duration={session.duration} transcript={session.transcript} />
       {session.feedback ? (
         <FeedbackSection
@@ -43,7 +45,9 @@ export function SessionDetail({ session }: { session: PastSessionDetail }) {
         <p className="mt-16 border-t-2 border-ink pt-5 text-muted">{t.history.feedbackMissing}</p>
       )}
       <TranscriptSection transcript={session.transcript} />
-      <DeleteSession id={session.id} />
+      <div className="print:hidden">
+        <DeleteSession id={session.id} />
+      </div>
     </>
   );
 }

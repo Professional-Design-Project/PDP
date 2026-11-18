@@ -1,7 +1,7 @@
 import asyncio
 import hashlib
 import secrets
-from dataclasses import replace
+from dataclasses import asdict, replace
 from datetime import UTC, datetime
 from uuid import uuid4
 
@@ -83,7 +83,9 @@ class Sessions:
             if len(await self.repository.unfinished()) >= self.max_sessions:
                 raise SessionLimitExceeded
             await self.repository.add(session)
-            await self.repository.append_event(session.id, "session.created", {})
+            await self.repository.append_event(
+                session.id, "session.created", asdict(style) if style else {}
+            )
             if consent is not None:
                 await self.repository.append_event(session.id, "consent.recorded", consent.record())
                 if owner_id is not None:

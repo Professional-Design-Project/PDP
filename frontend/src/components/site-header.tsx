@@ -15,7 +15,7 @@ export function SiteHeader() {
   const onPractice = splitLocale(usePathname()).rest === "/practice";
   const { t } = useLocale();
   return (
-    <header id="top" className="relative border-b border-ink">
+    <header id="top" className="relative border-b border-ink print:hidden">
       <div className="mx-auto flex h-16 max-w-7xl items-center justify-between gap-4 px-4 sm:px-8">
         <Link
           href="/"

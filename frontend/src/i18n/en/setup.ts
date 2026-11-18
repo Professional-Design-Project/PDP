@@ -3,6 +3,11 @@ import type { ScenarioId } from "@/lib/scenarios";
 export const setupEn = {
   setup: {
     title: "Set the room.",
+    preset: {
+      title: (date: string) => `Settings from your session on ${date}`,
+      text: "The scenario, language, context and behaviour are filled in. Documents are not saved after a session, so add them again if you need them.",
+      dismiss: "Hide this note",
+    },
     intro:
       "Pick a scenario, describe the situation you want to practise and check your microphone. The interviewer works only with what you give it.",
     scenario: "Scenario",
