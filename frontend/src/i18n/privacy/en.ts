@@ -6,7 +6,7 @@ export const privacyEn: DocContent = {
     "What ensaio is, what it does with your voice and your words, and what you can change at any time.",
   status:
     "Draft. ensaio is a student project in development, and this text is still waiting for legal review.",
-  updated: "Last updated 17 November 2026",
+  updated: "Last updated 18 November 2026",
   contents: "On this page",
   termLabel: "What",
   detailLabel: "Details",
@@ -44,6 +44,10 @@ export const privacyEn: DocContent = {
         {
           term: "Feedback",
           text: "The notes written after the session, if you asked for them.",
+        },
+        {
+          term: "Reports",
+          text: "Problems and ideas you send through the report form, with your e-mail address, so the team can read them and follow up.",
         },
       ],
     },

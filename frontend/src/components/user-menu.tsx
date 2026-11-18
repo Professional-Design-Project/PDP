@@ -3,6 +3,7 @@
 import { LocaleLink as Link } from "@/components/locale-link";
 import { StableLabel } from "@/components/stable-label";
 import { useAuth } from "@/hooks/use-auth";
+import { useIsAdmin } from "@/hooks/use-is-admin";
 import { useLocale } from "@/i18n/locale";
 
 const link =
@@ -11,6 +12,7 @@ const link =
 export function UserMenu() {
   const { t } = useLocale();
   const { enabled, user, loading, signOut } = useAuth();
+  const admin = useIsAdmin(user?.id);
   if (!enabled || loading) return null;
   if (!user) {
     return (
@@ -24,6 +26,11 @@ export function UserMenu() {
       <Link href="/history" className={link}>
         <StableLabel pick={(d) => d.history.nav} />
       </Link>
+      {admin && (
+        <Link href="/admin" className={link}>
+          <StableLabel pick={(d) => d.admin.nav} />
+        </Link>
+      )}
       <Link href="/account" className={`${link} max-w-48 max-md:hidden`} title={user.email}>
         <span className="truncate">{user.email ?? t.auth.account}</span>
       </Link>

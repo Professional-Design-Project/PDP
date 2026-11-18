@@ -22,6 +22,8 @@ export const siteEn = {
     practice: "Set the room",
     history: "Your sessions",
     account: "Your account",
+    report: "Report a problem",
+    admin: "Reports",
     login: "Sign in",
     signup: "Create an account",
     forgot: "Reset your password",

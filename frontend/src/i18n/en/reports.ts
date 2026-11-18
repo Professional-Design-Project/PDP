@@ -1,0 +1,38 @@
+export const reportsEn = {
+  report: {
+    nav: "Report a problem or idea",
+    title: "Tell us what to fix.",
+    intro:
+      "Found a bug, missing something or have an idea? Write it here. The team reads every report.",
+    kindLabel: "What is it about?",
+    kinds: { bug: "Something is broken", idea: "An idea", other: "Something else" },
+    messageLabel: "Your message",
+    messageHint: (left: number): string => `${left} characters left`,
+    privacy:
+      "We save your message with your e-mail address so we can follow up. Do not paste passwords or other private data. You can see your reports in your data export, and they are deleted with your account.",
+    send: "Send report",
+    sending: "Sending…",
+    sent: "Thanks, your report has been sent.",
+    another: "Send another one",
+    failed: "The report could not be sent. You can send up to 10 reports an hour.",
+  },
+  admin: {
+    nav: "Reports panel",
+    title: "Reports.",
+    intro: "Everything users have sent through the report form, newest first.",
+    loading: "Loading reports",
+    failed: "The reports could not be loaded.",
+    denied: "This page is only for admins.",
+    empty: "Nothing here yet.",
+    filter: "Show",
+    all: "All",
+    statuses: { new: "New", in_progress: "In progress", done: "Done" },
+    statusLabel: "Status",
+    from: "From",
+    unknownAuthor: "unknown",
+    delete: "Delete",
+    confirmDelete: "Yes, delete",
+    cancel: "Cancel",
+    actionFailed: "That did not work. Refresh the page and try again.",
+  },
+};

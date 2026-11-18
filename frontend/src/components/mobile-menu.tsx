@@ -5,6 +5,7 @@ import { useEffect, useId, useState } from "react";
 import { LocaleLink as Link } from "@/components/locale-link";
 import { ArrowRightIcon, CloseIcon, MenuIcon } from "@/components/icons";
 import { useAuth } from "@/hooks/use-auth";
+import { useIsAdmin } from "@/hooks/use-is-admin";
 import { useLocale } from "@/i18n/locale";
 
 const row =
@@ -13,6 +14,7 @@ const row =
 export function MobileMenu({ showPractice }: { showPractice: boolean }) {
   const { t } = useLocale();
   const { enabled, user, signOut } = useAuth();
+  const admin = useIsAdmin(user?.id);
   const pathname = usePathname();
   const panelId = useId();
   const [open, setOpen] = useState(false);
@@ -66,6 +68,14 @@ export function MobileMenu({ showPractice }: { showPractice: boolean }) {
               <Link href="/history" className={row}>
                 {t.history.nav}
               </Link>
+              <Link href="/report" className={row}>
+                {t.report.nav}
+              </Link>
+              {admin && (
+                <Link href="/admin" className={row}>
+                  {t.admin.nav}
+                </Link>
+              )}
               <Link href="/account" className={row}>
                 <span>{t.auth.account}</span>
                 <span className="ml-4 truncate text-[14px] font-normal text-muted">

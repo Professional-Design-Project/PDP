@@ -24,6 +24,8 @@ export const sitePl: SiteDictionary = {
     practice: "Przygotuj pokój",
     history: "Twoje sesje",
     account: "Twoje konto",
+    report: "Zgłoś problem",
+    admin: "Zgłoszenia",
     login: "Zaloguj się",
     signup: "Załóż konto",
     forgot: "Zresetuj hasło",
