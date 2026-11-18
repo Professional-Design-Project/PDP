@@ -23,7 +23,18 @@ npx supabase db push --remote
 
 Run these commands in a regular terminal: `login` opens the browser and `link` asks for the database password.
 
-`db push --remote` applies `supabase/migrations/` to the linked project. It creates `profiles`, `consents`, `practice_sessions` and `session_events`, enables RLS on all of them and adds a trigger that creates a profile for every new user.
+`db push --remote` applies `supabase/migrations/` to the linked project. It creates `profiles`, `consents`, `practice_sessions`, `session_events` and `feedback_reports`, enables RLS on all of them and adds a trigger that creates a profile for every new user.
+
+### Admins
+
+Signed-in users send problems and ideas on `/report`. Admins read them and change their status on `/admin`. Admins are listed in `private.admins`, which the API cannot read or change. To make someone an admin, run this in **SQL Editor** after they have signed in once:
+
+```sql
+insert into private.admins (user_id)
+select id from auth.users where email = 'admin@example.com';
+```
+
+To remove an admin, delete their row from `private.admins`.
 
 ## 3. Fill in the environment
 
