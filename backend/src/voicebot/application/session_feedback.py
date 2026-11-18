@@ -49,7 +49,13 @@ async def _write(
         for index, event in enumerate(turns, start=1)
     ]
     feedback = await writer.write(FeedbackRequest(scenario.title, language, session.context, lines))
-    notes = [note for note in feedback.notes if note.line <= len(lines)]
+    notes = [
+        note
+        for note in feedback.notes
+        if note.line <= len(lines)
+        and lines[note.line - 1][1] == "user"
+        and note.quote in lines[note.line - 1][2]
+    ]
     if not notes:
         raise FeedbackFailed
     return feedback.model_copy(update={"notes": notes})

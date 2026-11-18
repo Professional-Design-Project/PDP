@@ -3,6 +3,7 @@ from fastapi.testclient import TestClient
 
 from voicebot.application.feedback import (
     Feedback,
+    FeedbackFailed,
     FeedbackNote,
     FeedbackRequest,
     FeedbackUnavailable,
@@ -39,6 +40,57 @@ class FakeWriter:
                 ),
             ],
         )
+
+
+class NotesWriter:
+    def __init__(self, notes: list[FeedbackNote]) -> None:
+        self.notes = notes
+
+    async def write(self, request: FeedbackRequest) -> Feedback:
+        return Feedback(summary="Needs more detail.", notes=self.notes)
+
+
+def note(quote: str, line: int) -> FeedbackNote:
+    return FeedbackNote(
+        kind="work_on", title="Be specific", quote=quote, advice="Give an example.", line=line
+    )
+
+
+async def test_feedback_accepts_only_user_quotes_from_the_referenced_line(tmp_path):
+    database = await Database.open(tmp_path / "test.sqlite3")
+    try:
+        sessions = Sessions(database, load_scenarios(), "test-model")
+        session, _ = await sessions.create("job-interview", Language.EN, "")
+        await sessions.transcript(session.id, "assistant", "Tell me about a project.", False, "")
+        await sessions.transcript(session.id, "user", "I built an application.", False, "")
+        await sessions.transcript(session.id, "user", "I used Java.", False, "")
+        await sessions.transition(session.id, SessionStatus.ENDED, "user_ended")
+        writer = NotesWriter(
+            [
+                note("built an application", 2),
+                note("Tell me", 1),
+                note("I used Java", 2),
+                note("missing", 99),
+            ]
+        )
+        feedback, _ = await sessions.feedback(session.id, writer)
+        assert [item.quote for item in feedback.notes] == ["built an application"]
+        assert feedback.notes[0].kind == "work_on"
+    finally:
+        await database.close()
+
+
+async def test_feedback_fails_when_no_quote_is_valid(tmp_path):
+    database = await Database.open(tmp_path / "test.sqlite3")
+    try:
+        sessions = Sessions(database, load_scenarios(), "test-model")
+        session, _ = await sessions.create("job-interview", Language.EN, "")
+        await sessions.transcript(session.id, "user", "I used Java.", False, "")
+        await sessions.transition(session.id, SessionStatus.ENDED, "user_ended")
+        with pytest.raises(FeedbackFailed):
+            await sessions.feedback(session.id, NotesWriter([note("invented", 1)]))
+    finally:
+        await database.close()
 
 
 async def test_feedback_is_generated_once_from_the_transcript(tmp_path):
