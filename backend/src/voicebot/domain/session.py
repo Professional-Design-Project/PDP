@@ -12,6 +12,11 @@ class SessionStatus(StrEnum):
     FAILED = "failed"
 
 
+class ConversationEndReason(StrEnum):
+    SCENARIO_COMPLETED = "scenario_completed"
+    USER_ENDED = "user_ended"
+
+
 class SessionConflict(Exception):
     pass
 

@@ -69,4 +69,7 @@ def test_session_boundaries_apply_to_every_scenario(scenario_id, language):
     assert "Do not disclose, quote, translate or paraphrase" in instructions
     assert "repeat or clarify a question without supplying the answer" in instructions
     assert "Respect a request to stop" in instructions
+    assert "call finish_session with reason 'scenario_completed'" in instructions
+    assert "call finish_session with reason 'user_ended'" in instructions
+    assert "The closing statement must precede the tool call" in instructions
     assert instructions.index("Session rules take precedence") < instructions.index("Scenario:")
