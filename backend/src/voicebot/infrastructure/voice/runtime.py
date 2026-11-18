@@ -3,7 +3,7 @@ import logging
 from contextlib import suppress
 
 from voicebot.application.sessions import Sessions
-from voicebot.domain.session import SessionConflict, SessionStatus, Speaker
+from voicebot.domain.session import ConversationEndReason, SessionConflict, SessionStatus, Speaker
 from voicebot.infrastructure.voice.active_session import ActiveSession, InvalidSignaling
 from voicebot.infrastructure.voice.gemini import GeminiConversation, VoiceUnavailable
 from voicebot.infrastructure.voice.webrtc import Answer, Candidates, Offer, add_candidates
@@ -125,7 +125,14 @@ class VoiceRuntime:
                     }
                 )
 
-        await conversation.run(entry.stop, ready, transcript)
+        async def completed(reason: ConversationEndReason):
+            if entry.stop.is_set():
+                return
+            ended = await self.sessions.transition(session_id, SessionStatus.ENDED, reason)
+            entry.reason = ended.end_reason
+            entry.send({"kind": f"session.{ended.status}", "reason": ended.end_reason})
+
+        await conversation.run(entry.stop, ready, transcript, completed)
 
     async def _run(self, session_id: str, entry: ActiveSession) -> None:
         status = SessionStatus.ENDED
@@ -149,20 +156,19 @@ class VoiceRuntime:
             if entry.failed:
                 status = SessionStatus.FAILED
             try:
-                entry.send({"kind": f"session.{status}", "reason": entry.reason})
+                session = await self.sessions.get(session_id)
+                if not session.finished:
+                    ended = await self.sessions.transition(session_id, status, entry.reason)
+                    entry.send({"kind": f"session.{ended.status}", "reason": ended.end_reason})
+                logger.info("Session finished: session=%s reason=%s", session_id, entry.reason)
+            except Exception:
+                logger.error("Session finalization failed: session=%s", session_id)
+            finally:
                 try:
                     async with asyncio.timeout(self.settings.cleanup_timeout_seconds):
                         await entry.connection.disconnect()
                 except Exception:
                     logger.error("Connection cleanup failed: session=%s", session_id)
-                    status = SessionStatus.FAILED
-                    entry.reason = "cleanup_failed"
-            finally:
-                try:
-                    await self.sessions.transition(session_id, status, entry.reason)
-                    logger.info("Session finished: session=%s reason=%s", session_id, entry.reason)
-                except Exception:
-                    logger.error("Session finalization failed: session=%s", session_id)
                 finally:
                     self.active.pop(session_id, None)
 

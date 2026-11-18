@@ -2,7 +2,9 @@ import asyncio
 from collections.abc import Awaitable, Callable
 from contextlib import suppress
 
-from pipecat.frames.frames import LLMRunFrame
+from pipecat.adapters.llm.schemas.function_schema import FunctionSchema
+from pipecat.adapters.llm.schemas.tools_schema import ToolsSchema
+from pipecat.frames.frames import FunctionCallResultProperties, LLMRunFrame
 from pipecat.pipeline.pipeline import Pipeline
 from pipecat.pipeline.worker import PipelineParams, PipelineWorker, ProcessorUnusablePolicy
 from pipecat.processors.aggregators.llm_context import LLMContext
@@ -13,6 +15,7 @@ from pipecat.processors.aggregators.llm_response_universal import (
     UserTurnMessageAddedMessage,
 )
 from pipecat.services.google.gemini_live.llm import GeminiLiveLLMService
+from pipecat.services.llm_service import FunctionCallParams
 from pipecat.transcriptions.language import Language
 from pipecat.transports.base_transport import TransportParams
 from pipecat.transports.smallwebrtc.connection import SmallWebRTCConnection
@@ -20,7 +23,12 @@ from pipecat.transports.smallwebrtc.transport import SmallWebRTCTransport
 from pipecat.turns.user_turn_strategies import ExternalUserTurnStrategies
 from pipecat.workers.runner import WorkerRunner
 
-from voicebot.domain.session import Session, Speaker
+from voicebot.domain.session import ConversationEndReason, Session, Speaker
+from voicebot.infrastructure.voice.completion import (
+    AssistantTranscriptSavedFrame,
+    ConversationCompletion,
+    ConversationEndFrame,
+)
 from voicebot.settings import Settings
 
 
@@ -56,11 +64,30 @@ class GeminiConversation:
                 context_window_compression={"enabled": True},
             ),
         )
-        self.context = LLMContext()
+        self.context = LLMContext(
+            tools=ToolsSchema(
+                standard_tools=[
+                    FunctionSchema(
+                        name="finish_session",
+                        description="End the meeting after your spoken closing statement. "
+                        "Do not speak or ask another question after calling this tool.",
+                        properties={
+                            "reason": {
+                                "type": "string",
+                                "enum": [reason.value for reason in ConversationEndReason],
+                            }
+                        },
+                        required=["reason"],
+                    )
+                ]
+            )
+        )
+        self.llm.register_function("finish_session", self._finish_session)
         self.user, self.assistant = LLMContextAggregatorPair(
             self.context,
             user_params=LLMUserAggregatorParams(user_turn_strategies=ExternalUserTurnStrategies()),
         )
+        self.completion = ConversationCompletion()
         pipeline = Pipeline(
             [
                 self.transport.input(),
@@ -68,6 +95,7 @@ class GeminiConversation:
                 self.llm,
                 self.transport.output(),
                 self.assistant,
+                self.completion,
             ]
         )
         self.worker = PipelineWorker(
@@ -80,12 +108,36 @@ class GeminiConversation:
         )
         self.runner = WorkerRunner(handle_sigint=False, handle_sigterm=False)
         self.failed = False
+        self._end_reason: ConversationEndReason | None = None
+
+    async def _finish_session(self, params: FunctionCallParams) -> None:
+        try:
+            if set(params.arguments) != {"reason"}:
+                raise ValueError
+            reason = ConversationEndReason(params.arguments["reason"])
+        except (ValueError, TypeError):
+            await params.result_callback(
+                {"error": "Expected only reason: scenario_completed or user_ended"},
+                properties=FunctionCallResultProperties(run_llm=False),
+            )
+            return
+        if self._end_reason is None:
+            self._end_reason = reason
+            self.llm.set_audio_input_paused(True)
+
+        await params.result_callback(
+            {"status": "closing"},
+            properties=FunctionCallResultProperties(run_llm=False),
+        )
+        # Unlike tool-result system frames, this marker waits behind queued audio.
+        await self.llm.push_frame(ConversationEndFrame(self._end_reason))
 
     async def run(
         self,
         stop: asyncio.Event,
         on_ready: Callable[[], Awaitable[None]],
         on_transcript: Callable[[Speaker, str, bool, str], Awaitable[None]],
+        on_completed: Callable[[ConversationEndReason], Awaitable[None]],
     ) -> None:
         pipeline_ready = False
         client_connected = False
@@ -134,17 +186,34 @@ class GeminiConversation:
             await on_transcript(
                 "assistant", message.content, message.interrupted, message.timestamp
             )
+            await self.assistant.push_frame(AssistantTranscriptSavedFrame())
 
         await self.runner.add_workers(self.worker)
         run_task = asyncio.create_task(self.runner.run())
         stop_task = asyncio.create_task(stop.wait())
+        completion_task = asyncio.create_task(self.completion.completed.wait())
         try:
-            await asyncio.wait((run_task, stop_task), return_when=asyncio.FIRST_COMPLETED)
+            await asyncio.wait(
+                (run_task, stop_task, completion_task), return_when=asyncio.FIRST_COMPLETED
+            )
+            if (
+                completion_task.done()
+                and not stop.is_set()
+                and not run_task.done()
+                and not self.failed
+                and self.completion.reason is not None
+            ):
+                await on_completed(self.completion.reason)
+                if not stop.is_set():
+                    await self.worker.stop_when_done()
+                    await asyncio.wait((run_task, stop_task), return_when=asyncio.FIRST_COMPLETED)
         finally:
-            await self.runner.cancel()
-            stop_task.cancel()
-            with suppress(asyncio.CancelledError):
-                await stop_task
+            if not run_task.done():
+                await self.runner.cancel()
+            for task in (stop_task, completion_task):
+                task.cancel()
+                with suppress(asyncio.CancelledError):
+                    await task
             await run_task
         if self.failed:
             raise ProviderFailed
