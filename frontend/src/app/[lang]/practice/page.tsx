@@ -71,6 +71,7 @@ export default function PracticePage() {
       <SessionSummary
         duration={voice.summary.duration}
         transcript={voice.summary.transcript}
+        synchronized={voice.summary.synchronized}
         message={t.summary.ended[voice.summary.end]}
         heading={copy.finished}
         feedback={feedback.feedback}

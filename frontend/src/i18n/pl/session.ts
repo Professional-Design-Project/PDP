@@ -45,6 +45,8 @@ export const sessionPl: SessionDictionary = {
     setup: "Zmień ustawienia",
     transcript: "Transkrypcja",
     empty: "W tej sesji nic nie padło, więc nie ma czego czytać.",
+    unsynchronized:
+      "Nie udało się pobrać końcowych danych sesji. Widoczna transkrypcja i informacje o sesji mogą być niepełne.",
     ended: {
       completed: "Scenariusz został zakończony.",
       timeout: "Czas minął. Sesja trwa najwyżej 15 minut.",

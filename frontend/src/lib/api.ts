@@ -22,6 +22,19 @@ export type VoiceSession = {
   ice_servers: RTCIceServer[];
 };
 
+export type SessionSnapshot = {
+  status: "created" | "connecting" | "active" | "ended" | "failed";
+  started_at: string | null;
+  ended_at: string | null;
+  end_reason: string | null;
+};
+
+export type TranscriptEvent = {
+  sequence: number;
+  timestamp: string;
+  data: { role: "user" | "assistant"; text: string; interrupted: boolean };
+};
+
 export type NewSession = {
   scenario_id: string;
   language: string;
@@ -69,7 +82,35 @@ export async function createSession(body: NewSession) {
 }
 
 export function endSession(session: VoiceSession) {
-  return request(`/sessions/${session.id}/end`, { method: "POST", headers: bearer(session) });
+  return request<SessionSnapshot>(`/sessions/${session.id}/end`, {
+    method: "POST",
+    headers: bearer(session),
+    signal: AbortSignal.timeout(25000),
+  });
+}
+
+export function fetchSession(session: VoiceSession, signal: AbortSignal) {
+  return request<SessionSnapshot>(`/sessions/${session.id}`, {
+    headers: bearer(session),
+    cache: "no-store",
+    signal,
+  });
+}
+
+export async function fetchTranscript(session: VoiceSession, signal: AbortSignal) {
+  const events: TranscriptEvent[] = [];
+  let after = 0;
+  while (true) {
+    const page = await request<TranscriptEvent[]>(
+      `/sessions/${session.id}/transcript?after=${after}&limit=500`,
+      { headers: bearer(session), cache: "no-store", signal },
+    );
+    events.push(...page);
+    if (page.length < 500) return events;
+    const next = page[page.length - 1].sequence;
+    if (next <= after) throw new Error("Transcript cursor did not advance");
+    after = next;
+  }
 }
 
 export function sendOffer(session: VoiceSession, sdp: string | undefined) {

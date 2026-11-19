@@ -1,11 +1,14 @@
 "use client";
 
-import { useEffect, useReducer, useRef, useState } from "react";
+import { useRef, useState } from "react";
 import { audioConstraints } from "@/hooks/use-microphone";
+import { useMountEffect } from "@/hooks/use-mount-effect";
 import { ClosingPlayback } from "@/lib/closing-playback";
 import {
   createSession,
   endSession,
+  fetchSession,
+  fetchTranscript,
   sendOffer,
   type NewSession,
   type VoiceSession,
@@ -15,12 +18,18 @@ import {
   initialLiveState,
   liveReducer,
   type EndKind,
+  type LiveAction,
   type TranscriptLine,
 } from "@/components/session/session-state";
 
 export type Phase = "setup" | "session" | "summary";
 export type ConnectionStatus = "ready" | "requesting" | "connecting" | "connected" | "failed";
-export type SessionSummaryData = { duration: number; transcript: TranscriptLine[]; end: EndKind };
+export type SessionSummaryData = {
+  duration: number;
+  transcript: TranscriptLine[];
+  end: EndKind;
+  synchronized: boolean;
+};
 
 type Options = {
   onFinished: (wantsFeedback: boolean | undefined, session: VoiceSession | null) => void;
@@ -35,12 +44,17 @@ type ConnectionAttempt = {
   peer?: RTCPeerConnection;
   channel?: RTCDataChannel;
   audio?: HTMLAudioElement;
+  recovery?: AbortController;
+  disconnectTimer?: ReturnType<typeof setTimeout>;
 };
 
 async function disconnect(attempt: ConnectionAttempt) {
   attempt.controller.abort();
+  clearTimeout(attempt.disconnectTimer);
   if (attempt.channel) {
     attempt.channel.onmessage = null;
+    attempt.channel.onclose = null;
+    attempt.channel.onerror = null;
     attempt.channel.close();
     attempt.channel = undefined;
   }
@@ -81,7 +95,7 @@ function waitForIce(peer: RTCPeerConnection, signal: AbortSignal) {
 
 export function useVoiceSession({ onFinished }: Options) {
   const [phase, setPhase] = useState<Phase>("setup");
-  const [live, dispatch] = useReducer(liveReducer, initialLiveState);
+  const [live, setLive] = useState(initialLiveState);
   const [status, setStatus] = useState<ConnectionStatus>("ready");
   const [connecting, setConnecting] = useState(false);
   const [connected, setConnected] = useState(false);
@@ -91,19 +105,21 @@ export function useVoiceSession({ onFinished }: Options) {
   const [summary, setSummary] = useState<SessionSummaryData | null>(null);
   const attemptRef = useRef<ConnectionAttempt | null>(null);
   const lastSessionRef = useRef<VoiceSession | null>(null);
-  const liveRef = useRef(live);
+  const liveRef = useRef(initialLiveState);
 
-  useEffect(() => {
-    liveRef.current = live;
-  }, [live]);
+  function dispatch(action: LiveAction) {
+    liveRef.current = liveReducer(liveRef.current, action);
+    setLive(liveRef.current);
+  }
 
-  useEffect(() => {
+  useMountEffect(() => {
     return () => {
       const attempt = attemptRef.current;
       attemptRef.current = null;
+      attempt?.recovery?.abort();
       if (attempt) void disconnect(attempt);
     };
-  }, []);
+  });
 
   function isCurrent(attempt: ConnectionAttempt) {
     return attemptRef.current === attempt && !attempt.controller.signal.aborted;
@@ -116,12 +132,57 @@ export function useVoiceSession({ onFinished }: Options) {
     const current = liveRef.current;
     const duration =
       current.readyAt === null ? 0 : Math.max(0, Math.round((Date.now() - current.readyAt) / 1000));
+    let result: SessionSummaryData = {
+      duration,
+      transcript: current.transcript,
+      end: endKind(reason, failed),
+      synchronized: session === null,
+    };
+    const recovery = new AbortController();
+    attempt.recovery = recovery;
+    setEnding(true);
     setConnected(false);
     setConnecting(false);
     await disconnect(attempt);
     if (attemptRef.current !== attempt) return;
+    if (session) {
+      try {
+        const signal = AbortSignal.any([recovery.signal, AbortSignal.timeout(10000)]);
+        const saved = await fetchSession(session, signal);
+        signal.throwIfAborted();
+        if (saved.status !== "ended" && saved.status !== "failed") {
+          throw new Error("Session is still running");
+        }
+        const events = await fetchTranscript(session, signal);
+        const startedAt = saved.started_at ? Date.parse(saved.started_at) : null;
+        result = {
+          duration:
+            startedAt !== null && saved.ended_at
+              ? Math.max(0, Math.round((Date.parse(saved.ended_at) - startedAt) / 1000))
+              : 0,
+          transcript: events.map((event) => ({
+            id: String(event.sequence),
+            role: event.data.role,
+            text: event.data.text.trim(),
+            at:
+              startedAt === null
+                ? 0
+                : Math.max(0, Math.round((Date.parse(event.timestamp) - startedAt) / 1000)),
+            interrupted: event.data.interrupted,
+          })),
+          end: endKind(
+            saved.end_reason ?? reason,
+            saved.status === "failed" || (failed && saved.end_reason === "user_ended"),
+          ),
+          synchronized: true,
+        };
+      } catch {
+        // Keep the live transcript if the final server state cannot be recovered.
+      }
+    }
+    if (attemptRef.current !== attempt) return;
     attemptRef.current = null;
-    setSummary({ duration, transcript: current.transcript, end: endKind(reason, failed) });
+    setSummary(result);
     setPhase("summary");
     setStatus("ready");
     setEnding(false);
@@ -129,15 +190,6 @@ export function useVoiceSession({ onFinished }: Options) {
     window.scrollTo({ top: 0 });
     onFinished(wantsFeedback, session);
   }
-
-  const finishRef = useRef(finish);
-  useEffect(() => {
-    finishRef.current = finish;
-  });
-
-  useEffect(() => {
-    if (live.ended) void finishRef.current(live.ended.reason, live.ended.failed);
-  }, [live.ended]);
 
   function connectPeer(attempt: ConnectionAttempt, session: VoiceSession, stream: MediaStream) {
     const peer = new RTCPeerConnection({ iceServers: session.ice_servers });
@@ -152,12 +204,26 @@ export function useVoiceSession({ onFinished }: Options) {
       void audio.play();
     };
     peer.onconnectionstatechange = () => {
-      if (isCurrent(attempt) && peer.connectionState === "failed") {
-        void finishRef.current("transport_failed", true);
+      if (!isCurrent(attempt)) return;
+      clearTimeout(attempt.disconnectTimer);
+      if (peer.connectionState === "connected") {
+        setConnected(true);
+        setStatus("connected");
+      } else if (peer.connectionState === "disconnected") {
+        setConnected(false);
+        setStatus("connecting");
+        attempt.disconnectTimer = setTimeout(() => {
+          if (isCurrent(attempt)) void finish("transport_failed", true);
+        }, 5000);
+      } else if (peer.connectionState === "failed" || peer.connectionState === "closed") {
+        void finish("transport_failed", true);
       }
     };
     const channel = peer.createDataChannel("rtvi-ai");
     attempt.channel = channel;
+    channel.onclose = channel.onerror = () => {
+      if (isCurrent(attempt)) void finish("transport_failed", true);
+    };
     const playback = new ClosingPlayback(
       () => (attempt.audio ??= new Audio()),
       (message) => {
@@ -182,6 +248,10 @@ export function useVoiceSession({ onFinished }: Options) {
           playback.receive(message.data);
         }
         dispatch({ type: "message", message, now: Date.now() });
+        if (liveRef.current.ended) {
+          const { reason, failed } = liveRef.current.ended;
+          void finish(reason, failed);
+        }
       } catch {
         return;
       }
@@ -225,8 +295,6 @@ export function useVoiceSession({ onFinished }: Options) {
       if (!isCurrent(attempt)) return;
       await peer.setRemoteDescription(answer);
       if (!isCurrent(attempt)) return;
-      setConnected(true);
-      setStatus("connected");
     } catch (caught) {
       if (!isCurrent(attempt)) return;
       await disconnect(attempt);

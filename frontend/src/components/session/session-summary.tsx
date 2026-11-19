@@ -12,6 +12,7 @@ import { useLocale } from "@/i18n/locale";
 type SessionSummaryProps = {
   duration: number;
   transcript: TranscriptLine[];
+  synchronized: boolean;
   message: string;
   heading: string;
   feedback: FeedbackState;
@@ -23,6 +24,7 @@ type SessionSummaryProps = {
 export function SessionSummary({
   duration,
   transcript,
+  synchronized,
   message,
   heading,
   feedback,
@@ -49,6 +51,9 @@ export function SessionSummary({
         </Rise>
       </div>
 
+      {!synchronized && (
+        <output className="mt-8 block text-muted">{t.summary.unsynchronized}</output>
+      )}
       <SummaryStats duration={duration} transcript={transcript} />
 
       <Rise delay={150} className="mt-10 flex flex-col gap-3 sm:flex-row">

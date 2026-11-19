@@ -3,6 +3,8 @@ import { afterEach, beforeEach, expect, it, vi } from "vitest";
 import {
   createSession,
   endSession,
+  fetchSession,
+  fetchTranscript,
   sendOffer,
   type NewSession,
   type VoiceSession,
@@ -13,6 +15,8 @@ import { useVoiceSession } from "./use-voice-session";
 vi.mock("@/lib/api", () => ({
   createSession: vi.fn(),
   endSession: vi.fn(),
+  fetchSession: vi.fn(),
+  fetchTranscript: vi.fn(),
   sendOffer: vi.fn(),
 }));
 
@@ -39,6 +43,12 @@ const session: VoiceSession = {
 };
 const offer = { type: "offer", sdp: "offer-sdp" } satisfies RTCSessionDescriptionInit;
 const answer = { type: "answer", sdp: "answer-sdp" } satisfies RTCSessionDescriptionInit;
+const savedSession = {
+  status: "ended",
+  started_at: "2026-11-19T12:00:00Z",
+  ended_at: "2026-11-19T12:00:30Z",
+  end_reason: "scenario_completed",
+} as const;
 const getUserMedia = vi.fn<() => Promise<MediaStream>>();
 const peers: FakePeer[] = [];
 let blockedStage: "offer" | "local" | "ice" | "answer" | "remote" | undefined;
@@ -61,6 +71,8 @@ class FakePeer extends EventTarget {
   onconnectionstatechange: (() => void) | null = null;
   channel = {
     onmessage: null as ((event: MessageEvent) => void) | null,
+    onclose: null as (() => void) | null,
+    onerror: null as (() => void) | null,
     close: vi.fn(),
     send: vi.fn(),
     readyState: "open",
@@ -77,6 +89,8 @@ class FakePeer extends EventTarget {
   });
   setRemoteDescription = vi.fn(async () => {
     if (blockedStage === "remote") await resume.promise;
+    this.connectionState = "connected";
+    this.onconnectionstatechange?.();
   });
 
   constructor() {
@@ -92,7 +106,8 @@ beforeEach(() => {
   resume = Promise.withResolvers<void>();
   getUserMedia.mockResolvedValue(microphone().stream);
   vi.mocked(createSession).mockResolvedValue(session);
-  vi.mocked(endSession).mockResolvedValue({});
+  vi.mocked(endSession).mockResolvedValue(savedSession);
+  vi.mocked(fetchSession).mockRejectedValue(new Error("Offline"));
   vi.mocked(sendOffer).mockImplementation(async () => {
     if (blockedStage === "answer") await resume.promise;
     return answer;
@@ -106,6 +121,162 @@ afterEach(() => {
   cleanup();
   vi.unstubAllGlobals();
   vi.restoreAllMocks();
+  vi.useRealTimers();
+});
+
+function serverMessage(data: object) {
+  peers[0].channel.onmessage?.(
+    new MessageEvent("message", {
+      data: JSON.stringify({ type: "server-message", data }),
+    }),
+  );
+}
+
+it("recovers the final transcript and server completion reason before requesting feedback", async () => {
+  vi.mocked(fetchSession).mockResolvedValue(savedSession);
+  const finalLine = {
+    sequence: 12,
+    timestamp: "2026-11-19T12:00:25Z",
+    data: { role: "user", text: " My final answer. ", interrupted: false },
+  } as const;
+  vi.mocked(fetchTranscript).mockResolvedValue([finalLine]);
+  const onFinished = vi.fn(() => {
+    expect(fetchTranscript).toHaveBeenCalledOnce();
+  });
+  const { result } = renderHook(() => useVoiceSession({ onFinished }));
+  await act(() => result.current.start(body, ""));
+  act(() => serverMessage({ kind: "session.ready" }));
+  await act(() => result.current.leave(true));
+
+  expect(result.current.summary).toEqual({
+    duration: 30,
+    end: "completed",
+    synchronized: true,
+    transcript: [{ id: "12", role: "user", text: "My final answer.", at: 25, interrupted: false }],
+  });
+  expect(onFinished).toHaveBeenCalledExactlyOnceWith(true, session);
+});
+
+it.each(["ended", "failed"] as const)(
+  "handles data channel %s without a terminal event",
+  async (status) => {
+    vi.mocked(fetchSession).mockResolvedValue({
+      ...savedSession,
+      status,
+      end_reason: "transport_failed",
+    });
+    vi.mocked(fetchTranscript).mockResolvedValue([]);
+    const onFinished = vi.fn();
+    const { result } = renderHook(() => useVoiceSession({ onFinished }));
+    await act(() => result.current.start(body, ""));
+    act(() => serverMessage({ kind: "session.ready" }));
+    const closed = peers[0].channel.onclose;
+    await act(async () => {
+      closed?.();
+      closed?.();
+    });
+
+    expect(result.current.phase).toBe("summary");
+    expect(result.current.connected).toBe(false);
+    expect(result.current.summary?.synchronized).toBe(true);
+    expect(endSession).toHaveBeenCalledOnce();
+    expect(onFinished).toHaveBeenCalledOnce();
+  },
+);
+
+it.each(["failed", "closed", "channel-error"])("finishes after %s", async (state) => {
+  const { result } = renderHook(() => useVoiceSession({ onFinished: vi.fn() }));
+  await act(() => result.current.start(body, ""));
+  await act(async () => {
+    if (state === "channel-error") peers[0].channel.onerror?.();
+    else {
+      peers[0].connectionState = state;
+      peers[0].onconnectionstatechange?.();
+    }
+  });
+  expect(result.current.phase).toBe("summary");
+  expect(result.current.summary?.end).toBe("dropped");
+});
+
+it("allows a disconnected peer to recover before the deadline", async () => {
+  vi.useFakeTimers();
+  const { result } = renderHook(() => useVoiceSession({ onFinished: vi.fn() }));
+  await act(() => result.current.start(body, ""));
+  act(() => {
+    peers[0].connectionState = "disconnected";
+    peers[0].onconnectionstatechange?.();
+  });
+  expect(result.current.connected).toBe(false);
+  await act(() => vi.advanceTimersByTimeAsync(4000));
+  act(() => {
+    peers[0].connectionState = "connected";
+    peers[0].onconnectionstatechange?.();
+  });
+  await act(() => vi.advanceTimersByTimeAsync(6000));
+  expect(result.current.connected).toBe(true);
+  expect(result.current.phase).toBe("session");
+  expect(endSession).not.toHaveBeenCalled();
+});
+
+it("finishes when a disconnected peer does not recover", async () => {
+  vi.useFakeTimers();
+  const { result } = renderHook(() => useVoiceSession({ onFinished: vi.fn() }));
+  await act(() => result.current.start(body, ""));
+  act(() => {
+    peers[0].connectionState = "disconnected";
+    peers[0].onconnectionstatechange?.();
+  });
+  await act(() => vi.advanceTimersByTimeAsync(5000));
+  expect(result.current.phase).toBe("summary");
+  expect(endSession).toHaveBeenCalledOnce();
+});
+
+it.each(["end", "state", "transcript", "running"])(
+  "keeps local data when %s recovery fails",
+  async (stage) => {
+    vi.mocked(fetchSession).mockResolvedValue(savedSession);
+    vi.mocked(fetchTranscript).mockResolvedValue([]);
+    if (stage === "end") {
+      vi.mocked(endSession).mockRejectedValue(new Error("Offline"));
+      vi.mocked(fetchSession).mockRejectedValue(new Error("Offline"));
+    }
+    if (stage === "state") vi.mocked(fetchSession).mockRejectedValue(new Error("Offline"));
+    if (stage === "transcript") vi.mocked(fetchTranscript).mockRejectedValue(new Error("Offline"));
+    if (stage === "running")
+      vi.mocked(fetchSession).mockResolvedValue({ ...savedSession, status: "active" });
+    const { result } = renderHook(() => useVoiceSession({ onFinished: vi.fn() }));
+    await act(() => result.current.start(body, ""));
+    act(() =>
+      serverMessage({ kind: "transcript.final", sequence: 3, role: "user", text: "Local answer." }),
+    );
+    await act(() => result.current.leave(false));
+    expect(result.current.phase).toBe("summary");
+    expect(result.current.summary).toMatchObject({
+      synchronized: false,
+      transcript: [{ id: "3", text: "Local answer." }],
+    });
+  },
+);
+
+it("cancels recovery on unmount and ignores its late response", async () => {
+  const pending = Promise.withResolvers<typeof savedSession>();
+  vi.mocked(fetchSession).mockReturnValue(pending.promise);
+  vi.mocked(fetchTranscript).mockResolvedValue([]);
+  const onFinished = vi.fn();
+  const { result, unmount } = renderHook(() => useVoiceSession({ onFinished }));
+  await act(() => result.current.start(body, ""));
+  let leaving: Promise<void>;
+  await act(async () => {
+    leaving = result.current.leave(false);
+  });
+  const signal = vi.mocked(fetchSession).mock.calls[0][1];
+  unmount();
+  expect(signal.aborted).toBe(true);
+  await act(async () => {
+    pending.resolve(savedSession);
+    await leaving;
+  });
+  expect(onFinished).not.toHaveBeenCalled();
 });
 
 it("connects normally and releases the active session once", async () => {

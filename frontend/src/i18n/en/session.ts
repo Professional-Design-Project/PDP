@@ -42,6 +42,8 @@ export const sessionEn = {
     setup: "Change the setup",
     transcript: "Transcript",
     empty: "Nothing was said in this session, so there is nothing to read back.",
+    unsynchronized:
+      "The final session data could not be retrieved. The transcript and session details shown here may be incomplete.",
     ended: {
       completed: "The scenario is complete.",
       timeout: "Time is up. A session lasts up to 15 minutes.",

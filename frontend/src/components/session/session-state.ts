@@ -111,7 +111,7 @@ export function formatClock(totalSeconds: number) {
 export type EndKind = "completed" | "timeout" | "user" | "dropped" | "other";
 
 export function endKind(reason: string, failed: boolean): EndKind {
-  if (failed) return "dropped";
+  if (failed || reason === "transport_failed" || reason === "client_disconnected") return "dropped";
   if (reason === "scenario_completed") return "completed";
   if (reason === "session_timeout") return "timeout";
   if (reason === "user_ended") return "user";
