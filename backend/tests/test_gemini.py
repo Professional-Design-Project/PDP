@@ -1,4 +1,5 @@
 import asyncio
+import time
 from types import SimpleNamespace
 from unittest.mock import AsyncMock, Mock
 
@@ -33,7 +34,13 @@ class Events:
 
 @pytest.fixture
 async def conversation():
-    session = SimpleNamespace(id="session", model="test-model", instructions="test", language="en")
+    session = SimpleNamespace(
+        id="session",
+        model="test-model",
+        instructions="test",
+        language="en",
+        scenario_id="oral-exam",
+    )
     conversation = GeminiConversation(
         session, Mock(), Settings(_env_file=None, google_api_key="test-key")
     )
@@ -73,6 +80,62 @@ async def call_finish(conversation, arguments):
     result = AsyncMock()
     await conversation._finish_session(SimpleNamespace(arguments=arguments, result_callback=result))
     return result.call_args.kwargs["properties"]
+
+
+@pytest.mark.parametrize("elapsed,turns", [(120, 8), (400, 3), (299, 6), (719, 5)])
+async def test_premature_interview_completion_keeps_microphone_and_conversation_open(
+    conversation, elapsed, turns
+):
+    conversation._is_interview = True
+    conversation._ready_at = time.monotonic() - elapsed
+    conversation._user_turns = turns
+    result = AsyncMock()
+    await conversation._finish_session(
+        SimpleNamespace(arguments={"reason": "scenario_completed"}, result_callback=result)
+    )
+    assert result.call_args.args[0]["status"] == "continue_interview"
+    assert result.call_args.kwargs["properties"].run_llm is True
+    assert conversation._end_reason is None
+    conversation.llm.set_audio_input_paused.assert_not_called()
+    conversation.llm.push_frame.assert_not_awaited()
+
+
+@pytest.mark.parametrize("elapsed,turns", [(300, 6), (720, 2)])
+async def test_substantive_or_long_interview_can_close(conversation, elapsed, turns):
+    conversation._is_interview = True
+    conversation._ready_at = time.monotonic() - elapsed
+    conversation._user_turns = turns
+    await call_finish(conversation, {"reason": "scenario_completed"})
+    assert conversation._end_reason == ConversationEndReason.SCENARIO_COMPLETED
+    conversation.llm.set_audio_input_paused.assert_called_once_with(True)
+
+
+async def test_user_can_stop_an_interview_immediately(conversation):
+    conversation._is_interview = True
+    await call_finish(conversation, {"reason": "user_ended"})
+    assert conversation._end_reason == ConversationEndReason.USER_ENDED
+
+
+async def test_interview_progress_starts_when_ready_and_counts_nonempty_candidate_turns(
+    conversation,
+):
+    conversation._is_interview = True
+    conversation.worker.queue_frame = AsyncMock()
+    conversation.context.add_message = Mock()
+    stop = asyncio.Event()
+    task = asyncio.create_task(conversation.run(stop, AsyncMock(), AsyncMock(), AsyncMock()))
+    await conversation.started.wait()
+    await conversation.worker.emit("on_pipeline_started", None)
+    assert conversation._ready_at is None
+    await conversation.transport.emit("on_client_connected", None)
+    assert conversation._ready_at is not None
+    for content in (" ", "I organised an event.", "My task was finding a venue."):
+        await conversation.user.emit(
+            "on_user_turn_message_added", SimpleNamespace(content=content, timestamp="now")
+        )
+    assert conversation._user_turns == 2
+    stop.set()
+    await asyncio.wait_for(task, 1)
 
 
 @pytest.mark.parametrize("reason", list(ConversationEndReason))

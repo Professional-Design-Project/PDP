@@ -1,4 +1,5 @@
 import asyncio
+import time
 from collections.abc import Awaitable, Callable
 from contextlib import suppress
 
@@ -23,6 +24,7 @@ from pipecat.transports.smallwebrtc.transport import SmallWebRTCTransport
 from pipecat.turns.user_turn_strategies import ExternalUserTurnStrategies
 from pipecat.workers.runner import WorkerRunner
 
+from voicebot.application.interviews import INTERVIEW_SCENARIOS, can_complete_interview
 from voicebot.domain.session import ConversationEndReason, Session, Speaker
 from voicebot.infrastructure.voice.completion import (
     AssistantTranscriptSavedFrame,
@@ -113,6 +115,9 @@ class GeminiConversation:
         self.runner = WorkerRunner(handle_sigint=False, handle_sigterm=False)
         self.failed = False
         self._end_reason: ConversationEndReason | None = None
+        self._is_interview = session.scenario_id in INTERVIEW_SCENARIOS
+        self._ready_at: float | None = None
+        self._user_turns = 0
 
     async def _finish_session(self, params: FunctionCallParams) -> None:
         try:
@@ -129,6 +134,25 @@ class GeminiConversation:
             await params.result_callback(
                 {"status": "already_closing"},
                 properties=FunctionCallResultProperties(run_llm=False),
+            )
+            return
+        elapsed = 0 if self._ready_at is None else time.monotonic() - self._ready_at
+        if (
+            reason == ConversationEndReason.SCENARIO_COMPLETED
+            and self._is_interview
+            and not can_complete_interview(elapsed, self._user_turns)
+        ):
+            await params.result_callback(
+                {
+                    "status": "continue_interview",
+                    "instruction": "The interview is too brief to complete. Do not say goodbye "
+                    "or offer closing questions yet. Explore an under-covered scenario goal "
+                    "or a concrete detail in the candidate's answers. Ask one relevant "
+                    "question, then wait. Do not mention this internal check or call the "
+                    "tool again until the conversation has progressed. An explicit user "
+                    "request to stop must still be honoured with reason user_ended.",
+                },
+                properties=FunctionCallResultProperties(run_llm=True),
             )
             return
         self._end_reason = reason
@@ -157,6 +181,7 @@ class GeminiConversation:
             nonlocal notified
             if pipeline_ready and client_connected and not notified:
                 notified = True
+                self._ready_at = time.monotonic()
                 await on_ready()
 
         @self.transport.event_handler("on_client_connected")
@@ -189,6 +214,8 @@ class GeminiConversation:
 
         @self.user.event_handler("on_user_turn_message_added")
         async def user_transcript(aggregator, message: UserTurnMessageAddedMessage):
+            if message.content.strip():
+                self._user_turns += 1
             await on_transcript("user", message.content, False, message.timestamp)
 
         @self.assistant.event_handler("on_assistant_turn_stopped")
