@@ -11,7 +11,8 @@ def test_default_style_is_balanced():
     assert "about 50% of your questions" in rules
     assert "Mix broad questions" in rules
     assert "neutral and matter-of-fact" in rules
-    assert "at most 2 follow-up questions" in rules
+    assert "Probe adaptively" in rules
+    assert "Do not use a fixed follow-up count" in rules
 
 
 def test_chosen_style_reaches_the_instructions():
@@ -31,7 +32,7 @@ def test_extreme_values_have_their_own_wording():
     assert "Ask only general questions" in gentle
     assert "broad, open questions" in gentle
     assert "patient and encouraging" in gentle
-    assert "at most 1 follow-up question on" in gentle
+    assert "Use light probing" in gentle
 
 
 @pytest.mark.parametrize(

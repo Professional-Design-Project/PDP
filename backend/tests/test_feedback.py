@@ -88,6 +88,30 @@ async def test_feedback_accepts_only_user_quotes_from_the_referenced_line(tmp_pa
         await database.close()
 
 
+@pytest.mark.parametrize(
+    "scenario_id", ["hr-screening", "behavioral-interview", "specialist-interview"]
+)
+async def test_feedback_uses_the_selected_interview_stage_criteria(tmp_path, scenario_id):
+    database = await Database.open(tmp_path / "stage-feedback.sqlite3")
+    try:
+        scenarios = load_scenarios()
+        sessions = Sessions(database, scenarios, "test-model")
+        session, _ = await sessions.create(scenario_id, Language.EN, "Junior landscape architect")
+        await sessions.transcript(session.id, "assistant", "Tell me about your work.", False, "")
+        await sessions.transcript(session.id, "user", "I led it.", False, "")
+        await sessions.transition(session.id, SessionStatus.ENDED, "user_ended")
+        writer = FakeWriter()
+        await sessions.feedback(session.id, writer)
+        request = writer.requests[0]
+        focus = scenarios.get(scenario_id, Language.EN).feedback_focus
+        assert focus
+        assert request.focus == focus
+        assert all(criterion in feedback_instructions(request) for criterion in focus)
+        assert "topics the interviewer never explored" in feedback_instructions(request)
+    finally:
+        await database.close()
+
+
 async def test_feedback_fails_when_no_quote_is_valid(tmp_path):
     database = await Database.open(tmp_path / "test.sqlite3")
     try:

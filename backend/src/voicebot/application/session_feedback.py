@@ -49,7 +49,9 @@ async def _write(
         (index, str(event.data["role"]), str(event.data["text"]).strip())
         for index, event in enumerate(turns, start=1)
     ]
-    feedback = await writer.write(FeedbackRequest(scenario.title, language, session.context, lines))
+    feedback = await writer.write(
+        FeedbackRequest(scenario.title, language, session.context, lines, scenario.feedback_focus)
+    )
     notes = [
         note
         for note in feedback.notes

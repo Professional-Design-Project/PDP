@@ -2,6 +2,11 @@ import json
 
 from voicebot.application.documents import Document, documents_block
 from voicebot.application.interview_style import InterviewStyle, style_block
+from voicebot.application.interviews import (
+    INTERVIEW_SCENARIOS,
+    MIN_INTERVIEW_SECONDS,
+    MIN_INTERVIEW_USER_TURNS,
+)
 from voicebot.domain.scenario import Language, Scenario
 from voicebot.domain.session import ConversationEndReason
 
@@ -60,7 +65,12 @@ def compile_instructions(
         "If you ask the participant a question, stop speaking and wait for their answer. "
         "Do not answer it for them or say goodbye in the same turn. If you offer them a "
         "chance to ask questions, wait for their response and address their questions before "
-        "calling finish_session. Do not offer that chance after calling finish_session.",
+        "calling finish_session. Do not offer that chance after calling finish_session. "
+        "A request to explain why you are asking is not a refusal: explain briefly, ask "
+        "again whether they have questions and wait for a new response. After addressing "
+        "a candidate question, ask whether they have anything else and wait. Do not close "
+        "while a question or clarification is unresolved. 'I don't know' is not a request "
+        "to end the meeting.",
         f"Scenario: {scenario.id}, version: {scenario.version}.",
         f"Conversation language: {scenario.language.prompt_name} ({scenario.language.value}).",
         f"Speak only in {scenario.language.prompt_name}, unless the user explicitly "
@@ -73,6 +83,48 @@ def compile_instructions(
         *(f"- {rule}" for rule in scenario.constraints),
         *style_block(style or InterviewStyle()),
     ]
+    if scenario.id in INTERVIEW_SCENARIOS:
+        instructions.extend(
+            [
+                "Interview conduct and pacing:",
+                "This is a focused practice of one recruitment stage, not a complete hiring "
+                "process. Build a substantive conversation, normally around 8–12 minutes, "
+                "within the application's 15-minute maximum. Do not rush to the closing "
+                "questions after a brief introduction and one skills question.",
+                f"Automatic completion requires at least {MIN_INTERVIEW_SECONDS // 60} minutes "
+                f"and normally {MIN_INTERVIEW_USER_TURNS} candidate responses. These are safety "
+                "floors, not targets or a fixed question count. You do not have a reliable "
+                "clock: never invent elapsed time. The tool may reject premature completion; "
+                "if so, continue interviewing normally without mentioning internal limits.",
+                "Maintain a flexible agenda from the scenario goals. Explore every main "
+                "area through relevant questions and evidence before offering closing "
+                "questions. Vary the wording, order and depth based on what this candidate "
+                "actually says; avoid the same scripted sequence in every session.",
+                "Adapt the subject, vocabulary and difficulty to the field, role and "
+                "seniority in the context and documents, in any industry. If these are "
+                "missing, establish them through one short question at a time. Never assume "
+                "an IT role or invent employer facts, requirements or candidate experience.",
+                "For students and graduates, probe motivation, potential and readiness to "
+                "learn. Accept evidence from studies, personal projects, volunteering, "
+                "student organisations and casual work; do not require a paid-work example.",
+                "A vague or unsuccessful answer is a reason to investigate, not to end. "
+                "Respect the chosen probing intensity. When probing is enabled, ask for "
+                "the missing example, individual action, reasoning or result. If they "
+                "cannot answer, rephrase, allow thinking time or invite a different "
+                "situation without supplying a model answer. Eventually change topic "
+                "rather than repeat an unproductive demand.",
+                "Be professionally sceptical and attentive. Acknowledge answers briefly "
+                "without automatically calling them excellent, valuable or effective. "
+                "Do not confuse fluent delivery with competence. Do not coach, grade or "
+                "give a performance review during the interview; feedback comes afterwards.",
+                "Only offer candidate questions after the main interview has been "
+                "substantively explored. If asked about unavailable company information, "
+                "say you do not have it rather than inventing an answer. Before finishing, "
+                "resolve their questions and wait for a clear response that they have "
+                "nothing more to ask. Never treat a question about your question as that "
+                "confirmation. Respect an explicit request to stop immediately.",
+            ]
+        )
     if context.strip():
         instructions.extend(
             [

@@ -53,11 +53,19 @@ def focus_rule(focus: int) -> str:
 def follow_up_rule(follow_ups: int) -> str:
     if follow_ups == 0:
         return "Do not ask follow-up questions. Move to a new question after each answer."
-    plural = "question" if follow_ups == 1 else "questions"
-    return (
-        f"Ask at most {follow_ups} follow-up {plural} on the same point when an answer is vague "
-        "or incomplete, then move on."
+    levels = (
+        "Use light probing: clarify the most important gap in a vague answer, then favour "
+        "breadth over depth. Do not use a fixed follow-up count.",
+        "Probe adaptively: follow up on vague claims, missing personal contribution or "
+        "unsupported reasoning until there is useful evidence or the topic stops being "
+        "productive. Do not use a fixed follow-up count. Move on when the answer is clear; "
+        "do not repeat a question the candidate has already answered.",
+        "Probe persistently: test concrete evidence, reasoning, alternatives and consistency "
+        "with earlier answers. Use further follow-ups while they reveal something new, not "
+        "a fixed count. If the candidate is stuck, rephrase or try a different angle before "
+        "moving on; do not badger them or get trapped on one topic.",
     )
+    return levels[follow_ups - 1]
 
 
 def style_block(style: InterviewStyle) -> list[str]:

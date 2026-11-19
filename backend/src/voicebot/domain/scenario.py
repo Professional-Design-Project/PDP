@@ -22,6 +22,7 @@ class Scenario:
     goals: tuple[str, ...]
     constraints: tuple[str, ...]
     language: Language
+    feedback_focus: tuple[str, ...] = ()
 
     def __post_init__(self) -> None:
         if self.version < 1:
@@ -37,5 +38,7 @@ class Scenario:
                 raise ValueError("Scenario fields cannot be blank")
         if not self.goals or not self.constraints:
             raise ValueError("Scenario needs goals and constraints")
-        if any(not value.strip() for value in (*self.goals, *self.constraints)):
+        if any(
+            not value.strip() for value in (*self.goals, *self.constraints, *self.feedback_focus)
+        ):
             raise ValueError("Scenario rules cannot be blank")

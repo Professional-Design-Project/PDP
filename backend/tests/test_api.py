@@ -1,9 +1,35 @@
+import pytest
 from fastapi.testclient import TestClient
 
 from voicebot.main import create_app
 from voicebot.settings import Settings
 
 CONSENT = {"version": "test", "voice": True, "transcripts": True, "outside_eu": True}
+
+
+@pytest.mark.parametrize(
+    "scenario_id", ["hr-screening", "behavioral-interview", "specialist-interview"]
+)
+def test_interview_stage_reaches_session_and_document_instructions(tmp_path, scenario_id):
+    app = create_app(Settings(_env_file=None, database_path=tmp_path / "stages.sqlite3"))
+    with TestClient(app) as client:
+        response = client.post(
+            "/v1/sessions",
+            json={
+                "scenario_id": scenario_id,
+                "language": "en",
+                "context": "Graduate landscape architect applying for a junior role.",
+                "documents": [{"name": "portfolio.txt", "text": "Designed a community garden."}],
+                "consent": CONSENT,
+            },
+        )
+        assert response.status_code == 201
+        assert response.json()["scenario_id"] == scenario_id
+        session = client.portal.call(app.state.sessions.for_conversation, response.json()["id"])
+        assert f"Scenario: {scenario_id}" in session.instructions
+        assert "Graduate landscape architect" in session.instructions
+        assert "Designed a community garden" in session.instructions
+        assert "Do not rush to the closing" in session.instructions
 
 
 def test_health_and_versioned_schema(tmp_path):
