@@ -1,3 +1,16 @@
-export type ScenarioId = "job-interview" | "thesis-defence" | "oral-exam";
+export const scenarioGroups = ["job-interview", "thesis-defence", "oral-exam"] as const;
+export const interviewStages = [
+  "hr-screening",
+  "behavioral-interview",
+  "specialist-interview",
+] as const;
 
-export const scenarioIds: ScenarioId[] = ["job-interview", "thesis-defence", "oral-exam"];
+export type ScenarioGroup = (typeof scenarioGroups)[number];
+export type InterviewStageId = (typeof interviewStages)[number];
+export type ScenarioId = ScenarioGroup | InterviewStageId;
+
+export const scenarioIds: ScenarioId[] = [...scenarioGroups, ...interviewStages];
+
+export function scenarioGroup(id: ScenarioId): ScenarioGroup {
+  return id === "thesis-defence" || id === "oral-exam" ? id : "job-interview";
+}

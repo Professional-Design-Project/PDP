@@ -1,4 +1,4 @@
-import type { ScenarioId } from "@/lib/scenarios";
+import { scenarioGroup, type ScenarioGroup, type ScenarioId } from "@/lib/scenarios";
 
 export type DocumentKind =
   | "cv"
@@ -28,11 +28,15 @@ export const ACCEPTED = ".pdf,.docx,.pptx,.txt,.md";
 
 const extensions = [".pdf", ".docx", ".pptx", ".txt", ".md"];
 
-export const kindsFor: Record<ScenarioId, DocumentKind[]> = {
+const scenarioKinds: Record<ScenarioGroup, DocumentKind[]> = {
   "job-interview": ["cv", "job_post", "cover_letter", "other"],
   "thesis-defence": ["thesis", "review", "slides", "other"],
   "oral-exam": ["topics", "notes", "slides", "other"],
 };
+
+export function kindsFor(scenario: ScenarioId): DocumentKind[] {
+  return scenarioKinds[scenarioGroup(scenario)];
+}
 
 const hints: [RegExp, DocumentKind][] = [
   [/\b(cv|resume|życiorys|zyciorys)\b/i, "cv"],
@@ -46,7 +50,7 @@ const hints: [RegExp, DocumentKind][] = [
 ];
 
 export function guessKind(name: string, scenario: ScenarioId): DocumentKind {
-  const allowed = kindsFor[scenario];
+  const allowed = kindsFor(scenario);
   const matches = hints.filter(([pattern]) => pattern.test(name)).map(([, kind]) => kind);
   const match = matches.find((kind) => allowed.includes(kind));
   if (match) return match;

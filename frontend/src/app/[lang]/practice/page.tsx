@@ -4,6 +4,7 @@ import { useState } from "react";
 import { DocumentsField } from "@/components/documents-field";
 import { ContextField } from "@/components/practice/context-field";
 import { LanguagePicker } from "@/components/practice/language-picker";
+import { InterviewStagePicker } from "@/components/practice/interview-stage-picker";
 import { MicrophoneField } from "@/components/practice/microphone-field";
 import { PresetNotice } from "@/components/practice/preset-notice";
 import { ScenarioPicker } from "@/components/practice/scenario-picker";
@@ -23,16 +24,17 @@ import { useLocale, type Locale } from "@/i18n/locale";
 import { CONSENT_VERSION } from "@/lib/consent";
 import { languageName } from "@/lib/languages";
 import { defaultStyle, type InterviewStyle } from "@/lib/interview-style";
-import type { ScenarioId } from "@/lib/scenarios";
+import { scenarioGroup, type ScenarioId } from "@/lib/scenarios";
 
 export default function PracticePage() {
   const { locale, t } = useLocale();
-  const [scenario, setScenario] = useState<ScenarioId>("job-interview");
+  const [scenario, setScenario] = useState<ScenarioId>("hr-screening");
   const [chosenLanguage, setLanguage] = useState<Locale | null>(null);
   const [context, setContext] = useState("");
   const [style, setStyle] = useState<InterviewStyle>(defaultStyle);
   const language = chosenLanguage ?? locale;
   const copy = t.scenarios[scenario];
+  const group = scenarioGroup(scenario);
   const mic = useMicrophone();
   const docs = useDocuments(scenario);
   const consent = usePracticeConsent();
@@ -47,7 +49,7 @@ export default function PracticePage() {
   const locked = voice.phase !== "setup" || voice.connecting;
 
   function chooseScenario(id: ScenarioId) {
-    setScenario(id);
+    setScenario(id === "job-interview" ? "hr-screening" : id);
     docs.adaptTo(id);
   }
 
@@ -89,7 +91,10 @@ export default function PracticePage() {
       : t.setup.mic.unchecked;
 
   const rows: [string, string][] = [
-    [t.setup.scenario, copy.title],
+    [t.setup.scenario, t.scenarios[group].title],
+    ...(group === "job-interview"
+      ? [[t.setup.interviewStage, copy.title] as [string, string]]
+      : []),
     [t.setup.language, languageName(language)],
     [
       t.setup.context,
@@ -125,6 +130,9 @@ export default function PracticePage() {
         <Rise delay={100} className="space-y-14 lg:col-span-8">
           <Section number={1} title={t.setup.scenario}>
             <ScenarioPicker value={scenario} disabled={locked} onChange={chooseScenario} />
+            {group === "job-interview" && (
+              <InterviewStagePicker value={scenario} disabled={locked} onChange={chooseScenario} />
+            )}
           </Section>
 
           <Section number={2} title={t.setup.context} description={t.setup.contextIntro}>

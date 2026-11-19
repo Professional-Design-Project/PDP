@@ -105,10 +105,34 @@ export const landingEn = {
   scenarios: {
     "job-interview": {
       title: "Job interview",
-      description: "Questions about your experience and the role. One interviewer.",
+      description: "HR, behavioural or specialist. One interviewer, any field.",
       placeholder:
         "For example: junior backend developer at a fintech, second round, they asked about system design last time.",
       finished: "Interview finished.",
+    },
+    "hr-screening": {
+      title: "HR screening",
+      description:
+        "Motivation, role fit and expectations. Explain why this opportunity makes sense for you.",
+      placeholder:
+        "For example: final-year student applying for a junior marketing role at a publishing house. First recruiter call; I have volunteering experience but no full-time work history.",
+      finished: "HR screening finished.",
+    },
+    "behavioral-interview": {
+      title: "Behavioural interview",
+      description:
+        "Real situations, your own actions and what you learned. Expect questions beyond ‘we worked as a team’.",
+      placeholder:
+        "For example: applying for a graduate project coordinator role. I can discuss organising a student event, a team disagreement and a deadline we missed.",
+      finished: "Behavioural interview finished.",
+    },
+    "specialist-interview": {
+      title: "Specialist interview",
+      description:
+        "Your knowledge, projects and experience. Defend decisions, compare alternatives and work through a practical problem.",
+      placeholder:
+        "For example: junior civil engineer, discussing a university bridge design project. I handled load calculations and want to practise explaining my assumptions and design choices.",
+      finished: "Specialist interview finished.",
     },
     "thesis-defence": {
       title: "Thesis defence",

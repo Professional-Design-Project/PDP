@@ -1,4 +1,4 @@
-import type { ScenarioId } from "@/lib/scenarios";
+import type { ScenarioGroup } from "@/lib/scenarios";
 
 export const setupEn = {
   setup: {
@@ -11,6 +11,9 @@ export const setupEn = {
     intro:
       "Pick a scenario, describe the situation you want to practise and check your microphone. The interviewer works only with what you give it.",
     scenario: "Scenario",
+    interviewStage: "Interview stage",
+    interviewStageHint:
+      "Practise one stage, in any field. Add the role and your level below. Expect follow-up questions and a focused conversation of up to 15 minutes; you can stop at any time.",
     context: "Context",
     contextIntro:
       "Tell the interviewer about the role, the company or the situation. It reads only what is here.",
@@ -44,7 +47,7 @@ export const setupEn = {
           "job-interview": ["General questions", "Your CV and role"],
           "thesis-defence": ["Field of study", "Your thesis"],
           "oral-exam": ["Whole subject", "Your topics"],
-        } as Record<ScenarioId, readonly [string, string]>,
+        } satisfies Record<ScenarioGroup, readonly [string, string]>,
         explain: (focus: number) =>
           focus === 0
             ? "Only general questions, nothing from the details of your context and documents."
@@ -71,12 +74,15 @@ export const setupEn = {
         ],
       },
       followUps: {
-        title: "Follow-ups",
+        title: "Probing intensity",
         ends: ["One and done", "Digs deep"] as readonly [string, string],
-        explain: (count: number) =>
-          count === 0
-            ? "After each answer the interviewer moves on to a new question."
-            : `Up to ${count} follow-up${count === 1 ? "" : "s"} on the same point if your answer is vague or incomplete.`,
+        explain: (level: number) =>
+          [
+            "After each answer the interviewer moves on to a new question.",
+            "Light probing of the most important gap, then a new topic. The number of follow-ups varies.",
+            "Adaptive follow-ups on vague claims, your own contribution and reasoning. Moves on when there is enough detail, not after a fixed number of questions.",
+            "Persistent probing of evidence, alternatives and consistency. Tries a different angle when you get stuck, without repeating the same question endlessly.",
+          ][level],
       },
     },
     yourSession: "Your session",

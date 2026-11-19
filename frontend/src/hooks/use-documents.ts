@@ -72,7 +72,7 @@ export function useDocuments(scenario: ScenarioId) {
   function adaptTo(next: ScenarioId) {
     setDocuments((current) =>
       current.map((document) =>
-        kindsFor[next].includes(document.kind)
+        kindsFor(next).includes(document.kind)
           ? document
           : { ...document, kind: guessKind(document.name, next) },
       ),
@@ -82,5 +82,5 @@ export function useDocuments(scenario: ScenarioId) {
   const ready = documents.filter((document) => document.status === "ready");
   const reading = documents.some((document) => document.status === "reading");
 
-  return { documents, ready, reading, kinds: kindsFor[scenario], add, remove, setKind, adaptTo };
+  return { documents, ready, reading, kinds: kindsFor(scenario), add, remove, setKind, adaptTo };
 }

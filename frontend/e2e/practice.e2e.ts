@@ -24,6 +24,10 @@ test("the session summary follows the chosen scenario", async ({ page }) => {
   await page.goto("/en/practice");
   const summary = page.getByRole("complementary");
   await expect(summary.getByText("Job interview")).toBeVisible();
+  await expect(summary.getByText("HR screening")).toBeVisible();
+  await page.getByRole("radio", { name: "Specialist interview", exact: true }).check();
+  await expect(summary.getByText("Specialist interview")).toBeVisible();
+  await expect(summary.getByText("Job interview")).toBeVisible();
   await page.getByText("Oral exam", { exact: true }).click();
   await expect(summary.getByText("Oral exam")).toBeVisible();
 });
@@ -35,8 +39,11 @@ test("entering the room sends the setup and reports a failed start", async ({ pa
     await route.fulfill({ status: 503, json: { detail: "Voice is not configured" } });
   });
   await page.goto("/en/practice");
-  await page.getByText("Oral exam", { exact: true }).click();
-  await page.getByRole("textbox").first().fill("Operating systems, chapter 3");
+  await page.getByRole("radio", { name: "Specialist interview", exact: true }).check();
+  await page
+    .getByRole("textbox")
+    .first()
+    .fill("Junior landscape architect, community garden project");
   await tickRequiredConsents(page);
   await page.getByRole("button", { name: "Enter the room" }).click();
 
@@ -44,9 +51,9 @@ test("entering the room sends the setup and reports a failed start", async ({ pa
     page.getByRole("alert").filter({ hasText: "Could not start the conversation." }),
   ).toHaveText("Could not start the conversation. Request failed (503)");
   expect(body).toMatchObject({
-    scenario_id: "oral-exam",
+    scenario_id: "specialist-interview",
     language: "en",
-    context: "Operating systems, chapter 3",
+    context: "Junior landscape architect, community garden project",
     consent: { voice: true, transcripts: true, outside_eu: true, language: "en" },
   });
 });

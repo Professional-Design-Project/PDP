@@ -2,9 +2,14 @@
 
 import { BriefcaseIcon, ExamIcon, GraduationIcon } from "@/components/icons";
 import { useLocale } from "@/i18n/locale";
-import { scenarioIds, type ScenarioId } from "@/lib/scenarios";
+import {
+  scenarioGroup,
+  scenarioGroups,
+  type ScenarioGroup,
+  type ScenarioId,
+} from "@/lib/scenarios";
 
-const icons: Record<ScenarioId, typeof BriefcaseIcon> = {
+const icons: Record<ScenarioGroup, typeof BriefcaseIcon> = {
   "job-interview": BriefcaseIcon,
   "thesis-defence": GraduationIcon,
   "oral-exam": ExamIcon,
@@ -21,18 +26,20 @@ export function ScenarioPicker({ value, disabled, onChange }: ScenarioPickerProp
   return (
     <fieldset disabled={disabled} className="grid border-t border-l border-line sm:grid-cols-3">
       <legend className="sr-only">{t.setup.scenario}</legend>
-      {scenarioIds.map((id) => {
+      {scenarioGroups.map((id) => {
         const Icon = icons[id];
         return (
           <label
             key={id}
+            htmlFor={`scenario-${id}`}
             className="group flex min-h-44 flex-col border-r border-b border-line bg-white p-5 text-ink duration-300 hover:bg-raised has-checked:border-cobalt has-checked:bg-cobalt has-checked:text-white has-focus-visible:outline-2 has-focus-visible:outline-offset-2 has-focus-visible:outline-ink"
           >
             <input
               type="radio"
+              id={`scenario-${id}`}
               name="scenario"
               value={id}
-              checked={value === id}
+              checked={scenarioGroup(value) === id}
               onChange={() => onChange(id)}
               className="sr-only"
             />

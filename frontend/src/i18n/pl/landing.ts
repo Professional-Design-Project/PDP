@@ -110,10 +110,34 @@ export const landingPl: LandingDictionary = {
   scenarios: {
     "job-interview": {
       title: "Rozmowa rekrutacyjna",
-      description: "Pytania o twoje doświadczenie i stanowisko. Jeden rozmówca.",
+      description: "HR, behawioralna lub specjalistyczna. Jeden rozmówca, dowolna branża.",
       placeholder:
         "Na przykład: junior backend developer w fintechu, drugi etap, ostatnio pytali o projektowanie systemów.",
       finished: "Rozmowa zakończona.",
+    },
+    "hr-screening": {
+      title: "Rozmowa HR",
+      description:
+        "Motywacja, dopasowanie do roli i oczekiwania. Wyjaśnij, dlaczego ta praca jest dla ciebie.",
+      placeholder:
+        "Na przykład: kończę studia i aplikuję na młodszego specjalistę ds. marketingu w wydawnictwie. Pierwsza rozmowa z rekruterem; mam doświadczenie w wolontariacie, ale nie na etacie.",
+      finished: "Rozmowa HR zakończona.",
+    },
+    "behavioral-interview": {
+      title: "Rozmowa behawioralna",
+      description:
+        "Prawdziwe sytuacje, twoje działania i wnioski. Spodziewaj się pytań wykraczających poza „pracowaliśmy w zespole”.",
+      placeholder:
+        "Na przykład: aplikuję na stanowisko młodszego koordynatora projektów. Mogę opowiedzieć o organizacji wydarzenia studenckiego, sporze w zespole i niedotrzymanym terminie.",
+      finished: "Rozmowa behawioralna zakończona.",
+    },
+    "specialist-interview": {
+      title: "Rozmowa specjalistyczna",
+      description:
+        "Wiedza, projekty i doświadczenie. Uzasadnij decyzje, porównaj alternatywy i zmierz się z praktycznym problemem.",
+      placeholder:
+        "Na przykład: młodszy inżynier budownictwa, omawiam uczelniany projekt mostu. Odpowiadałem za obliczenia obciążeń i chcę przećwiczyć wyjaśnianie założeń oraz decyzji projektowych.",
+      finished: "Rozmowa specjalistyczna zakończona.",
     },
     "thesis-defence": {
       title: "Obrona pracy",

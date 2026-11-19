@@ -3,7 +3,7 @@
 import { StyleSlider } from "@/components/practice/style-slider";
 import { useLocale } from "@/i18n/locale";
 import type { InterviewStyle, StyleKey } from "@/lib/interview-style";
-import type { ScenarioId } from "@/lib/scenarios";
+import { scenarioGroup, type ScenarioId } from "@/lib/scenarios";
 
 type StyleFieldProps = {
   scenario: ScenarioId;
@@ -25,7 +25,7 @@ export function StyleField({ scenario, value, disabled, onChange }: StyleFieldPr
         title={copy.focus.title}
         value={value.focus}
         unit="%"
-        ends={copy.focus.ends[scenario]}
+        ends={copy.focus.ends[scenarioGroup(scenario)]}
         changes={copy.focus.explain(value.focus)}
         onChange={set("focus")}
       />
@@ -54,6 +54,7 @@ export function StyleField({ scenario, value, disabled, onChange }: StyleFieldPr
         id="follow_ups"
         title={copy.followUps.title}
         value={value.follow_ups}
+        unit={copy.outOf(3)}
         ends={copy.followUps.ends}
         changes={copy.followUps.explain(value.follow_ups)}
         onChange={set("follow_ups")}

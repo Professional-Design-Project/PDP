@@ -1,4 +1,4 @@
-import type { ScenarioId } from "@/lib/scenarios";
+import type { ScenarioGroup } from "@/lib/scenarios";
 import type { SetupDictionary } from "../en";
 
 export const setupPl: SetupDictionary = {
@@ -12,6 +12,9 @@ export const setupPl: SetupDictionary = {
     intro:
       "Wybierz scenariusz, opisz sytuację, którą chcesz przećwiczyć, i sprawdź mikrofon. Rozmówca pracuje tylko na tym, co mu dasz.",
     scenario: "Scenariusz",
+    interviewStage: "Etap rozmowy",
+    interviewStageHint:
+      "Przećwicz jeden etap, w dowolnej branży. Poniżej opisz stanowisko i swój poziom. Spodziewaj się dopytań i konkretnej rozmowy do 15 minut; możesz ją zatrzymać w każdej chwili.",
     context: "Kontekst",
     contextIntro: "Opisz rozmówcy stanowisko, firmę albo sytuację. Czyta tylko to, co jest tutaj.",
     contextLabel: "Dodatkowy kontekst",
@@ -44,7 +47,7 @@ export const setupPl: SetupDictionary = {
           "job-interview": ["Ogólne pytania", "Twoje CV i rola"],
           "thesis-defence": ["Dziedzina studiów", "Twoja praca"],
           "oral-exam": ["Cały przedmiot", "Twoje tematy"],
-        } as Record<ScenarioId, readonly [string, string]>,
+        } satisfies Record<ScenarioGroup, readonly [string, string]>,
         explain: (focus: number) =>
           focus === 0
             ? "Tylko ogólne pytania, bez szczegółów z twojego kontekstu i dokumentów."
@@ -71,12 +74,15 @@ export const setupPl: SetupDictionary = {
         ],
       },
       followUps: {
-        title: "Dopytania",
+        title: "Intensywność dopytań",
         ends: ["Bez dopytań", "Drąży"] as readonly [string, string],
-        explain: (count: number) =>
-          count === 0
-            ? "Po każdej odpowiedzi rozmówca przechodzi do nowego pytania."
-            : `Do ${count} ${count === 1 ? "dopytania" : "dopytań"} o tę samą kwestię, gdy odpowiedź jest niejasna albo niepełna.`,
+        explain: (level: number) =>
+          [
+            "Po każdej odpowiedzi rozmówca przechodzi do nowego pytania.",
+            "Lekkie dopytanie o najważniejszą lukę, potem nowy temat. Liczba dopytań zależy od odpowiedzi.",
+            "Dopytania o ogólniki, twój własny wkład i uzasadnienie. Rozmówca przechodzi dalej po uzyskaniu konkretów, nie po stałej liczbie pytań.",
+            "Wytrwałe sprawdzanie dowodów, alternatyw i spójności. Gdy utkniesz, rozmówca próbuje innego podejścia zamiast bez końca powtarzać to samo pytanie.",
+          ][level],
       },
     },
     yourSession: "Twoja sesja",

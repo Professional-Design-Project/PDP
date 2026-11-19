@@ -25,7 +25,7 @@ it("explains what each slider changes and updates it as it moves", () => {
   fireEvent.change(screen.getByLabelText("Nacisk"), { target: { value: "3" } });
   expect(screen.getByText(/podważa słabe punkty/)).toBeInTheDocument();
 
-  fireEvent.change(screen.getByLabelText("Dopytania"), { target: { value: "0" } });
+  fireEvent.change(screen.getByLabelText("Intensywność dopytań"), { target: { value: "0" } });
   expect(screen.getByText(/przechodzi do nowego pytania/)).toBeInTheDocument();
 
   fireEvent.change(screen.getByLabelText("Na czym skupiają się pytania"), {

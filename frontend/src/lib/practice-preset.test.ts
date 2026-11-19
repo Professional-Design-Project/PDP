@@ -38,3 +38,10 @@ it("refuses unknown scenarios, languages and missing sessions", () => {
   expect(toPreset({ ...row, scenario_id: "karaoke" }, {})).toBeNull();
   expect(toPreset({ ...row, language: "de" }, {})).toBeNull();
 });
+
+it.each(["hr-screening", "behavioral-interview", "specialist-interview", "job-interview"])(
+  "preserves the interview stage %s when practising again",
+  (scenario_id) => {
+    expect(toPreset({ ...row, scenario_id }, {})?.scenarioId).toBe(scenario_id);
+  },
+);
