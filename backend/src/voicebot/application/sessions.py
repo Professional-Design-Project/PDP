@@ -50,6 +50,8 @@ class Sessions:
         self.max_sessions = max_sessions
         self.token_ttl_seconds = token_ttl_seconds
         self.briefs: dict[str, str] = {}
+        # shortcut: single-process coordination; use shared coordination before scaling workers.
+        self._feedback_tasks: dict[str, asyncio.Task[tuple[Feedback, list[int]]]] = {}
 
     async def create(
         self,
@@ -152,8 +154,31 @@ class Sessions:
     async def feedback(
         self, session_id: str, writer: FeedbackWriter | None
     ) -> tuple[Feedback, list[int]]:
+        task = self._feedback_tasks.get(session_id)
+        if task is None:
+            task = asyncio.create_task(self._generate_feedback(session_id, writer))
+            self._feedback_tasks[session_id] = task
+
+            def completed(done: asyncio.Task[tuple[Feedback, list[int]]]) -> None:
+                self._feedback_tasks.pop(session_id, None)
+                # Retrieve failures even if every requesting client has disconnected.
+                if not done.cancelled():
+                    done.exception()
+
+            task.add_done_callback(completed)
+        return await asyncio.shield(task)
+
+    async def _generate_feedback(
+        self, session_id: str, writer: FeedbackWriter | None
+    ) -> tuple[Feedback, list[int]]:
         session = await self.get(session_id)
         return await session_feedback(self.repository, self.scenarios, session, writer)
+
+    async def close(self) -> None:
+        tasks = list(self._feedback_tasks.values())
+        for task in tasks:
+            task.cancel()
+        await asyncio.gather(*tasks, return_exceptions=True)
 
     async def recover(self) -> None:
         for session in await self.repository.unfinished():

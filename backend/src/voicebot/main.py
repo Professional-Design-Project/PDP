@@ -142,7 +142,10 @@ def create_app(
                 maintenance.cancel()
                 with suppress(asyncio.CancelledError):
                     await maintenance
-                await runtime.close()
+                try:
+                    await runtime.close()
+                finally:
+                    await sessions.close()
         finally:
             await database.close()
 

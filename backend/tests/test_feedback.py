@@ -1,3 +1,4 @@
+import asyncio
 from types import SimpleNamespace
 from unittest.mock import AsyncMock
 
@@ -137,6 +138,123 @@ def test_feedback_prompt_is_transcript_only():
     assert "Do not infer emotions" in instructions
     assert "1. User: Proces to program." in feedback_prompt(request)
     assert "<context>" not in feedback_prompt(request)
+
+
+async def test_concurrent_feedback_is_shared_even_when_a_request_is_cancelled(tmp_path):
+    database = await Database.open(tmp_path / "concurrent.sqlite3")
+    release = asyncio.Event()
+    entered = asyncio.Event()
+
+    class SlowWriter(FakeWriter):
+        async def write(self, request):
+            entered.set()
+            await release.wait()
+            return await super().write(request)
+
+    try:
+        sessions = Sessions(database, load_scenarios(), "test-model")
+        session, _ = await sessions.create("job-interview", Language.EN)
+        await sessions.transcript(session.id, "assistant", "Tell me.", False, "")
+        await sessions.transcript(session.id, "user", "I led it.", False, "")
+        await sessions.transition(session.id, SessionStatus.ENDED, "user_ended")
+        writer = SlowWriter()
+        first = asyncio.create_task(sessions.feedback(session.id, writer))
+        await asyncio.wait_for(entered.wait(), 2)
+        second = asyncio.create_task(sessions.feedback(session.id, writer))
+        cancelled = asyncio.create_task(sessions.feedback(session.id, writer))
+        await asyncio.sleep(0)
+        cancelled.cancel()
+        with pytest.raises(asyncio.CancelledError):
+            await cancelled
+        release.set()
+        results = await asyncio.wait_for(asyncio.gather(first, second), 2)
+        assert results[0] == results[1]
+        assert len(writer.requests) == 1
+        assert len(await database.events(session.id, kind="feedback.created")) == 1
+        assert await sessions.feedback(session.id, writer) == results[0]
+        assert len(writer.requests) == 1
+        assert not sessions._feedback_tasks
+    finally:
+        release.set()
+        await database.close()
+
+
+async def test_feedback_for_different_sessions_runs_concurrently(tmp_path):
+    database = await Database.open(tmp_path / "parallel.sqlite3")
+    entered = 0
+    both_entered = asyncio.Event()
+
+    class ParallelWriter(FakeWriter):
+        async def write(self, request):
+            nonlocal entered
+            entered += 1
+            if entered == 2:
+                both_entered.set()
+            await both_entered.wait()
+            return await super().write(request)
+
+    try:
+        sessions = Sessions(database, load_scenarios(), "test-model")
+        ids = []
+        for _ in range(2):
+            session, _ = await sessions.create("job-interview", Language.EN)
+            await sessions.transcript(session.id, "assistant", "Tell me.", False, "")
+            await sessions.transcript(session.id, "user", "I led it.", False, "")
+            await sessions.transition(session.id, SessionStatus.ENDED, "user_ended")
+            ids.append(session.id)
+        writer = ParallelWriter()
+        await asyncio.wait_for(asyncio.gather(*(sessions.feedback(id, writer) for id in ids)), 2)
+        assert len(writer.requests) == 2
+    finally:
+        both_entered.set()
+        await database.close()
+
+
+async def test_failed_feedback_can_be_retried(tmp_path):
+    database = await Database.open(tmp_path / "retry.sqlite3")
+    try:
+        sessions = Sessions(database, load_scenarios(), "test-model")
+        session, _ = await sessions.create("job-interview", Language.EN)
+        await sessions.transcript(session.id, "assistant", "Tell me.", False, "")
+        await sessions.transcript(session.id, "user", "I led it.", False, "")
+        await sessions.transition(session.id, SessionStatus.ENDED, "user_ended")
+        writer = SimpleNamespace(
+            write=AsyncMock(side_effect=FeedbackFailed(FeedbackFailure.PROVIDER_UNAVAILABLE))
+        )
+        with pytest.raises(FeedbackFailed):
+            await sessions.feedback(session.id, writer)
+        assert not sessions._feedback_tasks
+        assert await database.events(session.id, kind="feedback.created") == []
+        await sessions.feedback(session.id, FakeWriter())
+        assert len(await database.events(session.id, kind="feedback.created")) == 1
+    finally:
+        await database.close()
+
+
+async def test_shutdown_cancels_feedback_before_database_closes(tmp_path):
+    database = await Database.open(tmp_path / "shutdown.sqlite3")
+    entered = asyncio.Event()
+
+    class BlockedWriter:
+        async def write(self, request):
+            entered.set()
+            await asyncio.Event().wait()
+
+    sessions = Sessions(database, load_scenarios(), "test-model")
+    try:
+        session, _ = await sessions.create("job-interview", Language.EN)
+        await sessions.transcript(session.id, "user", "Hello.", False, "")
+        await sessions.transition(session.id, SessionStatus.ENDED, "user_ended")
+        request = asyncio.create_task(sessions.feedback(session.id, BlockedWriter()))
+        await asyncio.wait_for(entered.wait(), 2)
+        await asyncio.wait_for(sessions.close(), 2)
+        with pytest.raises(asyncio.CancelledError):
+            await request
+        assert not sessions._feedback_tasks
+        assert await database.events(session.id, kind="feedback.created") == []
+    finally:
+        await sessions.close()
+        await database.close()
 
 
 def test_feedback_endpoint_rejects_running_sessions(tmp_path):
