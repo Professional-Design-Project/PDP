@@ -12,6 +12,7 @@ from pipecat.frames.frames import (
 )
 from pipecat.processors.frame_processor import FrameDirection
 
+from voicebot.application.interviews import INTERVIEW_SCENARIOS
 from voicebot.domain.session import ConversationEndReason
 from voicebot.infrastructure.voice.gemini import GeminiConversation, ProviderFailed
 from voicebot.settings import Settings
@@ -33,13 +34,13 @@ class Events:
 
 
 @pytest.fixture
-async def conversation():
+async def conversation(request):
     session = SimpleNamespace(
         id="session",
         model="test-model",
         instructions="test",
         language="en",
-        scenario_id="oral-exam",
+        scenario_id=getattr(request, "param", "oral-exam"),
     )
     conversation = GeminiConversation(
         session, Mock(), Settings(_env_file=None, google_api_key="test-key")
@@ -82,6 +83,52 @@ async def call_finish(conversation, arguments):
     return result.call_args.kwargs["properties"]
 
 
+async def call_prepare(conversation, arguments=None):
+    result = AsyncMock()
+    await conversation._prepare_closing(
+        SimpleNamespace(arguments=arguments or {}, result_callback=result)
+    )
+    return result
+
+
+@pytest.mark.parametrize("conversation", sorted(INTERVIEW_SCENARIOS), indirect=True)
+async def test_each_interview_stage_requires_closing_confirmation(conversation):
+    conversation._ready_at = time.monotonic() - 800
+    conversation._user_turns = 10
+    await call_finish(conversation, {"reason": "scenario_completed"})
+    assert conversation._end_reason is None
+    result = await call_prepare(conversation)
+    assert result.call_args.args[0]["status"] == "awaiting_candidate"
+
+
+@pytest.fixture
+async def running_interview(conversation):
+    conversation._is_interview = True
+    conversation._ready_at = time.monotonic() - 600
+    conversation._user_turns = 8
+    stop = asyncio.Event()
+    task = asyncio.create_task(conversation.run(stop, AsyncMock(), AsyncMock(), AsyncMock()))
+    await conversation.started.wait()
+    try:
+        yield conversation
+    finally:
+        stop.set()
+        await asyncio.wait_for(task, 1)
+
+
+async def assistant_says(conversation, content, *, interrupted=False):
+    await conversation.assistant.emit(
+        "on_assistant_turn_stopped",
+        SimpleNamespace(content=content, interrupted=interrupted, timestamp="now"),
+    )
+
+
+async def candidate_says(conversation, content):
+    await conversation.user.emit(
+        "on_user_turn_message_added", SimpleNamespace(content=content, timestamp="now")
+    )
+
+
 @pytest.mark.parametrize("elapsed,turns", [(120, 8), (400, 3), (299, 6), (719, 5)])
 async def test_premature_interview_completion_keeps_microphone_and_conversation_open(
     conversation, elapsed, turns
@@ -105,9 +152,111 @@ async def test_substantive_or_long_interview_can_close(conversation, elapsed, tu
     conversation._is_interview = True
     conversation._ready_at = time.monotonic() - elapsed
     conversation._user_turns = turns
+    await call_prepare(conversation)
+    conversation._closing_confirmation.assistant_turn_finished(turns, interrupted=False)
+    conversation._user_turns += 1
     await call_finish(conversation, {"reason": "scenario_completed"})
     assert conversation._end_reason == ConversationEndReason.SCENARIO_COMPLETED
     conversation.llm.set_audio_input_paused.assert_called_once_with(True)
+
+
+async def test_interview_cannot_finish_without_preparing_confirmation(running_interview):
+    properties = await call_finish(running_interview, {"reason": "scenario_completed"})
+    assert properties.run_llm is True
+    assert running_interview._end_reason is None
+    running_interview.llm.set_audio_input_paused.assert_not_called()
+
+
+async def test_closing_requires_spoken_invitation_then_a_new_candidate_turn(running_interview):
+    conversation = running_interview
+    result = await call_prepare(conversation)
+    assert result.call_args.args[0]["status"] == "awaiting_candidate"
+    await call_finish(conversation, {"reason": "scenario_completed"})
+    assert conversation._end_reason is None
+
+    await assistant_says(conversation, "Do you have any further questions?")
+    properties = await call_finish(conversation, {"reason": "scenario_completed"})
+    assert properties.run_llm is False
+    assert conversation._end_reason is None
+    await candidate_says(conversation, " ")
+    await call_finish(conversation, {"reason": "scenario_completed"})
+    assert conversation._end_reason is None
+    conversation.llm.set_audio_input_paused.assert_not_called()
+
+    await candidate_says(conversation, "No, that is all. Thank you.")
+    await call_finish(conversation, {"reason": "scenario_completed"})
+    assert conversation._end_reason == ConversationEndReason.SCENARIO_COMPLETED
+
+
+async def test_candidate_turn_before_invitation_finishes_is_not_confirmation(running_interview):
+    conversation = running_interview
+    await call_prepare(conversation)
+    await candidate_says(conversation, "One more thing.")
+    await assistant_says(conversation, "What would you like to ask?")
+    await call_finish(conversation, {"reason": "scenario_completed"})
+    assert conversation._end_reason is None
+    conversation.llm.set_audio_input_paused.assert_not_called()
+
+
+@pytest.mark.parametrize("interrupted,content", [(True, "Any other"), (False, "")])
+async def test_unfinished_or_empty_invitation_cannot_enable_closing(
+    running_interview, interrupted, content
+):
+    conversation = running_interview
+    await call_prepare(conversation)
+    await assistant_says(conversation, content, interrupted=interrupted)
+    await candidate_says(conversation, "No.")
+    await call_finish(conversation, {"reason": "scenario_completed"})
+    assert conversation._end_reason is None
+    conversation.llm.set_audio_input_paused.assert_not_called()
+
+
+async def test_answering_candidate_question_requires_a_fresh_closing_invitation(
+    running_interview,
+):
+    conversation = running_interview
+    await call_prepare(conversation)
+    await assistant_says(conversation, "Do you have any questions?")
+    await candidate_says(conversation, "How big is the team?")
+    await assistant_says(conversation, "I do not have the confirmed team size.")
+    await call_finish(conversation, {"reason": "scenario_completed"})
+    assert conversation._end_reason is None
+
+    await call_prepare(conversation)
+    await assistant_says(conversation, "Anything else you would like to ask?")
+    await call_finish(conversation, {"reason": "scenario_completed"})
+    assert conversation._end_reason is None
+    await candidate_says(conversation, "That is everything, thanks.")
+    await call_finish(conversation, {"reason": "scenario_completed"})
+    assert conversation._end_reason == ConversationEndReason.SCENARIO_COMPLETED
+
+
+async def test_prepare_closing_rejects_arguments_without_arming_confirmation(running_interview):
+    result = await call_prepare(running_interview, {"confirmed": True})
+    assert "error" in result.call_args.args[0]
+    assert result.call_args.kwargs["properties"].run_llm is False
+    assert running_interview._closing_confirmation.prepared is False
+
+
+async def test_prepare_closing_cannot_skip_interview_progress(conversation):
+    conversation._is_interview = True
+    result = await call_prepare(conversation)
+    assert result.call_args.args[0]["status"] == "continue_interview"
+    assert conversation._closing_confirmation.prepared is False
+
+
+async def test_user_can_stop_while_waiting_for_closing_confirmation(running_interview):
+    await call_prepare(running_interview)
+    await assistant_says(running_interview, "Do you have any questions?")
+    await call_finish(running_interview, {"reason": "user_ended"})
+    assert running_interview._end_reason == ConversationEndReason.USER_ENDED
+
+
+async def test_prepare_after_completion_does_not_restart_the_interview(running_interview):
+    await call_finish(running_interview, {"reason": "user_ended"})
+    result = await call_prepare(running_interview)
+    assert result.call_args.args[0]["status"] == "already_closing"
+    assert result.call_args.kwargs["properties"].run_llm is False
 
 
 async def test_user_can_stop_an_interview_immediately(conversation):

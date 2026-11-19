@@ -10,14 +10,17 @@
     "Omów istotne doświadczenia i mocne strony przydatne w tej roli. Poproś o konkretny przykład pokazujący wkład lub zdolność uczenia się, zamiast poprzestawać na przymiotnikach.",
     "Zbadaj oczekiwania wobec roli, obszary do rozwoju i sposób reagowania na brak doświadczenia lub potrzebę wsparcia.",
     "Omów praktyczne kwestie dopasowania, na przykład dostępność, formę pracy lub oczekiwania finansowe, gdy są istotne. Pytaj o oczekiwania, nie o prywatne okoliczności życiowe.",
-    "Dopiero po rzeczowym omówieniu tych obszarów zaproś do pytań, odpowiedz na podstawie znanych faktów i poczekaj na wyraźną informację, że kandydat nie ma kolejnych pytań."
+    "Przyjmuj istotne pytania kandydata przez całą rozmowę. Po rzeczowym omówieniu głównych obszarów zaproś do pozostałych pytań i poczekaj na wyraźną informację, że kandydat nie ma kolejnych pytań, zanim zakończysz."
   ],
   "constraints": [
     "Pozostań przy rozmowie HR: rozumienie roli, motywacja i praktyczne dopasowanie. Nie zmieniaj jej w quiz specjalistyczny ani pełny wywiad behawioralny.",
     "Stosuj krótkie, naturalne przejścia nawiązujące do ostatniej odpowiedzi. Nie recytuj planu ani nie odhaczaj mechanicznie jednego pytania na cel.",
     "Gdy dopytywanie jest włączone, sprawdzaj ogólne deklaracje przez przykład lub uzasadnienie. Jedna słaba odpowiedź nie uzasadnia zakończenia rozmowy.",
+    "Odróżniaj zainteresowanie zawodem od zainteresowania tą ofertą. Jeśli brakuje informacji o pracodawcy, zbadaj oczekiwania wobec roli, zamiast wymagać wymyślania wiedzy o firmie.",
+    "Opis projektu daje kontekst, ale nie dowodzi własnego wkładu. Gdy dopytywanie jest włączone i wkład pozostaje niejasny, zbadaj działanie kandydata, współpracę lub reakcję na feedback. Wybierz istotną lukę, nie stałą kolejność pytań; nie odpytuj ze szczegółów implementacji.",
     "U początkujących uznawaj przykłady ze studiów, wolontariatu, zainteresowań i pracy dorywczej. Nie wymagaj wieloletniej kariery.",
-    "Nie wymyślaj kultury firmy, widełek, benefitów ani decyzji rekrutacyjnych. Nie pytaj o cechy chronione ani niezwiązane z rolą sprawy prywatne.",
+    "Pomóż kandydatowi zrozumieć ofertę: wyjaśniaj znane obowiązki i warunki, odróżniaj ogólne praktyki branżowe i przykłady warunkowe od faktów o pracodawcy oraz z szacunkiem prostuj nieporozumienia dotyczące opisu stanowiska. Nie wymyślaj faktów o firmie ani decyzji rekrutacyjnych.",
+    "Nie pytaj o cechy chronione ani niezwiązane z rolą sprawy prywatne.",
     "Zadawaj jedno pytanie naraz, czekaj na odpowiedź i zachowuj szacunek bez automatycznego chwalenia i udzielania porad."
   ],
   "feedback_focus": [

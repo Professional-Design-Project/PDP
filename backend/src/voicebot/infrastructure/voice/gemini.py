@@ -24,7 +24,11 @@ from pipecat.transports.smallwebrtc.transport import SmallWebRTCTransport
 from pipecat.turns.user_turn_strategies import ExternalUserTurnStrategies
 from pipecat.workers.runner import WorkerRunner
 
-from voicebot.application.interviews import INTERVIEW_SCENARIOS, can_complete_interview
+from voicebot.application.interviews import (
+    INTERVIEW_SCENARIOS,
+    ClosingConfirmation,
+    can_complete_interview,
+)
 from voicebot.domain.session import ConversationEndReason, Session, Speaker
 from voicebot.infrastructure.voice.completion import (
     AssistantTranscriptSavedFrame,
@@ -53,6 +57,7 @@ class GeminiConversation:
         key = settings.google_api_key.get_secret_value()
         if not key:
             raise VoiceUnavailable("Gemini API key is not configured")
+        self._is_interview = session.scenario_id in INTERVIEW_SCENARIOS
         self.transport = SmallWebRTCTransport(
             webrtc_connection=connection,
             params=TransportParams(audio_in_enabled=True, audio_out_enabled=True),
@@ -67,26 +72,44 @@ class GeminiConversation:
                 context_window_compression={"enabled": True},
             ),
         )
-        self.context = LLMContext(
-            tools=ToolsSchema(
-                standard_tools=[
-                    FunctionSchema(
-                        name="finish_session",
-                        description="Request the end of the meeting BEFORE saying goodbye. "
-                        "After the tool succeeds, say one brief closing statement, "
-                        "then remain silent.",
-                        properties={
-                            "reason": {
-                                "type": "string",
-                                "enum": [reason.value for reason in ConversationEndReason],
-                            }
-                        },
-                        required=["reason"],
-                    )
-                ]
+        tools = [
+            FunctionSchema(
+                name="finish_session",
+                description="Request the end of the meeting BEFORE saying goodbye. "
+                "For interviews, scenario_completed requires prepare_closing, "
+                "a spoken invitation for final questions, and a new, complete "
+                "candidate reply clearly confirming they have no more questions. "
+                "A fragment, pause or another question is not confirmation. "
+                "Use user_ended only for an explicit request to stop, not an "
+                "answer to an interview question or a workaround for rejection. "
+                "After the tool succeeds, say one brief closing statement, "
+                "then remain silent.",
+                properties={
+                    "reason": {
+                        "type": "string",
+                        "enum": [reason.value for reason in ConversationEndReason],
+                    }
+                },
+                required=["reason"],
             )
-        )
+        ]
         self.llm.register_function("finish_session", self._finish_session)
+        if self._is_interview:
+            tools.append(
+                FunctionSchema(
+                    name="prepare_closing",
+                    description="Before inviting the candidate's final questions, "
+                    "prepare to close the interview. This does NOT end it. "
+                    "After success, ask one closing question and yield the turn. "
+                    "Use again before a renewed invitation after answering "
+                    "candidate questions. Never combine with finish_session "
+                    "in the same turn.",
+                    properties={},
+                    required=[],
+                )
+            )
+            self.llm.register_function("prepare_closing", self._prepare_closing)
+        self.context = LLMContext(tools=ToolsSchema(standard_tools=tools))
         self.user, self.assistant = LLMContextAggregatorPair(
             self.context,
             user_params=LLMUserAggregatorParams(user_turn_strategies=ExternalUserTurnStrategies()),
@@ -115,9 +138,55 @@ class GeminiConversation:
         self.runner = WorkerRunner(handle_sigint=False, handle_sigterm=False)
         self.failed = False
         self._end_reason: ConversationEndReason | None = None
-        self._is_interview = session.scenario_id in INTERVIEW_SCENARIOS
         self._ready_at: float | None = None
         self._user_turns = 0
+        self._closing_confirmation = ClosingConfirmation()
+
+    async def _check_interview_progress(self, params: FunctionCallParams) -> bool:
+        elapsed = 0 if self._ready_at is None else time.monotonic() - self._ready_at
+        if not self._is_interview or can_complete_interview(elapsed, self._user_turns):
+            return True
+        await params.result_callback(
+            {
+                "status": "continue_interview",
+                "instruction": "The interview is too brief to complete. Do not say goodbye "
+                "or offer closing questions yet. Explore an under-covered scenario goal "
+                "or a concrete detail in the candidate's answers. Ask one relevant "
+                "question, then wait. Do not mention this internal check or call the "
+                "tool again until the conversation has progressed. An explicit user "
+                "request to stop must still be honoured with reason user_ended.",
+            },
+            properties=FunctionCallResultProperties(run_llm=True),
+        )
+        return False
+
+    async def _prepare_closing(self, params: FunctionCallParams) -> None:
+        if params.arguments:
+            await params.result_callback(
+                {"error": "prepare_closing takes no arguments"},
+                properties=FunctionCallResultProperties(run_llm=False),
+            )
+            return
+        if self._end_reason is not None:
+            await params.result_callback(
+                {"status": "already_closing"},
+                properties=FunctionCallResultProperties(run_llm=False),
+            )
+            return
+        if not await self._check_interview_progress(params):
+            return
+        self._closing_confirmation.prepare()
+        await params.result_callback(
+            {
+                "status": "awaiting_candidate",
+                "instruction": "Invite any remaining candidate questions, then stop speaking "
+                "and wait. Do not say goodbye or call finish_session in this turn. Address "
+                "any questions before preparing a new invitation. Only a complete reply "
+                "clearly indicating no further questions permits scenario_completed. "
+                "Silence, an unfinished phrase or uncertainty is not confirmation.",
+            },
+            properties=FunctionCallResultProperties(run_llm=True),
+        )
 
     async def _finish_session(self, params: FunctionCallParams) -> None:
         try:
@@ -136,23 +205,28 @@ class GeminiConversation:
                 properties=FunctionCallResultProperties(run_llm=False),
             )
             return
-        elapsed = 0 if self._ready_at is None else time.monotonic() - self._ready_at
+        if (
+            reason == ConversationEndReason.SCENARIO_COMPLETED
+            and not await self._check_interview_progress(params)
+        ):
+            return
         if (
             reason == ConversationEndReason.SCENARIO_COMPLETED
             and self._is_interview
-            and not can_complete_interview(elapsed, self._user_turns)
+            and not self._closing_confirmation.has_reply(self._user_turns)
         ):
             await params.result_callback(
                 {
-                    "status": "continue_interview",
-                    "instruction": "The interview is too brief to complete. Do not say goodbye "
-                    "or offer closing questions yet. Explore an under-covered scenario goal "
-                    "or a concrete detail in the candidate's answers. Ask one relevant "
-                    "question, then wait. Do not mention this internal check or call the "
-                    "tool again until the conversation has progressed. An explicit user "
-                    "request to stop must still be honoured with reason user_ended.",
+                    "status": "confirmation_required",
+                    "instruction": "Do not say goodbye. If you already invited final "
+                    "questions, remain silent and wait for the candidate. Otherwise call "
+                    "prepare_closing, ask whether they have further questions and yield "
+                    "the turn. Finish only after a new, complete reply clearly confirms "
+                    "they have no more questions. Never substitute user_ended.",
                 },
-                properties=FunctionCallResultProperties(run_llm=True),
+                properties=FunctionCallResultProperties(
+                    run_llm=self._closing_confirmation.asked_after_turn is None
+                ),
             )
             return
         self._end_reason = reason
@@ -220,6 +294,10 @@ class GeminiConversation:
 
         @self.assistant.event_handler("on_assistant_turn_stopped")
         async def assistant_transcript(aggregator, message: AssistantTurnStoppedMessage):
+            if message.content.strip() or message.interrupted:
+                self._closing_confirmation.assistant_turn_finished(
+                    self._user_turns, interrupted=message.interrupted
+                )
             await on_transcript(
                 "assistant", message.content, message.interrupted, message.timestamp
             )

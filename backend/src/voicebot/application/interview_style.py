@@ -57,8 +57,10 @@ def follow_up_rule(follow_ups: int) -> str:
         "Use light probing: clarify the most important gap in a vague answer, then favour "
         "breadth over depth. Do not use a fixed follow-up count.",
         "Probe adaptively: follow up on vague claims, missing personal contribution or "
-        "unsupported reasoning until there is useful evidence or the topic stops being "
-        "productive. Do not use a fixed follow-up count. Move on when the answer is clear; "
+        "unsupported reasoning. Usually one focused follow-up on a topic is enough; "
+        "continue only for an important unresolved point or a particularly relevant detail. "
+        "Do not use a fixed follow-up count. Move on when the answer is clear or further "
+        "probing adds no useful evidence; "
         "do not repeat a question the candidate has already answered.",
         "Probe persistently: test concrete evidence, reasoning, alternatives and consistency "
         "with earlier answers. Use further follow-ups while they reveal something new, not "
