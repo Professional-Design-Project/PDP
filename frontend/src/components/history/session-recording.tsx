@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { DeleteRecording } from "@/components/history/delete-recording";
+import { DeleteRecording } from "@/components/recordings/delete-recording";
 import { RecordingPlayer } from "@/components/session/recording-player";
 import { useSupabaseQuery } from "@/hooks/use-supabase-query";
 import { useLocale } from "@/i18n/locale";

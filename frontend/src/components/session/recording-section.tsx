@@ -1,6 +1,7 @@
 "use client";
 
 import { Loader } from "@/components/loader";
+import { DeleteRecording } from "@/components/recordings/delete-recording";
 import { RecordingPlayer } from "@/components/session/recording-player";
 import type { RecordingState } from "@/hooks/use-recording";
 import { useLocale } from "@/i18n/locale";
@@ -8,9 +9,10 @@ import { useLocale } from "@/i18n/locale";
 type RecordingSectionProps = {
   state: RecordingState;
   onSave: () => void;
+  onDeleted: () => void;
 };
 
-export function RecordingSection({ state, onSave }: RecordingSectionProps) {
+export function RecordingSection({ state, onSave, onDeleted }: RecordingSectionProps) {
   const { t } = useLocale();
   if (state.status === "none") return null;
   return (
@@ -31,7 +33,13 @@ export function RecordingSection({ state, onSave }: RecordingSectionProps) {
         </p>
       </div>
 
-      <RecordingPlayer src={state.url} />
+      {state.status === "deleted" ? (
+        <output className="mt-8 block animate-caption text-lg text-ink/80">
+          {t.recording.deleted}
+        </output>
+      ) : (
+        <RecordingPlayer src={state.url} />
+      )}
 
       {(state.status === "undecided" || state.status === "declined") && (
         <div className="mt-5 flex animate-caption flex-col gap-5 border border-line bg-white p-6 sm:flex-row sm:items-center sm:justify-between sm:p-8">
@@ -56,9 +64,10 @@ export function RecordingSection({ state, onSave }: RecordingSectionProps) {
       )}
 
       {state.status === "saved" && (
-        <output className="mt-5 block animate-caption text-lg text-ink/80">
-          {t.recording.saved}
-        </output>
+        <div className="mt-5 animate-caption">
+          <output className="block text-lg text-ink/80">{t.recording.saved}</output>
+          <DeleteRecording sessionId={state.sessionId} onDeleted={onDeleted} />
+        </div>
       )}
 
       {state.status === "failed" && (

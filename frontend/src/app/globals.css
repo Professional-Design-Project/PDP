@@ -172,6 +172,11 @@
 }
 
 @layer components {
+  .caption-scroll {
+    scrollbar-width: thin;
+    scrollbar-color: var(--color-ink-line) transparent;
+  }
+
   .style-range {
     display: block;
     width: 100%;

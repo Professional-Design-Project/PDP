@@ -7,7 +7,10 @@ import { uploadRecording } from "@/lib/recordings";
 import { browserClient } from "@/lib/supabase/client";
 
 export type RecordingStatus = "undecided" | "declined" | "saving" | "saved" | "failed";
-export type RecordingState = { status: "none" } | { status: RecordingStatus; url: string };
+export type RecordingState =
+  | { status: "none" }
+  | { status: "deleted"; sessionId: string }
+  | { status: RecordingStatus; url: string; sessionId: string };
 
 type Take = { recording: Blob; sessionId: string; url: string };
 
@@ -26,14 +29,18 @@ export function useRecording() {
   async function save() {
     const take = takeRef.current;
     if (!take) return;
-    setState({ status: "saving", url: take.url });
+    setState({ status: "saving", url: take.url, sessionId: take.sessionId });
     try {
       const supabase = browserClient();
       if (!supabase) throw new Error("Storage is not configured");
       await uploadRecording(supabase, take.sessionId, take.recording);
-      if (takeRef.current === take) setState({ status: "saved", url: take.url });
+      if (takeRef.current === take) {
+        setState({ status: "saved", url: take.url, sessionId: take.sessionId });
+      }
     } catch {
-      if (takeRef.current === take) setState({ status: "failed", url: take.url });
+      if (takeRef.current === take) {
+        setState({ status: "failed", url: take.url, sessionId: take.sessionId });
+      }
     }
   }
 
@@ -42,7 +49,7 @@ export function useRecording() {
     const take = takeRef.current;
     if (!take) return;
     if (wantsRecording) void save();
-    else setState({ status: "declined", url: take.url });
+    else setState({ status: "declined", url: take.url, sessionId: take.sessionId });
   }
 
   function receive(recording: Blob, session: VoiceSession) {
@@ -50,7 +57,17 @@ export function useRecording() {
     const url = URL.createObjectURL(recording);
     takeRef.current = { recording, sessionId: session.id, url };
     if (wantedRef.current) void save();
-    else setState({ status: wantedRef.current === false ? "declined" : "undecided", url });
+    else {
+      const status = wantedRef.current === false ? "declined" : "undecided";
+      setState({ status, url, sessionId: session.id });
+    }
+  }
+
+  function deleted() {
+    const take = takeRef.current;
+    if (!take) return;
+    release();
+    setState({ status: "deleted", sessionId: take.sessionId });
   }
 
   function reset() {
@@ -59,5 +76,5 @@ export function useRecording() {
     setState({ status: "none" });
   }
 
-  return { recording: state, choose, receive, save, reset };
+  return { recording: state, choose, receive, save, deleted, reset };
 }

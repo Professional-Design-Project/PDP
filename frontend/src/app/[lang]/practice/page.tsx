@@ -98,6 +98,7 @@ export default function PracticePage() {
           onRequestFeedback={() => void feedback.request(voice.lastSession())}
           recording={recording.recording}
           onSaveRecording={() => void recording.save()}
+          onRecordingDeleted={recording.deleted}
           onAgain={enter}
           onSetup={voice.backToSetup}
         />

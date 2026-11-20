@@ -21,6 +21,7 @@ type SessionSummaryProps = {
   onRequestFeedback: () => void;
   recording?: RecordingState;
   onSaveRecording?: () => void;
+  onRecordingDeleted?: () => void;
   onAgain: () => void;
   onSetup: () => void;
 };
@@ -35,6 +36,7 @@ export function SessionSummary({
   onRequestFeedback,
   recording = { status: "none" },
   onSaveRecording = () => undefined,
+  onRecordingDeleted = () => undefined,
   onAgain,
   onSetup,
 }: SessionSummaryProps) {
@@ -73,7 +75,7 @@ export function SessionSummary({
       </Rise>
 
       <FeedbackSection state={feedback} transcript={transcript} onRequest={onRequestFeedback} />
-      <RecordingSection state={recording} onSave={onSaveRecording} />
+      <RecordingSection state={recording} onSave={onSaveRecording} onDeleted={onRecordingDeleted} />
       <TranscriptSection transcript={transcript} />
     </main>
   );

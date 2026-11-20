@@ -27,7 +27,11 @@ it("saves right away when the user ticked the box before leaving", async () => {
   act(() => result.current.choose(true));
   await act(async () => result.current.receive(take, session));
   expect(uploadRecording).toHaveBeenCalledWith({}, "session-1", take);
-  expect(result.current.recording).toEqual({ status: "saved", url: "blob:take" });
+  expect(result.current.recording).toEqual({
+    status: "saved",
+    url: "blob:take",
+    sessionId: "session-1",
+  });
 });
 
 it("keeps the recording only on the device when the user did not tick the box", () => {
@@ -35,13 +39,21 @@ it("keeps the recording only on the device when the user did not tick the box", 
   act(() => result.current.choose(false));
   act(() => result.current.receive(take, session));
   expect(uploadRecording).not.toHaveBeenCalled();
-  expect(result.current.recording).toEqual({ status: "declined", url: "blob:take" });
+  expect(result.current.recording).toEqual({
+    status: "declined",
+    url: "blob:take",
+    sessionId: "session-1",
+  });
 });
 
 it("offers to save after a session the interviewer ended", () => {
   const { result } = renderHook(() => useRecording());
   act(() => result.current.receive(take, session));
-  expect(result.current.recording).toEqual({ status: "undecided", url: "blob:take" });
+  expect(result.current.recording).toEqual({
+    status: "undecided",
+    url: "blob:take",
+    sessionId: "session-1",
+  });
 });
 
 it("reports a failed upload and saves on retry", async () => {
@@ -49,10 +61,18 @@ it("reports a failed upload and saves on retry", async () => {
   const { result } = renderHook(() => useRecording());
   act(() => result.current.receive(take, session));
   await act(() => result.current.save());
-  expect(result.current.recording).toEqual({ status: "failed", url: "blob:take" });
+  expect(result.current.recording).toEqual({
+    status: "failed",
+    url: "blob:take",
+    sessionId: "session-1",
+  });
   vi.mocked(uploadRecording).mockResolvedValueOnce(undefined);
   await act(() => result.current.save());
-  expect(result.current.recording).toEqual({ status: "saved", url: "blob:take" });
+  expect(result.current.recording).toEqual({
+    status: "saved",
+    url: "blob:take",
+    sessionId: "session-1",
+  });
 });
 
 it("forgets the recording and the choice on reset", () => {
@@ -72,10 +92,28 @@ it("saves or discards a recording that arrived before the choice", async () => {
   act(() => result.current.receive(take, session));
   await act(async () => result.current.choose(true));
   expect(uploadRecording).toHaveBeenCalledWith({}, "session-1", take);
-  expect(result.current.recording).toEqual({ status: "saved", url: "blob:take" });
+  expect(result.current.recording).toEqual({
+    status: "saved",
+    url: "blob:take",
+    sessionId: "session-1",
+  });
 
   const second = renderHook(() => useRecording()).result;
   act(() => second.current.receive(take, session));
   act(() => second.current.choose(false));
-  expect(second.current.recording).toEqual({ status: "declined", url: "blob:take" });
+  expect(second.current.recording).toEqual({
+    status: "declined",
+    url: "blob:take",
+    sessionId: "session-1",
+  });
+});
+
+it("forgets a saved recording once the user deletes it", async () => {
+  vi.mocked(uploadRecording).mockResolvedValue(undefined);
+  const { result } = renderHook(() => useRecording());
+  act(() => result.current.choose(true));
+  await act(async () => result.current.receive(take, session));
+  act(() => result.current.deleted());
+  expect(result.current.recording).toEqual({ status: "deleted", sessionId: "session-1" });
+  expect(URL.revokeObjectURL).toHaveBeenCalledWith("blob:take");
 });

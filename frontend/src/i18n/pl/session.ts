@@ -56,7 +56,7 @@ export const sessionPl: SessionDictionary = {
     declined: "Nagranie nie zostało zapisane. Zniknie, gdy opuścisz tę stronę.",
     save: "Zapisz nagranie",
     saving: "Zapisuję nagranie",
-    saved: "Zapisano w historii na 30 dni. Usuń sesję, jeśli chcesz skasować nagranie wcześniej.",
+    saved: "Zapisano w historii na 30 dni. Możesz je usunąć w każdej chwili.",
     failed: "Nie udało się zapisać nagrania.",
     retry: "Spróbuj ponownie",
     player: "Nagranie rozmowy",

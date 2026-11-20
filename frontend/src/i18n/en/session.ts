@@ -54,7 +54,7 @@ export const sessionEn = {
     declined: "The recording was not saved. It disappears when you leave this page.",
     save: "Save the recording",
     saving: "Saving the recording",
-    saved: "Saved in your history for 30 days. Delete the session to delete the recording sooner.",
+    saved: "Saved in your history for 30 days. You can delete it at any time.",
     failed: "The recording could not be saved.",
     retry: "Try again",
     player: "Conversation recording",
