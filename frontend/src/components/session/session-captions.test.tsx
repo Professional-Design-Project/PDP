@@ -39,7 +39,8 @@ it("keeps long captions in a fixed area without a scrollbar that shows the newes
   expect(area).not.toHaveClass("overflow-y-auto");
   expect(area.scrollTop).toBe(900);
   expect(area).toHaveAttribute("data-clipped", "true");
-  expect(screen.getByText("You").closest("div.grid")).toHaveClass("shrink-0");
+  expect(area).toHaveClass("flex-1");
+  expect(screen.getByText("You").closest("div.grid")).toHaveClass("shrink-0", "sm:min-h-32");
 });
 
 it("does not fade a caption that fits", () => {

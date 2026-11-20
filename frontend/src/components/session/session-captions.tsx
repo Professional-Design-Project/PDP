@@ -20,7 +20,7 @@ export function SessionCaptions({ state, live, muted }: SessionCaptionsProps) {
   const hint = muted ? t.live.hintMuted : state.botSpeaking ? t.live.hintWait : t.live.hintReady;
 
   return (
-    <div className="flex min-h-0 flex-1 flex-col justify-center-safe py-8">
+    <div className="flex min-h-0 flex-1 flex-col pt-8 pb-6">
       <CaptionScroll follow={userTurn ? state.userCaption : state.botCaption}>
         {userTurn ? (
           <div key="user" className="animate-caption">
@@ -50,7 +50,7 @@ export function SessionCaptions({ state, live, muted }: SessionCaptionsProps) {
         )}
       </CaptionScroll>
 
-      <div className="mt-10 grid max-w-3xl shrink-0 gap-6 border-t border-ink-line pt-5 sm:grid-cols-2 sm:gap-10">
+      <div className="mt-6 grid max-w-3xl shrink-0 content-start gap-6 border-t border-ink-line pt-5 sm:min-h-32 sm:grid-cols-2 sm:gap-10">
         <div>
           <p className="font-semibold">{t.common.you}</p>
           <p className="mt-1 text-[15px] leading-relaxed text-ink-muted">{hint}</p>

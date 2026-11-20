@@ -31,7 +31,7 @@ export function CaptionScroll({ follow, children }: CaptionScrollProps) {
     <div
       ref={ref}
       data-testid="caption-scroll"
-      className="caption-fade min-h-0 shrink overflow-hidden"
+      className="caption-fade flex min-h-0 flex-1 flex-col justify-center-safe overflow-hidden"
     >
       {children}
     </div>
