@@ -11,8 +11,9 @@ router = APIRouter(prefix="/account", tags=["account"])
     status_code=204,
     summary="Delete the signed-in user's account and all of their data",
     description=(
-        "Deletes the Supabase user. Practice sessions, transcripts, feedback and consents are "
-        "removed with it by cascading foreign keys. Requires a signed-in user."
+        "Deletes the user's saved conversation recordings from storage, then the Supabase user. "
+        "Practice sessions, transcripts, feedback and consents are removed with it by cascading "
+        "foreign keys. Requires a signed-in user."
     ),
 )
 async def delete_account(request: Request, user: CurrentUser):
@@ -21,5 +22,6 @@ async def delete_account(request: Request, user: CurrentUser):
     admin = request.app.state.admin
     if admin is None:
         raise AccountDeletionFailed
+    await admin.delete_recordings(user.user_id)
     await admin.delete_user(user.user_id)
     return Response(status_code=204)

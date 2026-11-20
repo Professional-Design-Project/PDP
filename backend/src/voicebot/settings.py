@@ -30,3 +30,5 @@ class Settings(BaseSettings):
     session_timeout_seconds: int = Field(default=900, ge=1)
     cleanup_timeout_seconds: int = Field(default=10, ge=5)
     session_token_ttl_seconds: int = Field(default=86400, ge=60)
+    recording_retention_days: int = Field(default=30, ge=1)
+    recording_cleanup_interval_seconds: int = Field(default=3600, ge=60)

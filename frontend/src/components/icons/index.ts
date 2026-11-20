@@ -8,5 +8,6 @@ export {
   TranscriptIcon,
   UploadIcon,
 } from "./interface-icons";
+export { PauseIcon, PlayIcon } from "./media-icons";
 export { BriefcaseIcon, ExamIcon, GraduationIcon } from "./scenario-icons";
 export type { IconProps } from "./stroke-icon";

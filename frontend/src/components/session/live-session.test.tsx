@@ -44,8 +44,22 @@ it("shows the user turn and wires the controls", () => {
   fireEvent.click(screen.getByRole("button", { name: "Keep talking" }));
   expect(screen.queryByRole("heading", { name: "Leave the room?" })).not.toBeInTheDocument();
   fireEvent.click(screen.getByRole("button", { name: "End the session" }));
-  fireEvent.click(screen.getByRole("button", { name: "Leave and get feedback" }));
-  expect(handlers.onLeave).toHaveBeenCalledWith(true);
+  expect(screen.queryByRole("checkbox", { name: /Save the recording/ })).not.toBeInTheDocument();
+  fireEvent.click(screen.getByRole("button", { name: "Leave the room" }));
+  expect(handlers.onLeave).toHaveBeenCalledWith({ feedback: true, recording: false });
+});
+
+it("lets a signed-in user save the recording and skip feedback when leaving", () => {
+  const handlers = renderSession({ readyAt: Date.now() }, { canRecord: true });
+  fireEvent.click(screen.getByRole("button", { name: "End the session" }));
+  const recording = screen.getByRole("checkbox", { name: /Save the recording/ });
+  const feedback = screen.getByRole("checkbox", { name: /Get feedback/ });
+  expect(recording).not.toBeChecked();
+  expect(feedback).toBeChecked();
+  fireEvent.click(recording);
+  fireEvent.click(feedback);
+  fireEvent.click(screen.getByRole("button", { name: "Leave the room" }));
+  expect(handlers.onLeave).toHaveBeenCalledWith({ feedback: false, recording: true });
 });
 
 it("opens the transcript with finished turns", () => {

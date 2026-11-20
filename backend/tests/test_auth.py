@@ -106,8 +106,13 @@ def test_sign_in_is_required_when_supabase_is_configured(tmp_path, keys):
 class RecordingAdmin:
     def __init__(self) -> None:
         self.deleted: list[str] = []
+        self.calls: list[str] = []
+
+    async def delete_recordings(self, user_id: str) -> None:
+        self.calls.append(f"recordings:{user_id}")
 
     async def delete_user(self, user_id: str) -> None:
+        self.calls.append(f"user:{user_id}")
         self.deleted.append(user_id)
 
 
@@ -122,6 +127,7 @@ def test_users_can_delete_only_their_own_account(tmp_path, keys):
         headers = {"Authorization": f"Bearer {token(private)}"}
         assert client.delete("/v1/account", headers=headers).status_code == 204
         assert admin.deleted == [USER]
+        assert admin.calls == [f"recordings:{USER}", f"user:{USER}"]
 
 
 def test_account_deletion_needs_the_secret_key(tmp_path, keys):

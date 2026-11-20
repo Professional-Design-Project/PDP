@@ -12,17 +12,22 @@ import { StyleField } from "@/components/practice/style-field";
 import { SessionAside } from "@/components/practice/session-aside";
 import { Rise } from "@/components/rise";
 import { Section } from "@/components/section";
+import { FinishedPanel } from "@/components/session/finished-panel";
 import { LiveSession } from "@/components/session/live-session";
 import { SessionSummary } from "@/components/session/session-summary";
 import { useDocuments } from "@/hooks/use-documents";
+import { useEndDecision } from "@/hooks/use-end-decision";
 import { useFeedback } from "@/hooks/use-feedback";
 import { useMicrophone } from "@/hooks/use-microphone";
 import { usePracticeConsent } from "@/hooks/use-practice-consent";
 import { usePracticePreset } from "@/hooks/use-practice-preset";
+import { useRecording } from "@/hooks/use-recording";
+import { useSignedIn } from "@/hooks/use-signed-in";
 import { useVoiceSession } from "@/hooks/use-voice-session";
 import { useLocale, type Locale } from "@/i18n/locale";
 import { CONSENT_VERSION } from "@/lib/consent";
 import { languageName } from "@/lib/languages";
+import { setupRows } from "@/lib/setup-rows";
 import { defaultStyle, type InterviewStyle } from "@/lib/interview-style";
 import { scenarioGroup, type ScenarioId } from "@/lib/scenarios";
 
@@ -39,7 +44,17 @@ export default function PracticePage() {
   const docs = useDocuments(scenario);
   const consent = usePracticeConsent();
   const feedback = useFeedback();
-  const voice = useVoiceSession({ onFinished: feedback.choose });
+  const recording = useRecording();
+  const canRecord = useSignedIn();
+  const ending = useEndDecision(
+    { feedback: feedback.choose, recording: recording.choose },
+    canRecord,
+  );
+  const voice = useVoiceSession({
+    onFinished: ending.finished,
+    onRecorded: recording.receive,
+    record: canRecord,
+  });
   const presetState = usePracticePreset((preset) => {
     chooseScenario(preset.scenarioId);
     setLanguage(preset.language);
@@ -54,7 +69,9 @@ export default function PracticePage() {
   }
 
   function enter() {
+    ending.reset();
     feedback.reset();
+    recording.reset();
     void voice.start(
       {
         scenario_id: scenario,
@@ -70,43 +87,40 @@ export default function PracticePage() {
 
   if (voice.phase === "summary" && voice.summary) {
     return (
-      <SessionSummary
-        duration={voice.summary.duration}
-        transcript={voice.summary.transcript}
-        synchronized={voice.summary.synchronized}
-        message={t.summary.ended[voice.summary.end]}
-        heading={copy.finished}
-        feedback={feedback.feedback}
-        onRequestFeedback={() => void feedback.request(voice.lastSession())}
-        onAgain={enter}
-        onSetup={voice.backToSetup}
-      />
+      <>
+        <SessionSummary
+          duration={voice.summary.duration}
+          transcript={voice.summary.transcript}
+          synchronized={voice.summary.synchronized}
+          message={t.summary.ended[voice.summary.end]}
+          heading={copy.finished}
+          feedback={feedback.feedback}
+          onRequestFeedback={() => void feedback.request(voice.lastSession())}
+          recording={recording.recording}
+          onSaveRecording={() => void recording.save()}
+          onRecordingDeleted={recording.deleted}
+          onAgain={enter}
+          onSetup={voice.backToSetup}
+        />
+        {ending.undecided && (
+          <FinishedPanel
+            canRecord={canRecord}
+            onChoose={(choice) => ending.decide(choice, voice.lastSession())}
+          />
+        )}
+      </>
     );
   }
 
-  const microphoneSummary = mic.selected
-    ? mic.selected.label || t.setup.selectedMicrophone
-    : mic.status === "available"
-      ? t.setup.defaultMicrophone
-      : t.setup.mic.unchecked;
-
-  const rows: [string, string][] = [
-    [t.setup.scenario, t.scenarios[group].title],
-    ...(group === "job-interview"
-      ? [[t.setup.interviewStage, copy.title] as [string, string]]
-      : []),
-    [t.setup.language, languageName(language)],
-    [
-      t.setup.context,
-      context.trim() ? t.setup.contextSummary(context.trim().length) : t.setup.noContext,
-    ],
-    [
-      t.setup.documentsRow,
-      docs.ready.length ? t.documents.summary(docs.ready.length) : t.setup.noContext,
-    ],
-    [t.setup.style.pressure.title, t.setup.style.summary(style.pressure)],
-    [t.setup.microphone, microphoneSummary],
-  ];
+  const rows = setupRows(t, {
+    scenario,
+    language,
+    context,
+    documents: docs.ready.length,
+    style,
+    microphone: mic.selected ?? null,
+    microphoneAvailable: mic.status === "available",
+  });
 
   return (
     <main className="mx-auto max-w-7xl px-4 pt-12 pb-24 sm:px-8 sm:pt-16">
@@ -182,8 +196,12 @@ export default function PracticePage() {
           scenario={copy.title}
           muted={voice.muted}
           ending={voice.ending}
+          canRecord={canRecord}
           onToggleMute={voice.toggleMute}
-          onLeave={(withFeedback) => void voice.leave(withFeedback)}
+          onLeave={(choice) => {
+            recording.choose(choice.recording);
+            void voice.leave(choice.feedback);
+          }}
         />
       )}
     </main>

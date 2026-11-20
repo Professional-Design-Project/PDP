@@ -23,7 +23,7 @@ npx supabase db push --remote
 
 Run these commands in a regular terminal: `login` opens the browser and `link` asks for the database password.
 
-`db push --remote` applies `supabase/migrations/` to the linked project. It creates `profiles`, `consents`, `practice_sessions`, `session_events` and `feedback_reports`, enables RLS on all of them and adds a trigger that creates a profile for every new user.
+`db push --remote` applies `supabase/migrations/` to the linked project. It creates `profiles`, `consents`, `practice_sessions`, `session_events` and `feedback_reports`, enables RLS on all of them and adds a trigger that creates a profile for every new user. It also creates the private `recordings` Storage bucket (audio up to 50 MB, WebM, Ogg or MP4) with its access policies.
 
 ### Admins
 
@@ -50,7 +50,7 @@ NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY=sb_publishable_...
 ```
 VOICEBOT_SUPABASE_URL=https://<project-ref>.supabase.co
 VOICEBOT_DATABASE_URL=postgresql://...      # Connect → Session pooler; replace [YOUR-PASSWORD]
-VOICEBOT_SUPABASE_SECRET_KEY=sb_secret_...  # only used to delete accounts
+VOICEBOT_SUPABASE_SECRET_KEY=sb_secret_...  # deletes accounts and removes expired recordings
 ```
 
 The publishable key is safe in the browser. Never put the secret key or the database URL in the frontend.
@@ -98,6 +98,7 @@ When the app gets a public domain:
 | `session_events` | backend | the owner, only `transcript.final` and `feedback.created` |
 | `consents` | backend, when a session starts | the owner, who can also withdraw them |
 | `profiles` | trigger on sign-up | the owner, who can change `locale` |
+| Storage `recordings/<user id>/<session id>` | the owner's browser, once, only for their own finished session and only after they choose to save it | the owner, through short-lived signed links, for 30 days after it was saved. The owner can delete it; the frontend deletes it with the session and the backend deletes the whole folder before it deletes the account. Every hour the backend removes recordings older than 30 days (`VOICEBOT_RECORDING_RETENTION_DAYS`); this needs both `VOICEBOT_DATABASE_URL` and the secret key |
 
 The backend connects to Postgres directly and verifies user access tokens against the project's JWKS (`/auth/v1/.well-known/jwks.json`, ES256 or RS256). The project must use asymmetric JWT signing keys, which is the default for new projects.
 

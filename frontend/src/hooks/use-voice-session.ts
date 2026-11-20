@@ -4,6 +4,7 @@ import { useRef, useState } from "react";
 import { audioConstraints } from "@/hooks/use-microphone";
 import { useMountEffect } from "@/hooks/use-mount-effect";
 import { ClosingPlayback } from "@/lib/closing-playback";
+import { ConversationRecorder } from "@/lib/conversation-recorder";
 import {
   createSession,
   endSession,
@@ -33,6 +34,8 @@ export type SessionSummaryData = {
 
 type Options = {
   onFinished: (wantsFeedback: boolean | undefined, session: VoiceSession | null) => void;
+  onRecorded?: (recording: Blob, session: VoiceSession) => void;
+  record?: boolean;
 };
 
 type ConnectionAttempt = {
@@ -44,6 +47,7 @@ type ConnectionAttempt = {
   peer?: RTCPeerConnection;
   channel?: RTCDataChannel;
   audio?: HTMLAudioElement;
+  recorder?: ConversationRecorder | null;
   recovery?: AbortController;
   disconnectTimer?: ReturnType<typeof setTimeout>;
 };
@@ -64,6 +68,8 @@ async function disconnect(attempt: ConnectionAttempt) {
     attempt.peer.close();
     attempt.peer = undefined;
   }
+  attempt.recorder?.dispose();
+  attempt.recorder = undefined;
   attempt.stream?.getTracks().forEach((track) => track.stop());
   attempt.stream = undefined;
   if (attempt.audio) {
@@ -93,7 +99,7 @@ function waitForIce(peer: RTCPeerConnection, signal: AbortSignal) {
   });
 }
 
-export function useVoiceSession({ onFinished }: Options) {
+export function useVoiceSession({ onFinished, onRecorded, record = false }: Options) {
   const [phase, setPhase] = useState<Phase>("setup");
   const [live, setLive] = useState(initialLiveState);
   const [status, setStatus] = useState<ConnectionStatus>("ready");
@@ -143,6 +149,8 @@ export function useVoiceSession({ onFinished }: Options) {
     setEnding(true);
     setConnected(false);
     setConnecting(false);
+    const recorded = attempt.recorder?.stop() ?? Promise.resolve(null);
+    attempt.recorder = undefined;
     await disconnect(attempt);
     if (attemptRef.current !== attempt) return;
     if (session) {
@@ -189,6 +197,8 @@ export function useVoiceSession({ onFinished }: Options) {
     setMuted(false);
     window.scrollTo({ top: 0 });
     onFinished(wantsFeedback, session);
+    const recording = await recorded;
+    if (recording && session) onRecorded?.(recording, session);
   }
 
   function connectPeer(attempt: ConnectionAttempt, session: VoiceSession, stream: MediaStream) {
@@ -203,7 +213,9 @@ export function useVoiceSession({ onFinished }: Options) {
       const audio = attempt.audio ?? new Audio();
       audio.autoplay = true;
       attempt.audio = audio;
-      audio.srcObject = event.streams[0] || new MediaStream([event.track]);
+      const remote = event.streams[0] || new MediaStream([event.track]);
+      audio.srcObject = remote;
+      attempt.recorder?.addStream(remote);
       void audio.play();
     };
     peer.onconnectionstatechange = () => {
@@ -235,6 +247,7 @@ export function useVoiceSession({ onFinished }: Options) {
         }
       },
       attempt.controller.signal,
+      (clip) => void attempt.recorder?.addClip(clip),
     );
     channel.onmessage = (event) => {
       if (!isCurrent(attempt)) return;
@@ -251,6 +264,7 @@ export function useVoiceSession({ onFinished }: Options) {
           playback.receive(message.data);
         }
         dispatch({ type: "message", message, now: Date.now() });
+        if (liveRef.current.readyAt !== null) attempt.recorder?.start();
         if (liveRef.current.ended) {
           const { reason, failed } = liveRef.current.ended;
           void finish(reason, failed);
@@ -282,6 +296,7 @@ export function useVoiceSession({ onFinished }: Options) {
       stream.getAudioTracks().forEach((track) => {
         track.enabled = !attempt.muted;
       });
+      if (record) attempt.recorder = ConversationRecorder.create(stream);
       const session = await createSession(body);
       attempt.session = session;
       if (!isCurrent(attempt)) return;

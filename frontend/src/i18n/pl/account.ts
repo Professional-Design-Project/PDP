@@ -84,7 +84,8 @@ export const accountPl: AccountDictionary = {
     },
     duration: (time: string) => `${time} min`,
     deleteTitle: "Usuń tę sesję",
-    deleteText: "To usuwa z konta sesję, jej transkrypcję i uwagi. Nie da się tego cofnąć.",
+    deleteText:
+      "To usuwa z konta sesję, jej transkrypcję, uwagi i nagranie. Nie da się tego cofnąć.",
     deleteButton: "Usuń sesję",
     deleteConfirm: "Tak, usuń ją",
     deleteCancel: "Zostaw ją",
@@ -123,7 +124,7 @@ export const accountPl: AccountDictionary = {
       },
     },
     pdf: "Pobierz PDF",
-    markdown: "Pobierz Markdown",
+    markdown: "Pobierz .md",
     pdfHint:
       "Ćwicz ponownie otwiera pokój z tym samym scenariuszem, językiem, kontekstem i zachowaniem. Aby pobrać PDF, w oknie drukowania wybierz Zapisz jako PDF. Markdown to zwykły plik tekstowy, który otworzysz w każdym edytorze albo wkleisz do notatek.",
     feedbackMissing: "Dla tej sesji nie poproszono o uwagi.",
@@ -151,7 +152,7 @@ export const accountPl: AccountDictionary = {
     exportFailed: "Nie udało się przygotować pliku. Spróbuj ponownie za chwilę.",
     deleteTitle: "Usuń konto",
     deleteText:
-      "To usuwa konto, wszystkie sesje, transkrypcje, uwagi i rekordy zgód. Nie da się tego cofnąć.",
+      "To usuwa konto, wszystkie sesje, transkrypcje, uwagi, nagrania i rekordy zgód. Nie da się tego cofnąć.",
     deleteButton: "Usuń moje konto",
     deleteConfirm: "Tak, usuń wszystko",
     deleteCancel: "Zostaw konto",

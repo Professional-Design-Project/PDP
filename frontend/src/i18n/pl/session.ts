@@ -30,10 +30,46 @@ export const sessionPl: SessionDictionary = {
   },
   leave: {
     title: "Wyjść z pokoju?",
-    text: "Rozmówca może przeczytać twoją transkrypcję i zostawić kilka uwag o tym, co poszło dobrze, a nad czym popracować. Pisze je AI wyłącznie na podstawie słów, więc mogą zawierać błędy.",
-    withFeedback: "Wyjdź i odbierz uwagi",
-    withoutFeedback: "Wyjdź bez uwag",
+    text: "Wybierz, co ma się stać z tą rozmową. Na następnym ekranie nadal możesz zmienić zdanie.",
+    options: "Po sesji",
+    feedback: "Odbierz uwagi",
+    feedbackHint:
+      "Rozmówca przeczyta twoją transkrypcję i napisze, co poszło dobrze, a nad czym popracować. Pisze je AI wyłącznie na podstawie słów, więc mogą zawierać błędy.",
+    recording: "Zapisz nagranie",
+    recordingHint:
+      "Nagranie tej rozmowy trafi na 30 dni do twojej historii, żeby można było ją odsłuchać. Odtworzysz je tylko ty. Po 30 dniach zniknie automatycznie, a wcześniej usuniesz je razem z sesją.",
+    confirm: "Wyjdź z pokoju",
     stay: "Rozmawiaj dalej",
+  },
+  finished: {
+    title: "Rozmowa się zakończyła",
+    text: "Zanim zobaczysz podsumowanie, wybierz, co ma się stać z tą rozmową. Tam nadal możesz zmienić zdanie.",
+    confirm: "Pokaż podsumowanie",
+  },
+  recording: {
+    title: "Nagranie",
+    play: "Odtwórz nagranie",
+    pause: "Wstrzymaj nagranie",
+    notice:
+      "Twój głos i głos rozmówcy, tak jak brzmiały w rozmowie. Zostaje tylko na tym urządzeniu, chyba że zapiszesz je w historii.",
+    offer: "Chcesz zachować to nagranie w historii, żeby odsłuchać je później?",
+    declined: "Nagranie nie zostało zapisane. Zniknie, gdy opuścisz tę stronę.",
+    save: "Zapisz nagranie",
+    saving: "Zapisuję nagranie",
+    saved: "Zapisano w historii na 30 dni. Możesz je usunąć w każdej chwili.",
+    failed: "Nie udało się zapisać nagrania.",
+    retry: "Spróbuj ponownie",
+    player: "Nagranie rozmowy",
+    download: "Pobierz nagranie",
+    deleteButton: "Usuń nagranie",
+    deleteText: "Usunięty zostanie tylko dźwięk. Sesja, transkrypcja i uwagi zostają.",
+    deleteConfirm: "Tak, usuń je",
+    deleteCancel: "Zostaw je",
+    deleting: "Usuwam…",
+    deleted: "Nagranie zostało usunięte. Sesja, transkrypcja i uwagi zostają.",
+    deleteFailed: "Nie udało się usunąć nagrania. Spróbuj ponownie za chwilę.",
+    historyNotice: (date: string) =>
+      `Odtworzysz je tylko ty. Zniknie automatycznie ${date}, a wcześniej, jeśli usuniesz sesję.`,
   },
   summary: {
     practice:

@@ -6,7 +6,7 @@ export const privacyPl: DocContent = {
     "Czym jest ensaio, co robi z twoim głosem i twoimi słowami oraz co możesz zmienić w dowolnym momencie.",
   status:
     "Wersja robocza. ensaio to projekt studencki w trakcie rozwoju, a ten tekst czeka jeszcze na ocenę prawną.",
-  updated: "Ostatnia zmiana: 18 listopada 2026",
+  updated: "Ostatnia zmiana: 20 listopada 2026",
   contents: "Na tej stronie",
   termLabel: "Co",
   detailLabel: "Szczegóły",
@@ -46,6 +46,10 @@ export const privacyPl: DocContent = {
           text: "Informacja zwrotna napisana po sesji, jeśli o nią poproszono.",
         },
         {
+          term: "Nagranie",
+          text: "Dźwięk rozmowy, tylko jeśli przy wychodzeniu z pokoju zaznaczysz „Zapisz nagranie” albo zapiszesz je na ekranie podsumowania. Odtworzyć i pobrać je możesz tylko ty, a po 30 dniach jest usuwane automatycznie.",
+        },
+        {
           term: "Zgłoszenia",
           text: "Problemy i pomysły wysłane przez formularz zgłoszeń, razem z Twoim adresem e-mail, żeby zespół mógł je przeczytać i się odezwać.",
         },
@@ -55,7 +59,7 @@ export const privacyPl: DocContent = {
       id: "not-kept",
       title: "Czego nie zapisujemy",
       paragraphs: [
-        "ensaio nie zapisuje nagrań twojego głosu. Dźwięk trafia na żywo do dostawcy AI w trakcie sesji i tam jest zamieniany na tekst.",
+        "ensaio nie zapisuje nagrań twojego głosu, chyba że o to poprosisz. W trakcie sesji dźwięk trafia na żywo do dostawcy AI i tam jest zamieniany na tekst. Przeglądarka trzyma kopię rozmowy na twoim urządzeniu do końca sesji. Na nasze serwery trafia tylko wtedy, gdy zdecydujesz się ją zapisać, a w przeciwnym razie znika, gdy opuścisz ekran podsumowania.",
         "Dodane dokumenty są czytane jeden raz, żeby wyciągnąć z nich tekst. Rozmówca dostaje ten tekst na czas sesji, a ani pliki, ani ich tekst nie są zapisywane.",
       ],
     },
@@ -73,7 +77,7 @@ export const privacyPl: DocContent = {
         },
         {
           term: "Supabase",
-          text: "Utrzymuje bazę danych i logowanie dla kont, sesji, transkrypcji, uwag i zgód.",
+          text: "Utrzymuje bazę danych, magazyn plików i logowanie dla kont, sesji, transkrypcji, uwag, zapisanych nagrań i zgód.",
           where: "Supabase Inc., USA. Baza działa w regionie wybranym dla projektu.",
         },
         {
@@ -102,7 +106,7 @@ export const privacyPl: DocContent = {
       id: "retention",
       title: "Jak długo to trzymamy",
       paragraphs: [
-        "Sesje zostają na koncie, dopóki nie usuniesz ich pojedynczo w historii albo nie usuniesz konta. Usunięcie konta kasuje od razu konto, wszystkie sesje, transkrypcje, uwagi i rekordy zgód. Nie da się tego cofnąć.",
+        "Sesje zostają na koncie, dopóki nie usuniesz ich pojedynczo w historii albo nie usuniesz konta. Zapisane nagrania znikają automatycznie 30 dni po zapisaniu, a wcześniej razem z sesją. Usunięcie konta kasuje od razu konto, wszystkie sesje, transkrypcje, uwagi, nagrania i rekordy zgód. Nie da się tego cofnąć.",
       ],
     },
     {

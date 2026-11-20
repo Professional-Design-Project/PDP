@@ -58,7 +58,7 @@ it("downloads the session as a Markdown file", () => {
       <SessionActions session={session} />
     </LocaleProvider>,
   );
-  fireEvent.click(screen.getByRole("button", { name: /Download Markdown/ }));
+  fireEvent.click(screen.getByRole("button", { name: /Download \.md/ }));
   expect(click).toHaveBeenCalledOnce();
   expect(createObjectURL).toHaveBeenCalledOnce();
 });
