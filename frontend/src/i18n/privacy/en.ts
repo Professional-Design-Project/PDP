@@ -6,7 +6,7 @@ export const privacyEn: DocContent = {
     "What ensaio is, what it does with your voice and your words, and what you can change at any time.",
   status:
     "Draft. ensaio is a student project in development, and this text is still waiting for legal review.",
-  updated: "Last updated 18 November 2026",
+  updated: "Last updated 20 November 2026",
   contents: "On this page",
   termLabel: "What",
   detailLabel: "Details",
@@ -46,6 +46,10 @@ export const privacyEn: DocContent = {
           text: "The notes written after the session, if you asked for them.",
         },
         {
+          term: "Recording",
+          text: 'The audio of a conversation, only if you tick "Save the recording" when you leave the room or choose to save it on the summary screen. Only you can play or download it.',
+        },
+        {
           term: "Reports",
           text: "Problems and ideas you send through the report form, with your e-mail address, so the team can read them and follow up.",
         },
@@ -55,7 +59,7 @@ export const privacyEn: DocContent = {
       id: "not-kept",
       title: "What we do not keep",
       paragraphs: [
-        "ensaio does not save recordings of your voice. Audio goes live to the AI provider during the session and is turned into text there.",
+        "ensaio does not save recordings of your voice unless you ask it to. During the session the audio goes live to the AI provider and is turned into text there. Your browser keeps a copy of the conversation on your device until the session ends; it reaches our servers only if you choose to save it, and otherwise it is discarded when you leave the summary page.",
         "Documents you add are read once to pull out their text. The interviewer gets that text for the session, and neither the files nor their text are saved.",
       ],
     },
@@ -73,7 +77,7 @@ export const privacyEn: DocContent = {
         },
         {
           term: "Supabase",
-          text: "Hosts the database and the sign-in for accounts, sessions, transcripts, feedback and consents.",
+          text: "Hosts the database, file storage and the sign-in for accounts, sessions, transcripts, feedback, saved recordings and consents.",
           where: "Supabase Inc., USA. The database runs in the region chosen for the project.",
         },
         {
@@ -102,7 +106,7 @@ export const privacyEn: DocContent = {
       id: "retention",
       title: "How long we keep it",
       paragraphs: [
-        "Your sessions stay in your account until you delete them one by one in your history or delete your account. Deleting the account removes the account, all sessions, transcripts, feedback and consent records at once. This cannot be undone.",
+        "Your sessions and their recordings stay in your account until you delete them one by one in your history or delete your account. Deleting a session also deletes its recording. Deleting the account removes the account, all sessions, transcripts, feedback, recordings and consent records at once. This cannot be undone.",
       ],
     },
     {

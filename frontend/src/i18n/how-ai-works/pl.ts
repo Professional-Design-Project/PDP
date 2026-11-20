@@ -86,7 +86,7 @@ export const howAiWorksPl: DocContent = {
       id: "data",
       title: "Twoje dane",
       paragraphs: [
-        "W trakcie sesji twój głos trafia na żywo do Google. Transkrypcje i uwagi zostają na twoim koncie, dopóki ich nie usuniesz.",
+        "W trakcie sesji twój głos trafia na żywo do Google. Transkrypcje, uwagi i nagrania, które postanowisz zapisać, zostają na twoim koncie, dopóki ich nie usuniesz.",
       ],
       link: { href: "/privacy", label: "Przeczytaj o prywatności" },
     },
