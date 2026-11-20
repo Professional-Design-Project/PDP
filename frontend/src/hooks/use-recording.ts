@@ -39,6 +39,10 @@ export function useRecording() {
 
   function choose(wantsRecording: boolean) {
     wantedRef.current = wantsRecording;
+    const take = takeRef.current;
+    if (!take) return;
+    if (wantsRecording) void save();
+    else setState({ status: "declined", url: take.url });
   }
 
   function receive(recording: Blob, session: VoiceSession) {

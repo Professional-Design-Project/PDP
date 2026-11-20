@@ -1,10 +1,10 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { LeaveOption } from "@/components/session/leave-option";
+import { EndChoices, type EndChoice } from "@/components/session/end-choices";
 import { useLocale } from "@/i18n/locale";
 
-export type LeaveChoice = { feedback: boolean; recording: boolean };
+export type LeaveChoice = EndChoice;
 
 type LeavePanelProps = {
   canRecord: boolean;
@@ -15,8 +15,7 @@ type LeavePanelProps = {
 export function LeavePanel({ canRecord, onLeave, onStay }: LeavePanelProps) {
   const { t } = useLocale();
   const firstRef = useRef<HTMLButtonElement>(null);
-  const [feedback, setFeedback] = useState(true);
-  const [recording, setRecording] = useState(false);
+  const [choice, setChoice] = useState<EndChoice>({ feedback: true, recording: false });
 
   useEffect(() => {
     firstRef.current?.focus();
@@ -32,28 +31,12 @@ export function LeavePanel({ canRecord, onLeave, onStay }: LeavePanelProps) {
           {t.leave.title}
         </h2>
         <p className="mt-3 leading-relaxed text-ink/80">{t.leave.text}</p>
-        <fieldset className="mt-6 grid gap-3">
-          <legend className="sr-only">{t.leave.options}</legend>
-          <LeaveOption
-            label={t.leave.feedback}
-            hint={t.leave.feedbackHint}
-            checked={feedback}
-            onChange={setFeedback}
-          />
-          {canRecord && (
-            <LeaveOption
-              label={t.leave.recording}
-              hint={t.leave.recordingHint}
-              checked={recording}
-              onChange={setRecording}
-            />
-          )}
-        </fieldset>
+        <EndChoices value={choice} canRecord={canRecord} onChange={setChoice} />
         <div className="mt-6 grid gap-3">
           <button
             ref={firstRef}
             type="button"
-            onClick={() => onLeave({ feedback, recording: canRecord && recording })}
+            onClick={() => onLeave({ ...choice, recording: canRecord && choice.recording })}
             className="h-14 bg-cobalt px-5 text-left text-lg font-semibold text-white hover:bg-cobalt/90 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink"
           >
             {t.leave.confirm}

@@ -39,8 +39,15 @@ export const sessionEn = {
     confirm: "Leave the room",
     stay: "Keep talking",
   },
+  finished: {
+    title: "The conversation is over",
+    text: "Choose what happens to it before you see the summary. You can still change your mind there.",
+    confirm: "Show the summary",
+  },
   recording: {
     title: "Recording",
+    play: "Play the recording",
+    pause: "Pause the recording",
     notice:
       "Your voice and the interviewer's, as you heard them. It stays only on this device unless you save it to your history.",
     offer: "Want to keep this recording in your history to listen to later?",

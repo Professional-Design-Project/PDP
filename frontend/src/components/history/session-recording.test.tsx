@@ -36,10 +36,8 @@ it("deletes only the recording after a confirmation", async () => {
   vi.mocked(deleteRecording).mockResolvedValue(undefined);
   renderRecording();
 
-  expect(await screen.findByLabelText("Conversation recording")).toHaveAttribute(
-    "src",
-    "https://play",
-  );
+  await screen.findByRole("slider", { name: "Conversation recording" });
+  expect(document.querySelector("audio")).toHaveAttribute("src", "https://play");
   expect(screen.getByRole("link", { name: "Download the recording" })).toHaveAttribute(
     "href",
     "https://download",
@@ -50,7 +48,7 @@ it("deletes only the recording after a confirmation", async () => {
 
   expect(await screen.findByText(/The recording was deleted/)).toBeInTheDocument();
   expect(deleteRecording).toHaveBeenCalledWith({}, "session-1");
-  expect(screen.queryByLabelText("Conversation recording")).not.toBeInTheDocument();
+  expect(document.querySelector("audio")).toBeNull();
 });
 
 it("keeps the recording and says so when deleting fails", async () => {
@@ -64,5 +62,5 @@ it("keeps the recording and says so when deleting fails", async () => {
   fireEvent.click(await screen.findByRole("button", { name: "Delete the recording" }));
   fireEvent.click(screen.getByRole("button", { name: "Yes, delete it" }));
   expect(await screen.findByRole("alert")).toHaveTextContent("could not be deleted");
-  expect(screen.getByLabelText("Conversation recording")).toBeInTheDocument();
+  expect(document.querySelector("audio")).toHaveAttribute("src", "https://play");
 });

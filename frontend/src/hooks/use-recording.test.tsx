@@ -65,3 +65,17 @@ it("forgets the recording and the choice on reset", () => {
   expect(result.current.recording).toEqual({ status: "none" });
   expect(uploadRecording).not.toHaveBeenCalled();
 });
+
+it("saves or discards a recording that arrived before the choice", async () => {
+  vi.mocked(uploadRecording).mockResolvedValue(undefined);
+  const { result } = renderHook(() => useRecording());
+  act(() => result.current.receive(take, session));
+  await act(async () => result.current.choose(true));
+  expect(uploadRecording).toHaveBeenCalledWith({}, "session-1", take);
+  expect(result.current.recording).toEqual({ status: "saved", url: "blob:take" });
+
+  const second = renderHook(() => useRecording()).result;
+  act(() => second.current.receive(take, session));
+  act(() => second.current.choose(false));
+  expect(second.current.recording).toEqual({ status: "declined", url: "blob:take" });
+});

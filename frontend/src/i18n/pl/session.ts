@@ -41,8 +41,15 @@ export const sessionPl: SessionDictionary = {
     confirm: "Wyjdź z pokoju",
     stay: "Rozmawiaj dalej",
   },
+  finished: {
+    title: "Rozmowa się zakończyła",
+    text: "Zanim zobaczysz podsumowanie, wybierz, co ma się stać z tą rozmową. Tam nadal możesz zmienić zdanie.",
+    confirm: "Pokaż podsumowanie",
+  },
   recording: {
     title: "Nagranie",
+    play: "Odtwórz nagranie",
+    pause: "Wstrzymaj nagranie",
     notice:
       "Twój głos i głos rozmówcy, tak jak brzmiały w rozmowie. Zostaje tylko na tym urządzeniu, chyba że zapiszesz je w historii.",
     offer: "Chcesz zachować to nagranie w historii, żeby odsłuchać je później?",
