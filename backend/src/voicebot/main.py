@@ -32,6 +32,7 @@ from voicebot.infrastructure.auth import SupabaseAuth
 from voicebot.infrastructure.database import Database
 from voicebot.infrastructure.feedback import GeminiFeedbackWriter
 from voicebot.infrastructure.postgres import PostgresDatabase
+from voicebot.infrastructure.recording_retention import RecordingRetention
 from voicebot.infrastructure.scenarios import load_scenarios
 from voicebot.infrastructure.supabase_admin import AccountDeletionFailed, SupabaseAdmin
 from voicebot.infrastructure.voice.active_session import InvalidSignaling
@@ -139,13 +140,22 @@ def create_app(
             )
             runtime = VoiceRuntime(sessions, settings)
             app.state.runtime = runtime
-            maintenance = asyncio.create_task(runtime.maintain())
+            background = [asyncio.create_task(runtime.maintain())]
+            if isinstance(database, PostgresDatabase) and app.state.admin is not None:
+                retention = RecordingRetention(
+                    database.pool, app.state.admin, settings.recording_retention_days
+                )
+                background.append(
+                    asyncio.create_task(retention.run(settings.recording_cleanup_interval_seconds))
+                )
             try:
                 yield
             finally:
-                maintenance.cancel()
-                with suppress(asyncio.CancelledError):
-                    await maintenance
+                for task in background:
+                    task.cancel()
+                for task in background:
+                    with suppress(asyncio.CancelledError):
+                        await task
                 try:
                     await runtime.close()
                 finally:

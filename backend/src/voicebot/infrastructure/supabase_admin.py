@@ -35,10 +35,10 @@ class SupabaseAdmin:
         except HTTPError as error:
             if error.code == 404:
                 return None
-            logger.error("Account deletion failed: path=%s status=%s", path, error.code)
+            logger.error("Supabase admin request failed: path=%s status=%s", path, error.code)
             raise AccountDeletionFailed from error
         except URLError as error:
-            logger.error("Account deletion failed: %s", type(error).__name__)
+            logger.error("Supabase admin request failed: %s", type(error).__name__)
             raise AccountDeletionFailed from error
 
     def _delete_recordings(self, user_id: str) -> None:
@@ -52,17 +52,19 @@ class SupabaseAdmin:
             names = [item["name"] for item in json.loads(listed or b"[]")]
             if not names:
                 return
-            self._send(
-                f"/storage/v1/object/{RECORDINGS_BUCKET}",
-                "DELETE",
-                {"prefixes": [f"{folder}/{name}" for name in names]},
-            )
+            self._remove([f"{folder}/{name}" for name in names])
+
+    def _remove(self, paths: list[str]) -> None:
+        self._send(f"/storage/v1/object/{RECORDINGS_BUCKET}", "DELETE", {"prefixes": paths})
 
     def _delete_user(self, user_id: str) -> None:
         self._send(f"/auth/v1/admin/users/{quote(user_id, safe='')}", "DELETE")
 
     async def delete_recordings(self, user_id: str) -> None:
         await asyncio.to_thread(self._delete_recordings, user_id)
+
+    async def remove_recordings(self, paths: list[str]) -> None:
+        await asyncio.to_thread(self._remove, paths)
 
     async def delete_user(self, user_id: str) -> None:
         await asyncio.to_thread(self._delete_user, user_id)

@@ -23,12 +23,13 @@ create policy "recordings of finished sessions can be saved by their owner"
     )
   );
 
-create policy "recordings are readable by their owner"
+create policy "recordings are readable by their owner for 30 days"
   on storage.objects for select
   to authenticated
   using (
     bucket_id = 'recordings'
     and (storage.foldername(name))[1] = (select auth.uid())::text
+    and created_at > now() - interval '30 days'
   );
 
 create policy "recordings can be deleted by their owner"

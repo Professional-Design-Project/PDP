@@ -9,6 +9,7 @@ from voicebot.application.sessions import Sessions
 from voicebot.domain.scenario import Language
 from voicebot.domain.session import Consent, SessionStatus
 from voicebot.infrastructure.postgres import PostgresDatabase
+from voicebot.infrastructure.recording_retention import RecordingRetention
 from voicebot.infrastructure.scenarios import load_scenarios
 
 ADMIN_URL = os.environ.get("VOICEBOT_TEST_DATABASE_URL", "")
@@ -189,5 +190,41 @@ async def test_recordings_are_saved_read_and_deleted_only_by_the_session_owner(d
         delete = "delete from storage.objects where bucket_id = 'recordings' returning name"
         assert await _as_user(connection, OTHER, delete) == []
         assert len(await _as_user(connection, USER, delete)) == 1
+    finally:
+        await connection.close()
+
+
+async def test_recordings_expire_after_thirty_days(dsn):
+    connection = await asyncpg.connect(dsn)
+    try:
+        finished = str(await _insert_session(connection, USER, "ended"))
+        recent = str(await _insert_session(connection, USER, "ended"))
+        await connection.execute(
+            """
+            insert into storage.objects (bucket_id, name, created_at) values
+              ('recordings', $1, now() - interval '31 days'),
+              ('recordings', $2, now() - interval '29 days')
+            """,
+            f"{USER}/{finished}",
+            f"{USER}/{recent}",
+        )
+        visible = await _as_user(
+            connection, USER, "select name from storage.objects where bucket_id = 'recordings'"
+        )
+        assert [row["name"] for row in visible] == [f"{USER}/{recent}"]
+
+        class Remover:
+            async def remove_recordings(self, paths):
+                await connection.execute(
+                    "delete from storage.objects where name = any($1::text[])", paths
+                )
+
+        pool = await asyncpg.create_pool(dsn, min_size=1, max_size=1)
+        try:
+            assert await RecordingRetention(pool, Remover(), 30).purge() == 1
+        finally:
+            await pool.close()
+        remaining = await connection.fetch("select name from storage.objects")
+        assert [row["name"] for row in remaining] == [f"{USER}/{recent}"]
     finally:
         await connection.close()

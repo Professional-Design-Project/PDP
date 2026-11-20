@@ -52,7 +52,8 @@ create table if not exists storage.objects (
   id uuid primary key default gen_random_uuid(),
   bucket_id text references storage.buckets (id),
   name text not null,
-  owner_id text default auth.uid()::text
+  owner_id text default auth.uid()::text,
+  created_at timestamptz not null default now()
 );
 
 alter table storage.objects enable row level security;
