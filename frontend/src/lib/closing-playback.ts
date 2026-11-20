@@ -11,6 +11,7 @@ export class ClosingPlayback {
     private readonly player: () => HTMLAudioElement,
     private readonly send: (message: object) => void,
     signal: AbortSignal,
+    private readonly onPlay?: (clip: Blob) => void,
   ) {
     signal.addEventListener("abort", () => this.dispose(), { once: true });
   }
@@ -52,14 +53,18 @@ export class ClosingPlayback {
         return;
       }
       try {
-        this.url = URL.createObjectURL(new Blob(this.chunks, { type: "audio/wav" }));
+        const clip = new Blob(this.chunks, { type: "audio/wav" });
+        this.url = URL.createObjectURL(clip);
         this.chunks = [];
         this.audio = this.player();
         this.audio.srcObject = null;
         this.audio.onended = () => this.finish(true);
         this.audio.onerror = () => this.finish(false);
         this.audio.src = this.url;
-        void this.audio.play().catch(() => this.finish(false));
+        void this.audio.play().then(
+          () => this.onPlay?.(clip),
+          () => this.finish(false),
+        );
       } catch {
         this.finish(false);
       }
