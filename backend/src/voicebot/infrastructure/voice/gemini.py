@@ -100,7 +100,6 @@ class GeminiConversation:
             )
         self.llm = GeminiLiveLLMService(
             api_key=key,
-            tools=ToolsSchema(standard_tools=tools),
             settings=GeminiLiveLLMService.Settings(
                 model=session.model,
                 system_instruction=session.instructions,
@@ -112,8 +111,7 @@ class GeminiConversation:
         self.llm.register_function("finish_session", self._finish_session)
         if self._is_interview:
             self.llm.register_function("prepare_closing", self._prepare_closing)
-        # Context-provided tools force Gemini Live to reconnect during the first turn.
-        self.context = LLMContext()
+        self.context = LLMContext(tools=ToolsSchema(standard_tools=tools))
         self.user, self.assistant = LLMContextAggregatorPair(
             self.context,
             user_params=LLMUserAggregatorParams(user_turn_strategies=ExternalUserTurnStrategies()),
