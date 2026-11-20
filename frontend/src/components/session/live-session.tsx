@@ -4,7 +4,7 @@ import { useState } from "react";
 import { useModalDialog } from "@/hooks/use-modal-dialog";
 import { useSessionClock } from "@/hooks/use-session-clock";
 import { InterviewerCard } from "@/components/session/interviewer-card";
-import { LeavePanel } from "@/components/session/leave-panel";
+import { LeavePanel, type LeaveChoice } from "@/components/session/leave-panel";
 import { SessionCaptions } from "@/components/session/session-captions";
 import { SessionControls } from "@/components/session/session-controls";
 import { SessionHeader } from "@/components/session/session-header";
@@ -18,8 +18,9 @@ type LiveSessionProps = {
   scenario: string;
   muted: boolean;
   ending: boolean;
+  canRecord?: boolean;
   onToggleMute: () => void;
-  onLeave: (withFeedback: boolean) => void;
+  onLeave: (choice: LeaveChoice) => void;
 };
 
 export function LiveSession({
@@ -29,6 +30,7 @@ export function LiveSession({
   scenario,
   muted,
   ending,
+  canRecord = false,
   onToggleMute,
   onLeave,
 }: LiveSessionProps) {
@@ -68,9 +70,10 @@ export function LiveSession({
 
       {leaving && !ending && (
         <LeavePanel
-          onLeave={(withFeedback) => {
+          canRecord={canRecord}
+          onLeave={(choice) => {
             setLeaving(false);
-            onLeave(withFeedback);
+            onLeave(choice);
           }}
           onStay={() => setLeaving(false)}
         />

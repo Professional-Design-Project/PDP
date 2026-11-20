@@ -19,6 +19,8 @@ import { useFeedback } from "@/hooks/use-feedback";
 import { useMicrophone } from "@/hooks/use-microphone";
 import { usePracticeConsent } from "@/hooks/use-practice-consent";
 import { usePracticePreset } from "@/hooks/use-practice-preset";
+import { useRecording } from "@/hooks/use-recording";
+import { useSignedIn } from "@/hooks/use-signed-in";
 import { useVoiceSession } from "@/hooks/use-voice-session";
 import { useLocale, type Locale } from "@/i18n/locale";
 import { CONSENT_VERSION } from "@/lib/consent";
@@ -39,7 +41,13 @@ export default function PracticePage() {
   const docs = useDocuments(scenario);
   const consent = usePracticeConsent();
   const feedback = useFeedback();
-  const voice = useVoiceSession({ onFinished: feedback.choose });
+  const recording = useRecording();
+  const canRecord = useSignedIn();
+  const voice = useVoiceSession({
+    onFinished: feedback.choose,
+    onRecorded: recording.receive,
+    record: canRecord,
+  });
   const presetState = usePracticePreset((preset) => {
     chooseScenario(preset.scenarioId);
     setLanguage(preset.language);
@@ -55,6 +63,7 @@ export default function PracticePage() {
 
   function enter() {
     feedback.reset();
+    recording.reset();
     void voice.start(
       {
         scenario_id: scenario,
@@ -78,6 +87,8 @@ export default function PracticePage() {
         heading={copy.finished}
         feedback={feedback.feedback}
         onRequestFeedback={() => void feedback.request(voice.lastSession())}
+        recording={recording.recording}
+        onSaveRecording={() => void recording.save()}
         onAgain={enter}
         onSetup={voice.backToSetup}
       />
@@ -182,8 +193,12 @@ export default function PracticePage() {
           scenario={copy.title}
           muted={voice.muted}
           ending={voice.ending}
+          canRecord={canRecord}
           onToggleMute={voice.toggleMute}
-          onLeave={(withFeedback) => void voice.leave(withFeedback)}
+          onLeave={(choice) => {
+            recording.choose(choice.recording);
+            void voice.leave(choice.feedback);
+          }}
         />
       )}
     </main>

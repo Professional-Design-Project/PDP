@@ -4,9 +4,11 @@ import { arrowMotion, buttonStyles } from "@/components/button-styles";
 import { ArrowRightIcon } from "@/components/icons";
 import { Rise } from "@/components/rise";
 import { FeedbackSection } from "@/components/session/feedback-section";
+import { RecordingSection } from "@/components/session/recording-section";
 import type { FeedbackState, TranscriptLine } from "@/components/session/session-state";
 import { SummaryStats } from "@/components/session/summary-stats";
 import { TranscriptSection } from "@/components/session/transcript-section";
+import type { RecordingState } from "@/hooks/use-recording";
 import { useLocale } from "@/i18n/locale";
 
 type SessionSummaryProps = {
@@ -17,6 +19,8 @@ type SessionSummaryProps = {
   heading: string;
   feedback: FeedbackState;
   onRequestFeedback: () => void;
+  recording?: RecordingState;
+  onSaveRecording?: () => void;
   onAgain: () => void;
   onSetup: () => void;
 };
@@ -29,6 +33,8 @@ export function SessionSummary({
   heading,
   feedback,
   onRequestFeedback,
+  recording = { status: "none" },
+  onSaveRecording = () => undefined,
   onAgain,
   onSetup,
 }: SessionSummaryProps) {
@@ -67,6 +73,7 @@ export function SessionSummary({
       </Rise>
 
       <FeedbackSection state={feedback} transcript={transcript} onRequest={onRequestFeedback} />
+      <RecordingSection state={recording} transcript={transcript} onSave={onSaveRecording} />
       <TranscriptSection transcript={transcript} />
     </main>
   );

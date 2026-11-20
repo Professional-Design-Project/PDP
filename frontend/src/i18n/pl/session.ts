@@ -30,10 +30,31 @@ export const sessionPl: SessionDictionary = {
   },
   leave: {
     title: "Wyjść z pokoju?",
-    text: "Rozmówca może przeczytać twoją transkrypcję i zostawić kilka uwag o tym, co poszło dobrze, a nad czym popracować. Pisze je AI wyłącznie na podstawie słów, więc mogą zawierać błędy.",
-    withFeedback: "Wyjdź i odbierz uwagi",
-    withoutFeedback: "Wyjdź bez uwag",
+    text: "Wybierz, co ma się stać z tą rozmową. Na następnym ekranie nadal możesz zmienić zdanie.",
+    options: "Po sesji",
+    feedback: "Odbierz uwagi",
+    feedbackHint:
+      "Rozmówca przeczyta twoją transkrypcję i napisze, co poszło dobrze, a nad czym popracować. Pisze je AI wyłącznie na podstawie słów, więc mogą zawierać błędy.",
+    recording: "Zapisz nagranie",
+    recordingHint:
+      "Nagranie tej rozmowy trafi do twojej historii, żeby można było ją odsłuchać. Odtworzysz je tylko ty, a usuniesz razem z sesją.",
+    confirm: "Wyjdź z pokoju",
     stay: "Rozmawiaj dalej",
+  },
+  recording: {
+    title: "Nagranie",
+    notice:
+      "Twój głos i głos rozmówcy, tak jak brzmiały w rozmowie. Zostaje tylko na tym urządzeniu, chyba że zapiszesz je w historii.",
+    offer: "Chcesz zachować to nagranie w historii, żeby odsłuchać je później?",
+    declined: "Nagranie nie zostało zapisane. Zniknie, gdy opuścisz tę stronę.",
+    save: "Zapisz nagranie",
+    saving: "Zapisuję nagranie",
+    saved: "Zapisano w historii. Usunięcie sesji usuwa też nagranie.",
+    failed: "Nie udało się zapisać nagrania.",
+    retry: "Spróbuj ponownie",
+    player: "Nagranie rozmowy",
+    download: "Pobierz nagranie",
+    historyNotice: "Odtworzysz je tylko ty. Usunięcie sesji usuwa też nagranie.",
   },
   summary: {
     practice:

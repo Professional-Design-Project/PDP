@@ -2,6 +2,7 @@
 
 import { DeleteSession } from "@/components/history/delete-session";
 import { SessionActions } from "@/components/history/session-actions";
+import { SessionRecording } from "@/components/history/session-recording";
 import { LocaleLink as Link } from "@/components/locale-link";
 import { Rise } from "@/components/rise";
 import { FeedbackSection } from "@/components/session/feedback-section";
@@ -44,6 +45,7 @@ export function SessionDetail({ session }: { session: PastSessionDetail }) {
       ) : (
         <p className="mt-16 border-t-2 border-ink pt-5 text-muted">{t.history.feedbackMissing}</p>
       )}
+      <SessionRecording sessionId={session.id} transcript={session.transcript} />
       <TranscriptSection transcript={session.transcript} />
       <div className="print:hidden">
         <DeleteSession id={session.id} />

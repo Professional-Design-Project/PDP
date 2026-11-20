@@ -5,10 +5,20 @@ import { LocaleProvider } from "@/i18n/locale";
 
 const replace = vi.fn();
 const deleted = vi.fn();
+const removed = vi.fn();
 
 vi.mock("next/navigation", () => ({ useRouter: () => ({ replace }) }));
 vi.mock("@/lib/supabase/client", () => ({
   browserClient: () => ({
+    auth: { getSession: async () => ({ data: { session: { user: { id: "user-1" } } } }) },
+    storage: {
+      from: (bucket: string) => ({
+        remove: async (paths: string[]) => {
+          removed(bucket, paths);
+          return { data: [], error: null };
+        },
+      }),
+    },
     from: () => ({
       delete: () => ({
         eq: (_column: string, id: string) => ({ select: () => deleted(id) }),
@@ -20,6 +30,7 @@ vi.mock("@/lib/supabase/client", () => ({
 beforeEach(() => {
   replace.mockClear();
   deleted.mockReset();
+  removed.mockClear();
 });
 
 function renderDelete() {
@@ -37,6 +48,7 @@ it("asks first, deletes the session and goes back to the history", async () => {
   renderDelete();
   await waitFor(() => expect(replace).toHaveBeenCalledWith("/pl/history"));
   expect(deleted).toHaveBeenCalledWith("abc");
+  expect(removed).toHaveBeenCalledWith("recordings", ["user-1/abc"]);
 });
 
 it("says so when nothing was deleted", async () => {

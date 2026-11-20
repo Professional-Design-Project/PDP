@@ -1,5 +1,6 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { FeedbackResult, TranscriptLine } from "@/components/session/session-state";
+import { deleteRecording } from "@/lib/recordings";
 import type { ScenarioId } from "@/lib/scenarios";
 
 export type PastSession = {
@@ -124,6 +125,7 @@ export async function loadSession(supabase: SupabaseClient, id: string) {
 }
 
 export async function deleteSession(supabase: SupabaseClient, id: string) {
+  await deleteRecording(supabase, id);
   const { data, error } = await supabase
     .from("practice_sessions")
     .delete()

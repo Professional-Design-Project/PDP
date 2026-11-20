@@ -83,7 +83,7 @@ export const accountEn = {
     duration: (time: string) => `${time} min`,
     deleteTitle: "Delete this session",
     deleteText:
-      "This removes the session, its transcript and its feedback from your account. It cannot be undone.",
+      "This removes the session, its transcript, feedback and recording from your account. It cannot be undone.",
     deleteButton: "Delete session",
     deleteConfirm: "Yes, delete it",
     deleteCancel: "Keep it",
@@ -148,7 +148,7 @@ export const accountEn = {
     exportFailed: "The file could not be prepared. Try again in a moment.",
     deleteTitle: "Delete account",
     deleteText:
-      "This removes your account, every session, transcript, piece of feedback and consent record. It cannot be undone.",
+      "This removes your account, every session, transcript, piece of feedback, recording and consent record. It cannot be undone.",
     deleteButton: "Delete my account",
     deleteConfirm: "Yes, delete everything",
     deleteCancel: "Keep my account",
