@@ -45,7 +45,7 @@ export function SessionDetail({ session }: { session: PastSessionDetail }) {
       ) : (
         <p className="mt-16 border-t-2 border-ink pt-5 text-muted">{t.history.feedbackMissing}</p>
       )}
-      <SessionRecording sessionId={session.id} transcript={session.transcript} />
+      <SessionRecording sessionId={session.id} />
       <TranscriptSection transcript={session.transcript} />
       <div className="print:hidden">
         <DeleteSession id={session.id} />

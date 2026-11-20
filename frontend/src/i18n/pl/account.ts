@@ -124,7 +124,7 @@ export const accountPl: AccountDictionary = {
       },
     },
     pdf: "Pobierz PDF",
-    markdown: "Pobierz Markdown",
+    markdown: "Pobierz .md",
     pdfHint:
       "Ćwicz ponownie otwiera pokój z tym samym scenariuszem, językiem, kontekstem i zachowaniem. Aby pobrać PDF, w oknie drukowania wybierz Zapisz jako PDF. Markdown to zwykły plik tekstowy, który otworzysz w każdym edytorze albo wkleisz do notatek.",
     feedbackMissing: "Dla tej sesji nie poproszono o uwagi.",

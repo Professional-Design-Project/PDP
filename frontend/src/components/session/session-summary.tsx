@@ -73,7 +73,7 @@ export function SessionSummary({
       </Rise>
 
       <FeedbackSection state={feedback} transcript={transcript} onRequest={onRequestFeedback} />
-      <RecordingSection state={recording} transcript={transcript} onSave={onSaveRecording} />
+      <RecordingSection state={recording} onSave={onSaveRecording} />
       <TranscriptSection transcript={transcript} />
     </main>
   );

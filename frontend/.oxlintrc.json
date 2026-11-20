@@ -5,7 +5,15 @@
   "overrides": [
     {
       "files": ["src/app/**/opengraph-image.tsx"],
-      "rules": { "nextjs/no-img-element": "off" }
+      "rules": {
+        "nextjs/no-img-element": "off"
+      }
+    },
+    {
+      "files": ["src/components/session/recording-player.tsx"],
+      "rules": {
+        "jsx-a11y/media-has-caption": "off"
+      }
     }
   ]
 }

@@ -52,6 +52,13 @@ export const sessionEn = {
     retry: "Try again",
     player: "Conversation recording",
     download: "Download the recording",
+    deleteButton: "Delete the recording",
+    deleteText: "Only the audio is removed. The session, transcript and feedback stay.",
+    deleteConfirm: "Yes, delete it",
+    deleteCancel: "Keep it",
+    deleting: "Deleting…",
+    deleted: "The recording was deleted. The session, transcript and feedback stay.",
+    deleteFailed: "The recording could not be deleted. Try again in a moment.",
     historyNotice: (date: string): string =>
       `Only you can play it. It is deleted automatically on ${date}, or earlier if you delete the session.`,
   },

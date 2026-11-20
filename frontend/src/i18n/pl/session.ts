@@ -54,6 +54,13 @@ export const sessionPl: SessionDictionary = {
     retry: "Spróbuj ponownie",
     player: "Nagranie rozmowy",
     download: "Pobierz nagranie",
+    deleteButton: "Usuń nagranie",
+    deleteText: "Usunięty zostanie tylko dźwięk. Sesja, transkrypcja i uwagi zostają.",
+    deleteConfirm: "Tak, usuń je",
+    deleteCancel: "Zostaw je",
+    deleting: "Usuwam…",
+    deleted: "Nagranie zostało usunięte. Sesja, transkrypcja i uwagi zostają.",
+    deleteFailed: "Nie udało się usunąć nagrania. Spróbuj ponownie za chwilę.",
     historyNotice: (date: string) =>
       `Odtworzysz je tylko ty. Zniknie automatycznie ${date}, a wcześniej, jeśli usuniesz sesję.`,
   },

@@ -1,30 +1,37 @@
 "use client";
 
-import { useMemo } from "react";
-import type { TranscriptLine } from "@/components/session/session-state";
+import { useRef, type SyntheticEvent } from "react";
 import { useLocale } from "@/i18n/locale";
-import { captionsDataUrl } from "@/lib/transcript-captions";
 
-type RecordingPlayerProps = {
-  src: string;
-  transcript: TranscriptLine[];
-};
+export function RecordingPlayer({ src }: { src: string }) {
+  const { t } = useLocale();
+  const probingRef = useRef(false);
 
-export function RecordingPlayer({ src, transcript }: RecordingPlayerProps) {
-  const { locale, t } = useLocale();
-  const captions = useMemo(
-    () => captionsDataUrl(transcript, { user: t.common.you, assistant: t.common.interviewer }),
-    [transcript, t.common.you, t.common.interviewer],
-  );
+  function revealDuration(event: SyntheticEvent<HTMLAudioElement>) {
+    const audio = event.currentTarget;
+    if (Number.isFinite(audio.duration)) return;
+    probingRef.current = true;
+    audio.currentTime = Number.MAX_SAFE_INTEGER;
+  }
+
+  function rewind(event: SyntheticEvent<HTMLAudioElement>) {
+    const audio = event.currentTarget;
+    if (!probingRef.current || !Number.isFinite(audio.duration)) return;
+    probingRef.current = false;
+    audio.currentTime = 0;
+  }
+
   return (
     <audio
       controls
+      controlsList="nodownload noplaybackrate"
       preload="metadata"
       src={src}
       aria-label={t.recording.player}
+      onLoadedMetadata={revealDuration}
+      onDurationChange={rewind}
+      onTimeUpdate={rewind}
       className="mt-8 w-full"
-    >
-      <track kind="captions" src={captions} srcLang={locale} label={t.summary.transcript} />
-    </audio>
+    />
   );
 }

@@ -2,17 +2,15 @@
 
 import { Loader } from "@/components/loader";
 import { RecordingPlayer } from "@/components/session/recording-player";
-import type { TranscriptLine } from "@/components/session/session-state";
 import type { RecordingState } from "@/hooks/use-recording";
 import { useLocale } from "@/i18n/locale";
 
 type RecordingSectionProps = {
   state: RecordingState;
-  transcript: TranscriptLine[];
   onSave: () => void;
 };
 
-export function RecordingSection({ state, transcript, onSave }: RecordingSectionProps) {
+export function RecordingSection({ state, onSave }: RecordingSectionProps) {
   const { t } = useLocale();
   if (state.status === "none") return null;
   return (
@@ -33,7 +31,7 @@ export function RecordingSection({ state, transcript, onSave }: RecordingSection
         </p>
       </div>
 
-      <RecordingPlayer src={state.url} transcript={transcript} />
+      <RecordingPlayer src={state.url} />
 
       {(state.status === "undecided" || state.status === "declined") && (
         <div className="mt-5 flex animate-caption flex-col gap-5 border border-line bg-white p-6 sm:flex-row sm:items-center sm:justify-between sm:p-8">
