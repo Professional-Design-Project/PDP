@@ -192,7 +192,10 @@ export function useVoiceSession({ onFinished }: Options) {
   }
 
   function connectPeer(attempt: ConnectionAttempt, session: VoiceSession, stream: MediaStream) {
-    const peer = new RTCPeerConnection({ iceServers: session.ice_servers });
+    const peer = new RTCPeerConnection({
+      iceServers: session.ice_servers,
+      bundlePolicy: "max-bundle",
+    });
     attempt.peer = peer;
     stream.getTracks().forEach((track) => peer.addTrack(track, stream));
     peer.ontrack = (event) => {
