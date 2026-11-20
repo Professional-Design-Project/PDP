@@ -148,3 +148,46 @@ async def test_owners_can_read_their_context_but_not_the_instructions(dsn):
                 await connection.fetch("select instructions from public.practice_sessions")
     finally:
         await connection.close()
+
+
+async def _as_user(connection, user, query, *args):
+    async with connection.transaction():
+        await connection.execute("set local role authenticated")
+        await connection.execute("select set_config('request.jwt.claim.sub', $1, true)", user)
+        return await connection.fetch(query, *args)
+
+
+async def test_recordings_are_saved_read_and_deleted_only_by_the_session_owner(dsn):
+    insert = "insert into storage.objects (bucket_id, name) values ($1, $2) returning name"
+    connection = await asyncpg.connect(dsn)
+    try:
+        await connection.execute("insert into auth.users (id) values ($1)", OTHER)
+        finished = str(await _insert_session(connection, USER, "ended"))
+        live = str(await _insert_session(connection, USER, "active"))
+        bucket = await connection.fetchrow(
+            "select public, allowed_mime_types from storage.buckets where id = 'recordings'"
+        )
+        assert bucket["public"] is False
+        assert "audio/webm" in bucket["allowed_mime_types"]
+
+        for user, bucket_id, name in [
+            (USER, "recordings", f"{USER}/{live}"),
+            (USER, "recordings", f"{OTHER}/{finished}"),
+            (OTHER, "recordings", f"{OTHER}/{finished}"),
+            (USER, "recordings", f"{USER}/{finished}/extra"),
+        ]:
+            with pytest.raises(asyncpg.InsufficientPrivilegeError):
+                await _as_user(connection, user, insert, bucket_id, name)
+
+        saved = await _as_user(connection, USER, insert, "recordings", f"{USER}/{finished}")
+        assert len(saved) == 1
+
+        select = "select name from storage.objects where bucket_id = 'recordings'"
+        assert await _as_user(connection, OTHER, select) == []
+        assert len(await _as_user(connection, USER, select)) == 1
+
+        delete = "delete from storage.objects where bucket_id = 'recordings' returning name"
+        assert await _as_user(connection, OTHER, delete) == []
+        assert len(await _as_user(connection, USER, delete)) == 1
+    finally:
+        await connection.close()
