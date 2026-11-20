@@ -35,7 +35,7 @@ export const sessionEn = {
       "The interviewer reads your transcript and notes what went well and what to work on. Written by AI from the words only, so it may contain mistakes.",
     recording: "Save the recording",
     recordingHint:
-      "Keeps the audio of this conversation in your history so you can listen to it again. Only you can play it, and it is deleted with the session.",
+      "Keeps the audio of this conversation in your history for 30 days so you can listen to it again. Only you can play it. It is deleted automatically after 30 days, or earlier with the session.",
     confirm: "Leave the room",
     stay: "Keep talking",
   },
@@ -47,12 +47,13 @@ export const sessionEn = {
     declined: "The recording was not saved. It disappears when you leave this page.",
     save: "Save the recording",
     saving: "Saving the recording",
-    saved: "Saved in your history. Delete the session to delete the recording.",
+    saved: "Saved in your history for 30 days. Delete the session to delete the recording sooner.",
     failed: "The recording could not be saved.",
     retry: "Try again",
     player: "Conversation recording",
     download: "Download the recording",
-    historyNotice: "Only you can play it. Deleting the session deletes the recording too.",
+    historyNotice: (date: string): string =>
+      `Only you can play it. It is deleted automatically on ${date}, or earlier if you delete the session.`,
   },
   summary: {
     practice: "It was practice, not a grade. Read it back, then go again while it is fresh.",

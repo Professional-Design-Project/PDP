@@ -47,7 +47,7 @@ export const privacyPl: DocContent = {
         },
         {
           term: "Nagranie",
-          text: "Dźwięk rozmowy, tylko jeśli przy wychodzeniu z pokoju zaznaczysz „Zapisz nagranie” albo zapiszesz je na ekranie podsumowania. Odtworzyć i pobrać je możesz tylko ty.",
+          text: "Dźwięk rozmowy, tylko jeśli przy wychodzeniu z pokoju zaznaczysz „Zapisz nagranie” albo zapiszesz je na ekranie podsumowania. Odtworzyć i pobrać je możesz tylko ty, a po 30 dniach jest usuwane automatycznie.",
         },
         {
           term: "Zgłoszenia",
@@ -106,7 +106,7 @@ export const privacyPl: DocContent = {
       id: "retention",
       title: "Jak długo to trzymamy",
       paragraphs: [
-        "Sesje i ich nagrania zostają na koncie, dopóki nie usuniesz ich pojedynczo w historii albo nie usuniesz konta. Usunięcie sesji usuwa też jej nagranie. Usunięcie konta kasuje od razu konto, wszystkie sesje, transkrypcje, uwagi, nagrania i rekordy zgód. Nie da się tego cofnąć.",
+        "Sesje zostają na koncie, dopóki nie usuniesz ich pojedynczo w historii albo nie usuniesz konta. Zapisane nagrania znikają automatycznie 30 dni po zapisaniu, a wcześniej razem z sesją. Usunięcie konta kasuje od razu konto, wszystkie sesje, transkrypcje, uwagi, nagrania i rekordy zgód. Nie da się tego cofnąć.",
       ],
     },
     {

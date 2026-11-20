@@ -47,7 +47,7 @@ export const privacyEn: DocContent = {
         },
         {
           term: "Recording",
-          text: 'The audio of a conversation, only if you tick "Save the recording" when you leave the room or choose to save it on the summary screen. Only you can play or download it.',
+          text: 'The audio of a conversation, only if you tick "Save the recording" when you leave the room or choose to save it on the summary screen. Only you can play or download it, and it is deleted automatically after 30 days.',
         },
         {
           term: "Reports",
@@ -106,7 +106,7 @@ export const privacyEn: DocContent = {
       id: "retention",
       title: "How long we keep it",
       paragraphs: [
-        "Your sessions and their recordings stay in your account until you delete them one by one in your history or delete your account. Deleting a session also deletes its recording. Deleting the account removes the account, all sessions, transcripts, feedback, recordings and consent records at once. This cannot be undone.",
+        "Your sessions stay in your account until you delete them one by one in your history or delete your account. Saved recordings are deleted automatically 30 days after you save them, or earlier together with their session. Deleting the account removes the account, all sessions, transcripts, feedback, recordings and consent records at once. This cannot be undone.",
       ],
     },
     {

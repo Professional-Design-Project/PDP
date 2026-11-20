@@ -56,7 +56,13 @@ it("rethrows other upload errors and needs a signed-in user", async () => {
 
 it("returns signed play and download links for a saved recording", async () => {
   list.mockResolvedValue({
-    data: [{ name: "session-1", metadata: { mimetype: "audio/mp4" } }],
+    data: [
+      {
+        name: "session-1",
+        created_at: "2026-11-20T10:00:00.000Z",
+        metadata: { mimetype: "audio/mp4" },
+      },
+    ],
     error: null,
   });
   createSignedUrl
@@ -65,6 +71,7 @@ it("returns signed play and download links for a saved recording", async () => {
   await expect(loadRecording(client(), "session-1")).resolves.toEqual({
     playUrl: "https://play",
     downloadUrl: "https://download",
+    expiresAt: "2026-12-20T10:00:00.000Z",
   });
   expect(list).toHaveBeenCalledWith("user-1", { search: "session-1", limit: 10 });
   expect(createSignedUrl).toHaveBeenLastCalledWith("user-1/session-1", 3600, {

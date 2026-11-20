@@ -37,7 +37,7 @@ export const sessionPl: SessionDictionary = {
       "Rozmówca przeczyta twoją transkrypcję i napisze, co poszło dobrze, a nad czym popracować. Pisze je AI wyłącznie na podstawie słów, więc mogą zawierać błędy.",
     recording: "Zapisz nagranie",
     recordingHint:
-      "Nagranie tej rozmowy trafi do twojej historii, żeby można było ją odsłuchać. Odtworzysz je tylko ty, a usuniesz razem z sesją.",
+      "Nagranie tej rozmowy trafi na 30 dni do twojej historii, żeby można było ją odsłuchać. Odtworzysz je tylko ty. Po 30 dniach zniknie automatycznie, a wcześniej usuniesz je razem z sesją.",
     confirm: "Wyjdź z pokoju",
     stay: "Rozmawiaj dalej",
   },
@@ -49,12 +49,13 @@ export const sessionPl: SessionDictionary = {
     declined: "Nagranie nie zostało zapisane. Zniknie, gdy opuścisz tę stronę.",
     save: "Zapisz nagranie",
     saving: "Zapisuję nagranie",
-    saved: "Zapisano w historii. Usunięcie sesji usuwa też nagranie.",
+    saved: "Zapisano w historii na 30 dni. Usuń sesję, jeśli chcesz skasować nagranie wcześniej.",
     failed: "Nie udało się zapisać nagrania.",
     retry: "Spróbuj ponownie",
     player: "Nagranie rozmowy",
     download: "Pobierz nagranie",
-    historyNotice: "Odtworzysz je tylko ty. Usunięcie sesji usuwa też nagranie.",
+    historyNotice: (date: string) =>
+      `Odtworzysz je tylko ty. Zniknie automatycznie ${date}, a wcześniej, jeśli usuniesz sesję.`,
   },
   summary: {
     practice:

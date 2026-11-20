@@ -1,6 +1,8 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 
 export const RECORDINGS_BUCKET = "recordings";
+export const RECORDING_RETENTION_DAYS = 30;
+const DAY_MS = 86_400_000;
 const LINK_TTL_SECONDS = 3600;
 const EXTENSIONS: Record<string, string> = {
   "audio/webm": "webm",
@@ -8,7 +10,7 @@ const EXTENSIONS: Record<string, string> = {
   "audio/mp4": "m4a",
 };
 
-export type SavedRecording = { playUrl: string; downloadUrl: string };
+export type SavedRecording = { playUrl: string; downloadUrl: string; expiresAt: string };
 
 async function ownerId(supabase: SupabaseClient) {
   const { data } = await supabase.auth.getSession();
@@ -48,7 +50,7 @@ export async function loadRecording(
   const { data: files, error } = await bucket.list(folder, { search: sessionId, limit: 10 });
   if (error) throw error;
   const file = files.find((item) => item.name === sessionId);
-  if (!file) return null;
+  if (!file?.created_at) return null;
   const path = `${folder}/${sessionId}`;
   const extension = EXTENSIONS[String(file.metadata?.mimetype)] ?? "webm";
   const [play, download] = await Promise.all([
@@ -59,7 +61,10 @@ export async function loadRecording(
   ]);
   if (play.error) throw play.error;
   if (download.error) throw download.error;
-  return { playUrl: play.data.signedUrl, downloadUrl: download.data.signedUrl };
+  const expiresAt = new Date(
+    Date.parse(file.created_at) + RECORDING_RETENTION_DAYS * DAY_MS,
+  ).toISOString();
+  return { playUrl: play.data.signedUrl, downloadUrl: download.data.signedUrl, expiresAt };
 }
 
 export async function deleteRecording(supabase: SupabaseClient, sessionId: string) {

@@ -4,6 +4,7 @@ import { RecordingPlayer } from "@/components/session/recording-player";
 import type { TranscriptLine } from "@/components/session/session-state";
 import { useSupabaseQuery } from "@/hooks/use-supabase-query";
 import { useLocale } from "@/i18n/locale";
+import { formatDate } from "@/lib/format";
 import { loadRecording } from "@/lib/recordings";
 
 type SessionRecordingProps = {
@@ -12,7 +13,7 @@ type SessionRecordingProps = {
 };
 
 export function SessionRecording({ sessionId, transcript }: SessionRecordingProps) {
-  const { t } = useLocale();
+  const { locale, t } = useLocale();
   const { state } = useSupabaseQuery(
     (supabase) => loadRecording(supabase, sessionId),
     `recording:${sessionId}`,
@@ -28,7 +29,7 @@ export function SessionRecording({ sessionId, transcript }: SessionRecordingProp
           {t.recording.title}
         </h2>
         <p className="max-w-md text-[15px] leading-relaxed text-muted lg:col-span-5">
-          {t.recording.historyNotice}
+          {t.recording.historyNotice(formatDate(state.data.expiresAt, locale))}
         </p>
       </div>
       <RecordingPlayer src={state.data.playUrl} transcript={transcript} />

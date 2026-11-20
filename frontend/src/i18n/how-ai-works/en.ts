@@ -87,7 +87,7 @@ export const howAiWorksEn: DocContent = {
       id: "data",
       title: "Your data",
       paragraphs: [
-        "Your voice goes live to Google during the session. Transcripts, feedback and any recordings you choose to save are kept in your account until you delete them.",
+        "Your voice goes live to Google during the session. Transcripts, feedback and any recordings you choose to save are kept in your account until you delete them. Recordings are deleted automatically after 30 days.",
       ],
       link: { href: "/privacy", label: "Read about privacy" },
     },
