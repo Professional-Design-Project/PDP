@@ -1,5 +1,6 @@
 import asyncio
 import logging
+import sys
 import traceback
 from contextlib import asynccontextmanager, suppress
 
@@ -99,8 +100,11 @@ def create_app(
 ) -> FastAPI:
     settings = settings or Settings()
     logging.basicConfig(level=logging.INFO)
-    # Pipecat debug output can contain transcripts and provider session handles.
-    pipecat_logger.disable("pipecat")
+    logging.getLogger("aiortc.rtcdtlstransport").setLevel(logging.DEBUG)
+    # Keep transport/provider failures visible without debug transcripts or session handles.
+    pipecat_logger.remove()
+    pipecat_logger.add(sys.stderr, level="WARNING")
+    pipecat_logger.enable("pipecat")
     scenarios = load_scenarios()
 
     @asynccontextmanager

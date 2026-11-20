@@ -76,7 +76,10 @@ def compile_instructions(
         "ask briefly without supplying the missing words. When they request thinking time, "
         "acknowledge briefly and wait; do not fill the pause with a new question. "
         "An explicit stop request means ending the meeting itself, not 'no' to an ordinary "
-        "question, lack of knowledge or a pause.",
+        "question, lack of knowledge or a pause. Recognise polite or indirect requests to "
+        "end the meeting from context; do not require exact wording or repeated refusals. "
+        "If it is unclear whether they are declining the question or ending the meeting, "
+        "ask which they mean instead of assuming they want another interview question.",
         f"Scenario: {scenario.id}, version: {scenario.version}.",
         f"Conversation language: {scenario.language.prompt_name} ({scenario.language.value}).",
         f"Speak only in {scenario.language.prompt_name}, unless the user explicitly "

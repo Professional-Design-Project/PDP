@@ -36,6 +36,7 @@ from voicebot.infrastructure.voice.completion import (
     ClosingAudio,
     ConversationCompletion,
 )
+from voicebot.infrastructure.voice.diagnostics import AudioInputDiagnostics
 from voicebot.settings import Settings
 
 
@@ -62,16 +63,6 @@ class GeminiConversation:
             webrtc_connection=connection,
             params=TransportParams(audio_in_enabled=True, audio_out_enabled=True),
         )
-        self.llm = GeminiLiveLLMService(
-            api_key=key,
-            settings=GeminiLiveLLMService.Settings(
-                model=session.model,
-                system_instruction=session.instructions,
-                voice=settings.gemini_voice,
-                language=Language(session.language),
-                context_window_compression={"enabled": True},
-            ),
-        )
         tools = [
             FunctionSchema(
                 name="finish_session",
@@ -93,7 +84,6 @@ class GeminiConversation:
                 required=["reason"],
             )
         ]
-        self.llm.register_function("finish_session", self._finish_session)
         if self._is_interview:
             tools.append(
                 FunctionSchema(
@@ -108,6 +98,18 @@ class GeminiConversation:
                     required=[],
                 )
             )
+        self.llm = GeminiLiveLLMService(
+            api_key=key,
+            settings=GeminiLiveLLMService.Settings(
+                model=session.model,
+                system_instruction=session.instructions,
+                voice=settings.gemini_voice,
+                language=Language(session.language),
+                context_window_compression={"enabled": True},
+            ),
+        )
+        self.llm.register_function("finish_session", self._finish_session)
+        if self._is_interview:
             self.llm.register_function("prepare_closing", self._prepare_closing)
         self.context = LLMContext(tools=ToolsSchema(standard_tools=tools))
         self.user, self.assistant = LLMContextAggregatorPair(
@@ -116,6 +118,7 @@ class GeminiConversation:
         )
         self.completion = ConversationCompletion()
         self.closing_audio = ClosingAudio()
+        self.audio_diagnostics = AudioInputDiagnostics(session.id, self.llm)
         pipeline = Pipeline(
             [
                 self.transport.input(),
@@ -131,6 +134,7 @@ class GeminiConversation:
             pipeline,
             conversation_id=session.id,
             params=PipelineParams(enable_metrics=True, enable_usage_metrics=True),
+            observers=[self.audio_diagnostics],
             processor_unusable_policy=ProcessorUnusablePolicy.CANCEL,
             idle_timeout_secs=None,
             cancel_timeout_secs=3,
@@ -323,6 +327,7 @@ class GeminiConversation:
                     await self.worker.stop_when_done()
                     await asyncio.wait((run_task, stop_task), return_when=asyncio.FIRST_COMPLETED)
         finally:
+            self.audio_diagnostics.report()
             if not run_task.done():
                 await self.runner.cancel()
             for task in (stop_task, completion_task):
