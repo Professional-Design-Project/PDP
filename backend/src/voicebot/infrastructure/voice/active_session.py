@@ -1,9 +1,12 @@
 import asyncio
+import logging
 from dataclasses import dataclass, field
 
 from pipecat.transports.smallwebrtc.connection import IceServer, SmallWebRTCConnection
 
 from voicebot.settings import Settings
+
+logger = logging.getLogger(__name__)
 
 
 class InvalidSignaling(Exception):
@@ -58,4 +61,15 @@ class ActiveSession:
         except TimeoutError:
             self.reason = "session_timeout" if self.ready.is_set() else "connection_timeout"
             self.failed = not self.ready.is_set()
+            pc = self.connection.pc
+            sctp = pc.sctp
+            logger.warning(
+                "Voice timeout: pc=%s reason=%s peer=%s ice=%s dtls=%s sctp=%s",
+                self.connection.pc_id,
+                self.reason,
+                pc.connectionState,
+                pc.iceConnectionState,
+                sctp.transport.state if sctp else None,
+                sctp.state if sctp else None,
+            )
             self.stop.set()

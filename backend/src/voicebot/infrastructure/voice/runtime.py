@@ -63,6 +63,11 @@ class VoiceRuntime:
                     else:
                         await entry.connection.renegotiate(offer.sdp, offer.type)
                 answer = Answer.model_validate(entry.connection.get_answer())
+                logger.info(
+                    "WebRTC answer created: session=%s pc=%s",
+                    session_id,
+                    entry.connection.pc_id,
+                )
                 if fresh:
                     entry.task = asyncio.create_task(self._run(session_id, entry), name=session_id)
                 return answer
@@ -105,6 +110,7 @@ class VoiceRuntime:
                 entry.stop.set()
                 return
             entry.ready.set()
+            logger.info("Voice session ready: session=%s", session_id)
             entry.send({"kind": "session.ready"})
 
         async def transcript(role: Speaker, text: str, interrupted: bool, started_at: str):
@@ -190,7 +196,8 @@ class VoiceRuntime:
         async with self.lock:
             entry = self.active.get(session_id)
             if entry:
-                entry.reason = reason
+                if not entry.stop.is_set():
+                    entry.reason = reason
                 entry.stop.set()
         if entry:
             async with entry.signaling_lock:

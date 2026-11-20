@@ -100,6 +100,7 @@ def create_app(
 ) -> FastAPI:
     settings = settings or Settings()
     logging.basicConfig(level=logging.INFO)
+    logging.getLogger("aiortc.rtcdtlstransport").setLevel(logging.DEBUG)
     # Keep transport/provider failures visible without debug transcripts or session handles.
     pipecat_logger.remove()
     pipecat_logger.add(sys.stderr, level="WARNING")
