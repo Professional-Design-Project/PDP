@@ -172,6 +172,10 @@
 }
 
 @layer components {
+  .caption-fade[data-clipped="true"] {
+    mask-image: linear-gradient(to bottom, rgb(0 0 0 / 0.25) 0, black 2.5rem);
+  }
+
   .style-range {
     display: block;
     width: 100%;

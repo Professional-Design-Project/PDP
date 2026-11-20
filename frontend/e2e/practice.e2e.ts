@@ -138,6 +138,10 @@ for (const restAvailable of [true, false]) {
       channel.close();
     });
 
+    const finished = page.getByRole("dialog", { name: "The conversation is over" });
+    await expect(finished).toBeVisible();
+    await finished.getByRole("checkbox", { name: /Get feedback/ }).uncheck();
+    await finished.getByRole("button", { name: "Show the summary" }).click();
     await expect(page.getByRole("dialog")).not.toBeVisible();
     if (restAvailable) {
       await expect(

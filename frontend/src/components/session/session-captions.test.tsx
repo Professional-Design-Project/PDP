@@ -20,6 +20,7 @@ it("keeps long captions in a fixed area without a scrollbar that shows the newes
   const { rerender } = renderCaptions("Hello.");
   const area = screen.getByTestId("caption-scroll");
   Object.defineProperty(area, "scrollHeight", { configurable: true, value: 900 });
+  Object.defineProperty(area, "clientHeight", { configurable: true, value: 300 });
   rerender(
     <LocaleProvider locale="en">
       <SessionCaptions
@@ -37,5 +38,12 @@ it("keeps long captions in a fixed area without a scrollbar that shows the newes
   expect(area).toHaveClass("overflow-hidden", "min-h-0");
   expect(area).not.toHaveClass("overflow-y-auto");
   expect(area.scrollTop).toBe(900);
-  expect(screen.getByText("You").closest("div.grid")).toHaveClass("shrink-0");
+  expect(area).toHaveAttribute("data-clipped", "true");
+  expect(area).toHaveClass("flex-1");
+  expect(screen.getByText("You").closest("div.grid")).toHaveClass("shrink-0", "sm:min-h-32");
+});
+
+it("does not fade a caption that fits", () => {
+  renderCaptions("Hello.");
+  expect(screen.getByTestId("caption-scroll")).toHaveAttribute("data-clipped", "false");
 });
