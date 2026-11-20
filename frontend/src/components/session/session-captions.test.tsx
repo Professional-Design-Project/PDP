@@ -16,7 +16,7 @@ function renderCaptions(botCaption: string) {
   );
 }
 
-it("keeps long captions in a scrolling area that follows the newest words", () => {
+it("keeps long captions in a fixed area without a scrollbar that shows the newest words", () => {
   const { rerender } = renderCaptions("Hello.");
   const area = screen.getByTestId("caption-scroll");
   Object.defineProperty(area, "scrollHeight", { configurable: true, value: 900 });
@@ -34,7 +34,8 @@ it("keeps long captions in a scrolling area that follows the newest words", () =
       />
     </LocaleProvider>,
   );
-  expect(area).toHaveClass("overflow-y-auto", "min-h-0");
+  expect(area).toHaveClass("overflow-hidden", "min-h-0");
+  expect(area).not.toHaveClass("overflow-y-auto");
   expect(area.scrollTop).toBe(900);
   expect(screen.getByText("You").closest("div.grid")).toHaveClass("shrink-0");
 });

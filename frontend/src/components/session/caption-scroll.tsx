@@ -16,11 +16,7 @@ export function CaptionScroll({ follow, children }: CaptionScrollProps) {
   }, [follow]);
 
   return (
-    <div
-      ref={ref}
-      data-testid="caption-scroll"
-      className="caption-scroll min-h-0 shrink overflow-y-auto overscroll-contain"
-    >
+    <div ref={ref} data-testid="caption-scroll" className="min-h-0 shrink overflow-hidden">
       {children}
     </div>
   );
