@@ -47,6 +47,10 @@ ensaio is a voice practice partner for job interviews, thesis defences and oral 
 - **Local.** Leave the Supabase variables empty. There are no accounts, and the backend stores data in `backend/data/voicebot.sqlite3`.
 - **Supabase.** Set the Supabase variables in both environment files. Sign-in is required to practise, and sessions, transcripts, feedback and consents are stored in Supabase. See [supabase/README.md](supabase/README.md) for the project setup.
 
+The current voice integration and ongoing architecture work are described in
+[docs/voice-architecture.md](docs/voice-architecture.md). Gemini Live is the
+only supported voice engine at present.
+
 ### What each person needs
 
 | Who | What they need |
