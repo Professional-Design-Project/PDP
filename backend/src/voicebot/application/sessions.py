@@ -42,10 +42,12 @@ class Sessions:
         model: str,
         max_sessions: int = 8,
         token_ttl_seconds: int = 86400,
+        profile: str = "gemini_live",
     ) -> None:
         self.repository = repository
         self.scenarios = scenarios
         self.model = model
+        self.profile = profile
         self.lock = asyncio.Lock()
         self.max_sessions = max_sessions
         self.token_ttl_seconds = token_ttl_seconds
@@ -73,7 +75,7 @@ class Sessions:
             scenario_version=scenario.version,
             instructions=compile_instructions(scenario, context, style=style),
             language=scenario.language.value,
-            profile="gemini_live",
+            profile=self.profile,
             model=self.model,
             token_hash=hashlib.sha256(token.encode()).hexdigest(),
             created_at=datetime.now(UTC),

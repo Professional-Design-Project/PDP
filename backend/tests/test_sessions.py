@@ -77,6 +77,20 @@ async def test_session_domain_and_storage(tmp_path):
         await database.close()
 
 
+async def test_session_persists_the_configured_voice_profile(tmp_path):
+    from voicebot.application.sessions import Sessions
+
+    database = await Database.open(tmp_path / "test.sqlite3")
+    try:
+        sessions = Sessions(database, load_scenarios(), "test-model", profile="test_profile")
+        session, _ = await sessions.create("oral-exam", "en")
+
+        assert session.profile == "test_profile"
+        assert (await database.get(session.id)).profile == "test_profile"
+    finally:
+        await database.close()
+
+
 async def test_document_text_reaches_the_conversation_but_is_not_stored(tmp_path):
     from voicebot.application.documents import Document
     from voicebot.application.sessions import Sessions
