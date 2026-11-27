@@ -51,8 +51,41 @@ class GeminiVoiceEngine:
         return GeminiConversation(session, connection, self.settings)
 
 
+class CascadedVoiceEngine:
+    profile = "cascaded"
+
+    def __init__(self, settings: Settings) -> None:
+        self.settings = settings
+        self.model = settings.openrouter_voice_model
+
+    @property
+    def configured(self) -> bool:
+        return all(
+            (
+                self.settings.openrouter_api_key.get_secret_value(),
+                self.settings.elevenlabs_api_key.get_secret_value(),
+                self.settings.elevenlabs_voice_id.strip(),
+                self.model.strip(),
+                self.settings.elevenlabs_stt_model.strip(),
+                self.settings.elevenlabs_tts_model.strip(),
+            )
+        )
+
+    def create(self, session: Session, connection: SmallWebRTCConnection) -> Conversation:
+        if not self.configured:
+            raise VoiceUnavailable(
+                "Set VOICEBOT_OPENROUTER_API_KEY, VOICEBOT_ELEVENLABS_API_KEY, "
+                "VOICEBOT_ELEVENLABS_VOICE_ID and nonempty voice model settings"
+            )
+        from voicebot.infrastructure.voice.cascaded import CascadedConversation
+
+        return CascadedConversation(session, connection, self.settings)
+
+
 def select_voice_engine(settings: Settings) -> VoiceEngine:
     """Compose the selected engine without opening provider connections."""
     if settings.voice_architecture == "realtime" and settings.realtime_provider == "gemini":
         return GeminiVoiceEngine(settings)
+    if settings.voice_architecture == "cascaded":
+        return CascadedVoiceEngine(settings)
     raise ValueError("Unsupported voice architecture or realtime provider")

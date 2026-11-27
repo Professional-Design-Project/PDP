@@ -16,8 +16,16 @@ class Settings(BaseSettings):
     model_config = SettingsConfigDict(env_prefix="VOICEBOT_", env_file=".env", extra="ignore")
 
     google_api_key: SecretStr = SecretStr("")
-    voice_architecture: Literal["realtime"] = "realtime"
+    voice_architecture: Literal["realtime", "cascaded"] = "realtime"
     realtime_provider: Literal["gemini"] = "gemini"
+    stt_provider: Literal["elevenlabs"] = "elevenlabs"
+    llm_provider: Literal["openrouter"] = "openrouter"
+    tts_provider: Literal["elevenlabs"] = "elevenlabs"
+    elevenlabs_api_key: SecretStr = SecretStr("")
+    elevenlabs_voice_id: str = ""
+    elevenlabs_stt_model: str = "scribe_v2_realtime"
+    elevenlabs_tts_model: str = "eleven_flash_v2_5"
+    openrouter_voice_model: str = "openai/gpt-4.1-mini"
     gemini_model: str = "gemini-3.8-live"
     gemini_voice: str = "Charon"
     feedback_provider: Literal["gemini", "openrouter"] = "gemini"

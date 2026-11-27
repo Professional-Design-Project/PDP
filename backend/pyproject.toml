@@ -8,7 +8,7 @@ dependencies = [
     "asyncpg>=0.30,<1",
     "fastapi>=0.115,<1",
     "httpx>=0.28,<1",
-    "pipecat-ai[google,webrtc]==1.14.0",
+    "pipecat-ai[elevenlabs,google,openrouter,silero,webrtc]==1.14.0",
     "pydantic-settings>=2.7,<3",
     "pyjwt[crypto]>=2.10,<3",
     "pypdf>=5,<7",
