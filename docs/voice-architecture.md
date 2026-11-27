@@ -34,8 +34,9 @@ Sessions -> repository (SQLite or Postgres)
   `application/scenarios.py` and `infrastructure/scenarios.py`.
 * `application/session_feedback.py` requests feedback separately from voice,
   filters notes against actual user transcript quotations, and saves results.
-  The default feedback writer currently uses Gemini and the same Google key,
-  but has a separate model setting.
+  Feedback uses Gemini by default, or can be configured independently to use
+  OpenRouter. Its output is schema-validated and quotations are checked against
+  the transcript regardless of provider.
 
 ## Confirmed constraints and remaining work
 
@@ -94,6 +95,14 @@ The defaults are `VOICEBOT_VOICE_ARCHITECTURE=realtime` and
 The existing `VOICEBOT_GEMINI_MODEL`, `VOICEBOT_GEMINI_VOICE` and
 `VOICEBOT_FEEDBACK_MODEL` settings remain in effect. See the root README for
 setup and commands. Do not add actual credentials to version control.
+
+To use OpenRouter for feedback, set `VOICEBOT_FEEDBACK_PROVIDER=openrouter`,
+`VOICEBOT_OPENROUTER_API_KEY`, and optionally
+`VOICEBOT_OPENROUTER_FEEDBACK_MODEL`. Choose a model that supports structured
+JSON output. This affects feedback only; it does not select an OpenRouter voice
+pipeline. OpenRouter and upstream model providers may apply their own data
+handling and routing policies; review them before sending real transcripts.
+The integration has not yet been tested against a live OpenRouter account.
 
 Baseline on Windows with the locked backend dependencies and Python 3.12:
 133 tests passed and 10 were skipped before changes; Ruff check and format

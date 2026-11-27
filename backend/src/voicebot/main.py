@@ -30,7 +30,7 @@ from voicebot.application.sessions import (
 from voicebot.domain.session import ConsentRequired, SessionConflict
 from voicebot.infrastructure.auth import SupabaseAuth
 from voicebot.infrastructure.database import Database
-from voicebot.infrastructure.feedback import GeminiFeedbackWriter
+from voicebot.infrastructure.feedback import GeminiFeedbackWriter, OpenRouterFeedbackWriter
 from voicebot.infrastructure.postgres import PostgresDatabase
 from voicebot.infrastructure.recording_retention import RecordingRetention
 from voicebot.infrastructure.scenarios import load_scenarios
@@ -136,10 +136,20 @@ def create_app(
             app.state.auth = auth or (
                 SupabaseAuth(settings.supabase_url) if settings.supabase_url else None
             )
-            key = settings.google_api_key.get_secret_value()
-            app.state.feedback_writer = feedback_writer or (
-                GeminiFeedbackWriter(key, settings.feedback_model) if key else None
-            )
+            if feedback_writer is not None:
+                app.state.feedback_writer = feedback_writer
+            elif settings.feedback_provider == "openrouter":
+                key = settings.openrouter_api_key.get_secret_value()
+                app.state.feedback_writer = (
+                    OpenRouterFeedbackWriter(key, settings.openrouter_feedback_model)
+                    if key
+                    else None
+                )
+            else:
+                key = settings.google_api_key.get_secret_value()
+                app.state.feedback_writer = (
+                    GeminiFeedbackWriter(key, settings.feedback_model) if key else None
+                )
             runtime = VoiceRuntime(sessions, settings, voice_engine)
             app.state.runtime = runtime
             background = [asyncio.create_task(runtime.maintain())]

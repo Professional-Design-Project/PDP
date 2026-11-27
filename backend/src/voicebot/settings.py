@@ -20,7 +20,10 @@ class Settings(BaseSettings):
     realtime_provider: Literal["gemini"] = "gemini"
     gemini_model: str = "gemini-3.8-live"
     gemini_voice: str = "Charon"
+    feedback_provider: Literal["gemini", "openrouter"] = "gemini"
     feedback_model: str = "gemini-3.5-flash"
+    openrouter_api_key: SecretStr = SecretStr("")
+    openrouter_feedback_model: str = "openai/gpt-4.1-mini"
     supabase_url: str = ""
     database_url: SecretStr = SecretStr("")
     supabase_secret_key: SecretStr = SecretStr("")
