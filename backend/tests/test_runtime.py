@@ -20,7 +20,7 @@ from pipecat.frames.frames import (
 
 from voicebot.application.documents import Document
 from voicebot.application.sessions import Sessions
-from voicebot.domain.session import ConversationEndReason, SessionConflict
+from voicebot.domain.session import ConversationEndReason, SessionConflict, SessionStatus
 from voicebot.infrastructure.database import Database
 from voicebot.infrastructure.scenarios import load_scenarios
 from voicebot.infrastructure.voice.active_session import ActiveSession
@@ -132,6 +132,39 @@ async def test_unconfigured_engine_rejects_offer_before_opening_connection(tmp_p
 
         assert not runtime.active
         assert (await sessions.get(session.id)).status == "created"
+    finally:
+        await database.close()
+
+
+async def test_engine_failure_keeps_transcript_and_releases_connection(tmp_path):
+    database = await Database.open(tmp_path / "failure.sqlite3")
+    try:
+        sessions = Sessions(database, load_scenarios(), "test-model")
+        session, _ = await sessions.create("oral-exam", "en")
+        await sessions.transition(session.id, SessionStatus.CONNECTING)
+        connection = Mock(disconnect=AsyncMock())
+        entry = ActiveSession(connection)
+
+        async def run(stop, ready, transcript, completed):
+            await ready()
+            await transcript("user", "My answer", False, "now")
+            raise RuntimeError("provider failure")
+
+        engine = Mock(configured=True, create=Mock(return_value=Mock(run=run)))
+        runtime = VoiceRuntime(sessions, Settings(_env_file=None), engine)
+        runtime.active[session.id] = entry
+
+        await runtime._run(session.id, entry)
+
+        saved = await sessions.get(session.id)
+        assert saved.status == "failed"
+        assert saved.end_reason == "runtime_failed"
+        events = await sessions.events(session.id, 0, 100, kind="transcript.final")
+        assert [(event.data["role"], event.data["text"]) for event in events] == [
+            ("user", "My answer")
+        ]
+        connection.disconnect.assert_awaited_once()
+        assert not runtime.active
     finally:
         await database.close()
 
