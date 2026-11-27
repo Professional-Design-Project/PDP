@@ -16,7 +16,8 @@ ensaio is a voice practice partner for job interviews, thesis defences and oral 
 
 - Node.js 22.13 or later, with Corepack enabled
 - Python 3.12 and [uv](https://docs.astral.sh/uv/)
-- A Google AI Studio API key
+- A Google AI Studio API key for Gemini Live or Gemini feedback; alternatively,
+  OpenRouter and ElevenLabs keys for the cascaded voice pipeline
 - Optional: a Supabase project, for accounts and session history
 
 ## Setup
@@ -30,7 +31,8 @@ ensaio is a voice practice partner for job interviews, thesis defences and oral 
 
 2. Copy the example environment files and fill them in:
 
-   - `backend/.env.example` to `backend/.env`. `VOICEBOT_GOOGLE_API_KEY` is required.
+   - `backend/.env.example` to `backend/.env`. Configure credentials for the
+     selected voice and feedback providers.
    - `frontend/.env.example` to `frontend/.env.local`.
 
 3. Start both servers, each in its own terminal from the repository root:
