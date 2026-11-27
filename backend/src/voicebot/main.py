@@ -36,7 +36,7 @@ from voicebot.infrastructure.recording_retention import RecordingRetention
 from voicebot.infrastructure.scenarios import load_scenarios
 from voicebot.infrastructure.supabase_admin import AccountDeletionFailed, SupabaseAdmin
 from voicebot.infrastructure.voice.active_session import InvalidSignaling
-from voicebot.infrastructure.voice.engine import GeminiVoiceEngine, VoiceUnavailable
+from voicebot.infrastructure.voice.engine import VoiceUnavailable, select_voice_engine
 from voicebot.infrastructure.voice.runtime import VoiceRuntime
 from voicebot.settings import Settings
 
@@ -107,7 +107,7 @@ def create_app(
     pipecat_logger.add(sys.stderr, level="WARNING")
     pipecat_logger.enable("pipecat")
     scenarios = load_scenarios()
-    voice_engine = GeminiVoiceEngine(settings)
+    voice_engine = select_voice_engine(settings)
 
     @asynccontextmanager
     async def lifespan(app: FastAPI):

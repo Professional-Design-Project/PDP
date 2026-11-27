@@ -49,3 +49,10 @@ class GeminiVoiceEngine:
         from voicebot.infrastructure.voice.gemini import GeminiConversation
 
         return GeminiConversation(session, connection, self.settings)
+
+
+def select_voice_engine(settings: Settings) -> VoiceEngine:
+    """Compose the selected engine without opening provider connections."""
+    if settings.voice_architecture == "realtime" and settings.realtime_provider == "gemini":
+        return GeminiVoiceEngine(settings)
+    raise ValueError("Unsupported voice architecture or realtime provider")

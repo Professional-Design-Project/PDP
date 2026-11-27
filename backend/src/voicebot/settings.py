@@ -1,4 +1,5 @@
 from pathlib import Path
+from typing import Literal
 
 from pydantic import BaseModel, ConfigDict, Field, SecretStr
 from pydantic_settings import BaseSettings, SettingsConfigDict
@@ -15,6 +16,8 @@ class Settings(BaseSettings):
     model_config = SettingsConfigDict(env_prefix="VOICEBOT_", env_file=".env", extra="ignore")
 
     google_api_key: SecretStr = SecretStr("")
+    voice_architecture: Literal["realtime"] = "realtime"
+    realtime_provider: Literal["gemini"] = "gemini"
     gemini_model: str = "gemini-3.8-live"
     gemini_voice: str = "Charon"
     feedback_model: str = "gemini-3.5-flash"
