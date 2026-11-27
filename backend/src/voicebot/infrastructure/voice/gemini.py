@@ -27,7 +27,9 @@ from pipecat.workers.runner import WorkerRunner
 from voicebot.application.interviews import (
     INTERVIEW_SCENARIOS,
     ClosingConfirmation,
+    CompletionDecision,
     can_complete_interview,
+    completion_decision,
 )
 from voicebot.domain.session import ConversationEndReason, Session, Speaker
 from voicebot.infrastructure.voice.completion import (
@@ -143,8 +145,11 @@ class GeminiConversation:
         self._user_turns = 0
         self._closing_confirmation = ClosingConfirmation()
 
-    async def _check_interview_progress(self, params: FunctionCallParams) -> bool:
-        elapsed = 0 if self._ready_at is None else time.monotonic() - self._ready_at
+    async def _check_interview_progress(
+        self, params: FunctionCallParams, elapsed: float | None = None
+    ) -> bool:
+        if elapsed is None:
+            elapsed = 0 if self._ready_at is None else time.monotonic() - self._ready_at
         if not self._is_interview or can_complete_interview(elapsed, self._user_turns):
             return True
         await params.result_callback(
@@ -206,16 +211,18 @@ class GeminiConversation:
                 properties=FunctionCallResultProperties(run_llm=False),
             )
             return
-        if (
-            reason == ConversationEndReason.SCENARIO_COMPLETED
-            and not await self._check_interview_progress(params)
-        ):
+        elapsed = 0 if self._ready_at is None else time.monotonic() - self._ready_at
+        decision = completion_decision(
+            reason=reason,
+            is_interview=self._is_interview,
+            elapsed_seconds=elapsed,
+            user_turns=self._user_turns,
+            confirmation=self._closing_confirmation,
+        )
+        if decision == CompletionDecision.CONTINUE_INTERVIEW:
+            await self._check_interview_progress(params, elapsed)
             return
-        if (
-            reason == ConversationEndReason.SCENARIO_COMPLETED
-            and self._is_interview
-            and not self._closing_confirmation.has_reply(self._user_turns)
-        ):
+        if decision == CompletionDecision.CONFIRMATION_REQUIRED:
             await params.result_callback(
                 {
                     "status": "confirmation_required",
