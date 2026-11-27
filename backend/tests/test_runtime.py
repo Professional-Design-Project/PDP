@@ -57,6 +57,27 @@ async def test_runtime_passes_document_brief_to_gemini_without_storing_it(tmp_pa
         await database.close()
 
 
+async def test_runtime_accepts_a_conversation_factory(tmp_path):
+    database = await Database.open(tmp_path / "runtime.sqlite3")
+    try:
+        sessions = Sessions(database, load_scenarios(), "test-model")
+        session, _ = await sessions.create("oral-exam", "en")
+        conversation = Mock(run=AsyncMock())
+        factory = Mock(return_value=conversation)
+        connection = object()
+        settings = Settings(_env_file=None)
+        runtime = VoiceRuntime(sessions, settings, conversation_factory=factory)
+
+        await runtime._serve(
+            session.id, SimpleNamespace(stop=asyncio.Event(), connection=connection)
+        )
+
+        assert factory.call_args.args == (session, connection, settings)
+        conversation.run.assert_awaited_once()
+    finally:
+        await database.close()
+
+
 async def test_real_webrtc_signaling_and_cleanup(tmp_path, monkeypatch):
     database = await Database.open(tmp_path / "runtime.sqlite3")
     sessions = Sessions(database, load_scenarios(), "test-model")
