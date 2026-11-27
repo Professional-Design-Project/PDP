@@ -1,8 +1,6 @@
 import asyncio
 import logging
-from collections.abc import Awaitable, Callable
 from contextlib import suppress
-from typing import Protocol
 
 from voicebot.application.sessions import Sessions
 from voicebot.domain.session import (
@@ -12,7 +10,7 @@ from voicebot.domain.session import (
     Speaker,
 )
 from voicebot.infrastructure.voice.active_session import ActiveSession, InvalidSignaling
-from voicebot.infrastructure.voice.gemini import GeminiConversation, VoiceUnavailable
+from voicebot.infrastructure.voice.engine import VoiceEngine, VoiceUnavailable
 from voicebot.infrastructure.voice.playback import PlaybackFailed, confirm_playback
 from voicebot.infrastructure.voice.webrtc import Answer, Candidates, Offer, add_candidates
 from voicebot.settings import Settings
@@ -20,31 +18,21 @@ from voicebot.settings import Settings
 logger = logging.getLogger(__name__)
 
 
-class Conversation(Protocol):
-    async def run(
-        self,
-        stop: asyncio.Event,
-        on_ready: Callable[[], Awaitable[None]],
-        on_transcript: Callable[[Speaker, str, bool, str], Awaitable[None]],
-        on_completed: Callable[[ConversationEndReason, bytes], Awaitable[None]],
-    ) -> None: ...
-
-
 class VoiceRuntime:
     def __init__(
         self,
         sessions: Sessions,
         settings: Settings,
-        conversation_factory: Callable[..., Conversation] | None = None,
+        engine: VoiceEngine,
     ) -> None:
         self.sessions = sessions
         self.settings = settings
-        self.conversation_factory = conversation_factory
+        self.engine = engine
         self.active: dict[str, ActiveSession] = {}
         self.lock = asyncio.Lock()
 
     async def offer(self, session_id: str, offer: Offer) -> Answer:
-        if not self.settings.google_api_key.get_secret_value():
+        if not self.engine.configured:
             raise VoiceUnavailable
         async with self.lock:
             session = await self.sessions.for_conversation(session_id)
@@ -123,8 +111,7 @@ class VoiceRuntime:
         if entry.stop.is_set():
             return
         session = await self.sessions.for_conversation(session_id)
-        factory = self.conversation_factory or GeminiConversation
-        conversation = factory(session, entry.connection, self.settings)
+        conversation = self.engine.create(session, entry.connection)
 
         async def ready():
             if entry.stop.is_set():

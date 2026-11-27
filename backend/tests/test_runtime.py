@@ -24,6 +24,7 @@ from voicebot.domain.session import ConversationEndReason, SessionConflict
 from voicebot.infrastructure.database import Database
 from voicebot.infrastructure.scenarios import load_scenarios
 from voicebot.infrastructure.voice.active_session import ActiveSession
+from voicebot.infrastructure.voice.engine import GeminiVoiceEngine, VoiceUnavailable
 from voicebot.infrastructure.voice.gemini import GeminiConversation
 from voicebot.infrastructure.voice.runtime import VoiceRuntime
 from voicebot.infrastructure.voice.webrtc import Offer
@@ -40,9 +41,9 @@ async def test_runtime_passes_document_brief_to_gemini_without_storing_it(tmp_pa
         )
         conversation = Mock(run=AsyncMock())
         factory = Mock(return_value=conversation)
-        monkeypatch.setattr("voicebot.infrastructure.voice.runtime.GeminiConversation", factory)
         entry = SimpleNamespace(stop=asyncio.Event(), connection=object())
-        runtime = VoiceRuntime(sessions, Settings(_env_file=None))
+        settings = Settings(_env_file=None)
+        runtime = VoiceRuntime(sessions, settings, Mock(configured=True, create=factory))
 
         await runtime._serve(session.id, entry)
 
@@ -66,22 +67,23 @@ async def test_runtime_accepts_a_conversation_factory(tmp_path):
         factory = Mock(return_value=conversation)
         connection = object()
         settings = Settings(_env_file=None)
-        runtime = VoiceRuntime(sessions, settings, conversation_factory=factory)
+        runtime = VoiceRuntime(sessions, settings, Mock(configured=True, create=factory))
 
         await runtime._serve(
             session.id, SimpleNamespace(stop=asyncio.Event(), connection=connection)
         )
 
-        assert factory.call_args.args == (session, connection, settings)
+        assert factory.call_args.args == (session, connection)
         conversation.run.assert_awaited_once()
     finally:
         await database.close()
 
 
-async def test_real_webrtc_signaling_and_cleanup(tmp_path, monkeypatch):
+async def test_real_webrtc_signaling_and_cleanup_without_google_credentials(tmp_path, monkeypatch):
     database = await Database.open(tmp_path / "runtime.sqlite3")
     sessions = Sessions(database, load_scenarios(), "test-model")
-    runtime = VoiceRuntime(sessions, Settings(_env_file=None, google_api_key="test-key"))
+    settings = Settings(_env_file=None)
+    runtime = VoiceRuntime(sessions, settings, Mock(configured=True))
 
     async def serve(session_id, entry):
         await entry.connection.connect()
@@ -117,6 +119,23 @@ async def test_real_webrtc_signaling_and_cleanup(tmp_path, monkeypatch):
         await database.close()
 
 
+async def test_unconfigured_engine_rejects_offer_before_opening_connection(tmp_path):
+    database = await Database.open(tmp_path / "runtime.sqlite3")
+    try:
+        settings = Settings(_env_file=None)
+        sessions = Sessions(database, load_scenarios(), "test-model")
+        session, _ = await sessions.create("oral-exam", "en")
+        runtime = VoiceRuntime(sessions, settings, GeminiVoiceEngine(settings))
+
+        with pytest.raises(VoiceUnavailable):
+            await runtime.offer(session.id, Offer(sdp="unused", type="offer"))
+
+        assert not runtime.active
+        assert (await sessions.get(session.id)).status == "created"
+    finally:
+        await database.close()
+
+
 @pytest.mark.parametrize("reason", list(ConversationEndReason))
 async def test_completion_is_saved_and_sent_before_disconnect(tmp_path, monkeypatch, reason):
     database = await Database.open(tmp_path / "completion.sqlite3")
@@ -126,7 +145,7 @@ async def test_completion_is_saved_and_sent_before_disconnect(tmp_path, monkeypa
         connection = Mock(disconnect=AsyncMock())
         entry = ActiveSession(connection)
         entry.ready.set()
-        runtime = VoiceRuntime(sessions, Settings(_env_file=None))
+        runtime = VoiceRuntime(sessions, Settings(_env_file=None), Mock(configured=True))
         runtime.active[session.id] = entry
         monkeypatch.setattr(
             "voicebot.infrastructure.voice.runtime.confirm_playback", AsyncMock(return_value=True)
@@ -147,10 +166,7 @@ async def test_completion_is_saved_and_sent_before_disconnect(tmp_path, monkeypa
             cleaned = await sessions.transition(session.id, "ended", "user_ended")
             assert cleaned.end_reason == reason
 
-        monkeypatch.setattr(
-            "voicebot.infrastructure.voice.runtime.GeminiConversation",
-            Mock(return_value=Mock(run=run)),
-        )
+        runtime.engine.create.return_value = Mock(run=run)
         await runtime._run(session.id, entry)
 
         events = await sessions.events(session.id, 0, 100)
@@ -176,17 +192,14 @@ async def test_completion_does_not_override_an_external_stop(tmp_path, monkeypat
         session, _ = await sessions.create("oral-exam", "pl")
         entry = ActiveSession(Mock(disconnect=AsyncMock()))
         entry.ready.set()
-        runtime = VoiceRuntime(sessions, Settings(_env_file=None))
+        runtime = VoiceRuntime(sessions, Settings(_env_file=None), Mock(configured=True))
 
         async def run(stop, ready, transcript, completed):
             entry.reason = "session_timeout"
             stop.set()
             await completed(ConversationEndReason.SCENARIO_COMPLETED, b"closing audio")
 
-        monkeypatch.setattr(
-            "voicebot.infrastructure.voice.runtime.GeminiConversation",
-            Mock(return_value=Mock(run=run)),
-        )
+        runtime.engine.create.return_value = Mock(run=run)
         await runtime._run(session.id, entry)
         assert (await sessions.get(session.id)).end_reason == "session_timeout"
     finally:
@@ -199,7 +212,8 @@ async def test_real_pipeline_waits_for_client_playback_before_completion(
 ):
     database = await Database.open(tmp_path / "pipeline.sqlite3")
     sessions = Sessions(database, load_scenarios(), "test-model")
-    runtime = VoiceRuntime(sessions, Settings(_env_file=None, google_api_key="test-key"))
+    settings = Settings(_env_file=None, google_api_key="test-key")
+    runtime = VoiceRuntime(sessions, settings, GeminiVoiceEngine(settings))
     conversations = []
     audio_bytes_sent = 0
     audio_bytes_at_end = 0
@@ -223,7 +237,7 @@ async def test_real_pipeline_waits_for_client_playback_before_completion(
         return conversation
 
     monkeypatch.setattr(
-        "voicebot.infrastructure.voice.runtime.GeminiConversation", conversation_factory
+        "voicebot.infrastructure.voice.gemini.GeminiConversation", conversation_factory
     )
     peer = RTCPeerConnection(RTCConfiguration(iceServers=[]))
     ready = asyncio.Event()

@@ -36,7 +36,7 @@ from voicebot.infrastructure.recording_retention import RecordingRetention
 from voicebot.infrastructure.scenarios import load_scenarios
 from voicebot.infrastructure.supabase_admin import AccountDeletionFailed, SupabaseAdmin
 from voicebot.infrastructure.voice.active_session import InvalidSignaling
-from voicebot.infrastructure.voice.gemini import VoiceUnavailable
+from voicebot.infrastructure.voice.engine import GeminiVoiceEngine, VoiceUnavailable
 from voicebot.infrastructure.voice.runtime import VoiceRuntime
 from voicebot.settings import Settings
 
@@ -107,6 +107,7 @@ def create_app(
     pipecat_logger.add(sys.stderr, level="WARNING")
     pipecat_logger.enable("pipecat")
     scenarios = load_scenarios()
+    voice_engine = GeminiVoiceEngine(settings)
 
     @asynccontextmanager
     async def lifespan(app: FastAPI):
@@ -118,9 +119,10 @@ def create_app(
             sessions = Sessions(
                 database,
                 scenarios,
-                settings.gemini_model,
+                voice_engine.model,
                 settings.max_sessions,
                 settings.session_token_ttl_seconds,
+                profile=voice_engine.profile,
             )
             await sessions.recover()
             app.state.sessions = sessions
@@ -138,7 +140,7 @@ def create_app(
             app.state.feedback_writer = feedback_writer or (
                 GeminiFeedbackWriter(key, settings.feedback_model) if key else None
             )
-            runtime = VoiceRuntime(sessions, settings)
+            runtime = VoiceRuntime(sessions, settings, voice_engine)
             app.state.runtime = runtime
             background = [asyncio.create_task(runtime.maintain())]
             if isinstance(database, PostgresDatabase) and app.state.admin is not None:
@@ -239,7 +241,7 @@ def create_app(
     def health() -> dict[str, str | bool]:
         return {
             "status": "ok",
-            "voice_configured": bool(settings.google_api_key.get_secret_value()),
+            "voice_configured": voice_engine.configured,
             "auth_required": bool(settings.supabase_url),
         }
 

@@ -37,11 +37,8 @@ from voicebot.infrastructure.voice.completion import (
     ConversationCompletion,
 )
 from voicebot.infrastructure.voice.diagnostics import AudioInputDiagnostics
+from voicebot.infrastructure.voice.engine import VoiceUnavailable
 from voicebot.settings import Settings
-
-
-class VoiceUnavailable(Exception):
-    pass
 
 
 class ProviderFailed(Exception):
