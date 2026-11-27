@@ -3,7 +3,6 @@ import time
 from collections.abc import Awaitable, Callable
 from contextlib import suppress
 
-from pipecat.adapters.llm.schemas.function_schema import FunctionSchema
 from pipecat.adapters.llm.schemas.tools_schema import ToolsSchema
 from pipecat.frames.frames import FunctionCallResultProperties, LLMRunFrame
 from pipecat.pipeline.pipeline import Pipeline
@@ -40,6 +39,7 @@ from voicebot.infrastructure.voice.completion import (
 )
 from voicebot.infrastructure.voice.diagnostics import AudioInputDiagnostics
 from voicebot.infrastructure.voice.engine import VoiceUnavailable
+from voicebot.infrastructure.voice.tools import conversation_tools
 from voicebot.settings import Settings
 
 
@@ -62,41 +62,7 @@ class GeminiConversation:
             webrtc_connection=connection,
             params=TransportParams(audio_in_enabled=True, audio_out_enabled=True),
         )
-        tools = [
-            FunctionSchema(
-                name="finish_session",
-                description="Request the end of the meeting BEFORE saying goodbye. "
-                "For interviews, scenario_completed requires prepare_closing, "
-                "a spoken invitation for final questions, and a new, complete "
-                "candidate reply clearly confirming they have no more questions. "
-                "A fragment, pause or another question is not confirmation. "
-                "Use user_ended only for an explicit request to stop, not an "
-                "answer to an interview question or a workaround for rejection. "
-                "After the tool succeeds, say one brief closing statement, "
-                "then remain silent.",
-                properties={
-                    "reason": {
-                        "type": "string",
-                        "enum": [reason.value for reason in ConversationEndReason],
-                    }
-                },
-                required=["reason"],
-            )
-        ]
-        if self._is_interview:
-            tools.append(
-                FunctionSchema(
-                    name="prepare_closing",
-                    description="Before inviting the candidate's final questions, "
-                    "prepare to close the interview. This does NOT end it. "
-                    "After success, ask one closing question and yield the turn. "
-                    "Use again before a renewed invitation after answering "
-                    "candidate questions. Never combine with finish_session "
-                    "in the same turn.",
-                    properties={},
-                    required=[],
-                )
-            )
+        tools = conversation_tools(is_interview=self._is_interview)
         self.llm = GeminiLiveLLMService(
             api_key=key,
             settings=GeminiLiveLLMService.Settings(
